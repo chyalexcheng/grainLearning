@@ -6,8 +6,8 @@ readParamsFromTable(
    kr = 1.0,
    eta = 1.0,
    mu = 50.0,
-   num = 1000,
-   conf = 0.5e6,
+   num = 2000,
+   conf = 0.2e6,
    key = 1,
    unknownOk=True
 )
@@ -21,7 +21,7 @@ num = table.num           # number of soil particles
 dScaling = 1e3            # density scaling
 e = 0.68                  # initial void ratio
 conf = table.conf         # confining pressure
-strainGoal = 0.085        # target strain level
+strainGoal = 0.1          # target strain level
 dstrain = strainGoal/100  # strain increment
 rate = 0.1                # loading rate (strain rate)
 damp = 0.2                # damping coefficient
@@ -52,7 +52,10 @@ if random:
                 distributeMass=True,porosity=e/(1+e),seed=1,num=num)
    O.cell.hSize = Matrix3(mx[0],0,0, 0,mx[1],0, 0,0,mx[2])
 else:
-   O.cell.hSize=Matrix3(0.04622011418432206,0,0, 0,0.04612047733502004,0, 0,0,0.09212029433303306)
+   if num==1000: O.cell.hSize=Matrix3(0.04622011418432206,0,0, 0,0.04612047733502004,0, 0,0,0.09212029433303306)
+   if num==2000: O.cell.hSize=Matrix3(0.050134992262392535,0,0, 0,0.050157098506083464,0, 0,0,0.0994518551339961)
+   if num==5000: O.cell.hSize=Matrix3(0.046170983201952086,0,0, 0,0.04625783531203574,0, 0,0,0.09201499300536521)
+   if num==10000:O.cell.hSize=Matrix3(0.046093488302021875,0,0, 0,0.04616421348377587,0, 0,0,0.09220693508372971)
    sp.load('PeriSp_'+str(num)+'_0.68.txt')
 
 # load spheres to simulation
@@ -89,36 +92,36 @@ O.engines=[
 
 # prepare dense particle packing
 if random:
-	triaxDone = False
-	triax.goal=(-0.1*conf,-0.1*conf,-0.1*conf)
-	triax.maxStrainRate=(10.*rate,10.*rate,10.*rate)
-	triax.doneHook="triaxDone=True;newton.damping=0.9"
-	# prepare dense packing
-	while 1:
-	   O.run(100,True)
-	   if triaxDone:
-	      n = porosity()
-	      # reduce inter-particle friction if e is still big
-	      if n/(1.-n) > e:
-	         ctrMu *= 0.99
-	         print ctrMu, n/(1.-n)
-	         for inter in O.interactions:
-	            inter.phys.tangensOfFrictionAngle = tan(radians(ctrMu))
-	         O.materials[spMat].frictionAngle=radians(ctrMu)
-	         triaxDone = False
-	      else:
-	         # now start isotropic compression
-	         triax.goal = (-conf,-conf,-conf)
-	         triax.doneHook = "compactionFinished()"
-	         # set inter-particle friction to correct level
-	         for inter in O.interactions:
-	            inter.phys.tangensOfFrictionAngle = tan(radians(mu))
-	         O.materials[spMat].frictionAngle=radians(mu)
-	         break
+   triaxDone = False
+   triax.goal=(-0.1*conf,-0.1*conf,-0.1*conf)
+   triax.maxStrainRate=(10.*rate,10.*rate,10.*rate)
+   triax.doneHook="triaxDone=True;newton.damping=0.9"
+   # prepare dense packing
+   while 1:
+      O.run(100,True)
+      if triaxDone:
+         n = porosity()
+         # reduce inter-particle friction if e is still big
+         if n/(1.-n) > e:
+            ctrMu *= 0.99
+            print ctrMu, n/(1.-n)
+            for inter in O.interactions:
+               inter.phys.tangensOfFrictionAngle = tan(radians(ctrMu))
+            O.materials[spMat].frictionAngle=radians(ctrMu)
+            triaxDone = False
+         else:
+            # now start isotropic compression
+            triax.goal = (-conf,-conf,-conf)
+            triax.doneHook = "compactionFinished()"
+            # set inter-particle friction to correct level
+            for inter in O.interactions:
+               inter.phys.tangensOfFrictionAngle = tan(radians(mu))
+            O.materials[spMat].frictionAngle=radians(mu)
+            break
 else:
-	triax.goal=(-conf,-conf,-conf)
-	triax.maxStrainRate=(10.*rate,10.*rate,10.*rate)
-	triax.doneHook='compactionFinished()'
+   triax.goal=(-conf,-conf,-conf)
+   triax.maxStrainRate=(10.*rate,10.*rate,10.*rate)
+   triax.doneHook='compactionFinished()'
 
 def compactionFinished():
    if unbalancedForce()<stabilityRatio:
@@ -131,8 +134,6 @@ def compactionFinished():
       triax.maxStrainRate=(10*rate,10*rate,rate)
       # next time, call triaxFinished instead of compactionFinished
       triax.doneHook="addPlotData()"
-      # enable data recorder
-      O.engines[-1].dead = False
       # set damping to normal level
       newton.damping = 0.2
       print 'start trixial shearing.'
@@ -148,7 +149,7 @@ def addPlotData():
    if abs(e_z-strainGoal)/strainGoal > stabilityRatio:
       triax.goal[2] -= dstrain
    else:
-      numpy.save('./mcSimulations/'+str(table.key)+'.npy',plot.data)
+      numpy.save('./mcSimulations/'+str(table.num)+'/'+'%3.1f'%(table.conf/1e6)+'/'+str(table.key)+'.npy',plot.data)
       print 'triaxial shearing finished.'
       O.pause()
 

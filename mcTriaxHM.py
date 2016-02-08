@@ -6,7 +6,7 @@ readParamsFromTable(
    kr = 1.0,
    eta = 1.0,
    mu = 50.0,
-   num = 2000,
+   num = 5000,
    conf = 0.2e6,
    key = 1,
    unknownOk=True

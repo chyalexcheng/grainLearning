@@ -267,7 +267,7 @@
       end do
 
 !~       write(10001, '(g23.15e3)') (L_t(i, 1:nsample), i = 1, sstep)
-      write(10001, '(100e15.5)') (L_t(i, 1:nsample), i = 1, sstep)
+      write(10001, '(100f15.10)') (L_t(i, 1:nsample), i = 1, sstep)
 
       close(10001)
 

@@ -226,8 +226,6 @@
 
 !ccc  Make weight for each time step  cccccccccccccccccccccccccccccccccc
 
-      open(10001, file = 'weights.txt')
-
       allocate(L_t(sstep, nsample), L_x(nsample) ,L_sum_t(sstep, nsample))
 
       L_t = 0._rkind
@@ -266,12 +264,19 @@
 
       end do
 
-!~       write(10001, '(g23.15e3)') (L_t(i, 1:nsample), i = 1, sstep)
-      write(10001, '(100f15.10)') (L_t(i, 1:nsample), i = 1, sstep)
+
+!ccc output weitht ccccccccccccccccccccccccccccccccccccccccccccccccccccc
+
+      open(10001, file = 'weight.txt')
+
+      do i = 1, nsample
+        write(10001, *) (L_t(j, i), j = 1, sstep)
+      end do
 
       close(10001)
 
-!ccc  Make weight  ccccccccccccccccccccccccccccccccccccccccccccccccccccc
+
+!ccc  Makeidentified parameters  ccccccccccccccccccccccccccccccccccccccc
 
       allocate(APi(sstep, nprm), AP_i(nsample, nprm))
 
@@ -292,7 +297,7 @@
       end do
 
       do i = 1, sstep
-       write(120, '(5e15.5)') (APi(i, k), k = 1, nprm)
+       write(120, '(10e15.7)') (APi(i, k), k = 1, nprm)
       end do
 
 !-----------------------------------------------------------------------

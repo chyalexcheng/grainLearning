@@ -21,10 +21,11 @@ num = table.num           # number of soil particles
 dScaling = 1e3            # density scaling
 e = 0.68                  # initial void ratio
 conf = table.conf         # confining pressure
-strainGoal = 0.1          # target strain level
-dstrain = strainGoal/100  # strain increment
+strainGoal = 0.15         # target strain level
+dstrain = strainGoal/150  # strain increment
 rate = 0.1                # loading rate (strain rate)
 damp = 0.2                # damping coefficient
+stressTolRatio = 1.e-4    # tolerance for stress goal
 stabilityRatio = 1.e-3    # threshold for quasi-static condition
 # corners to define specimen size
 mn,mx=Vector3.Zero,Vector3(0.1,0.1,0.2)
@@ -83,7 +84,7 @@ O.engines=[
       # wait until the unbalanced force goes below this value
       maxUnbalanced=stabilityRatio,
       # turn on checkVoidRatio after finishing initial compression
-      relStressTol=stabilityRatio,
+      relStressTol=stressTolRatio,
    ),
    NewtonIntegrator(damping=damp,label='newton'),
    ]
@@ -127,7 +128,7 @@ def compactionFinished():
       O.cell.trsf=Matrix3.Identity
       # set loading type: constant pressure in x,y, 8.5% compression in z
       triax.goal=(-conf,-conf,-dstrain)
-      triax.stressMask=3
+      triax.stressMask=3; triax.globUpdate = 1;
       # allow faster deformation along x,y to better maintain stresses
       triax.maxStrainRate=(10*rate,10*rate,rate)
       # next time, call triaxFinished instead of compactionFinished
@@ -148,6 +149,7 @@ def addPlotData():
       triax.goal[2] -= dstrain
    else:
       numpy.save('./mcSimulations/CL/'+str(table.num)+'/'+'%3.1f'%(table.conf/1e6)+'/'+str(table.key)+'.npy',plot.data)
+      numpy.save('./covResults/CL'+str(table.num)+'/'+'%3.1f'%(table.conf/1e6)+'_'+str(table.key)+'.npy',plot.data)
       print 'triaxial shearing finished.'
       O.pause()
 

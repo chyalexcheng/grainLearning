@@ -88,11 +88,11 @@
 !   xn       :  Monte Calro Simulation
 !   xnd      :  dummy of xn
 !   cvrc     :  variance co-variance Matrix
-!   L        :  likelihood(exp(0.5Å~((yn-hn•xn)É∞^-1(yn-hn•xn))))
-!   L_1      :  hn•xn , parameter-1
-!   L_2      :  yn-hn•xn , parameter-2
-!   L_3      :  É∞^-1(yn-hn•xn) , parameter-3
-!   L_4      :  (yn-hn•xn)É∞^-1(yn-hn•xn) , parameter-4
+!   L        :  likelihood(exp(0.5Å~((yn-hn*xn)É∞^-1(yn-hn*xn))))
+!   L_1      :  hn*xn , parameter-1
+!   L_2      :  yn-hn*xn , parameter-2
+!   L_3      :  É∞^-1(yn-hn*xn) , parameter-3
+!   L_4      :  (yn-hn*xn)É∞^-1(yn-hn*xn) , parameter-4
 !   L_i      :  parametere of likelihood
 !   L_t      :  likelihood at t(time)
 !ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
@@ -162,7 +162,7 @@
       read(1000, *) idummy
       read(1000, *) ((xn(i, j), i = 1, obs_number),j = 1, sstep)
 
-!ccc Make L1-matrix(hn•xn)([call dgemm(L1,h,xn)]) ccccccccccccccccccccc
+!ccc Make L1-matrix(hn*xn)([call dgemm(L1,h,xn)]) ccccccccccccccccccccc
 
       do i = 1, obs_number
        do j = 1, sstep
@@ -174,18 +174,18 @@
       end do
 
 
-!ccccc Make L2-matrix(yn-hn•xn) cccccccccccccccccccccccccccccccccccccccc
+!ccccc Make L2-matrix(yn-hn*xn) cccccccccccccccccccccccccccccccccccccccc
 
       L_2(1 : obs_number, 1 : sstep) = y(1 : obs_number, 1 : sstep)&
                                      - L_1(1 : obs_number, 1 : sstep)
 
 
-!ccccc Make L3-matrix(É∞^-1(yn-hn•xn)) (inverse matrix) cccccccccccccccc
+!ccccc Make L3-matrix(É∞^-1(yn-hn*xn)) (inverse matrix) cccccccccccccccc
 
        call gauss_jordan(cvrc, L_3, L_2, obs_number, sstep)
 
 
-!ccccc Compute L( exp(0.5Å~((yn-hn•xn)É∞^-1(yn-hn•xn))) ) cccccccccccccc
+!ccccc Compute L( exp(0.5Å~((yn-hn*xn)É∞^-1(yn-hn*xn))) ) cccccccccccccc
 
 !    L_i : dummy parameter of L
 

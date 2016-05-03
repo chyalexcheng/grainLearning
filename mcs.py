@@ -20,4 +20,3 @@ for i in range(2000):
    # use radial strain, stress ratio and volumetric strain as state variables
    for j in range(nstep):
       fout.write('%15.5e'%(0.5*(data['e_v'][j]-data['e_a'][j]))+'%15.5e'%data['s33_over_s11'][j]+'%15.5e'%data['e_v'][j]+'\n')
-

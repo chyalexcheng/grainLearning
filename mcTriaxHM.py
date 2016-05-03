@@ -6,7 +6,7 @@ readParamsFromTable(
    kr = 1.0,
    eta = 1.0,
    mu = 50.0,
-   num = 5000,
+   num = 1000,
    conf = 0.2e6,
    key = 1,
    unknownOk=True
@@ -21,7 +21,7 @@ num = table.num           # number of soil particles
 dScaling = 1e3            # density scaling
 e = 0.68                  # initial void ratio
 conf = table.conf         # confining pressure
-strainGoal = 0.1          # target strain level
+strainGoal = 0.085        # target strain level
 dstrain = strainGoal/100  # strain increment
 rate = 0.1                # loading rate (strain rate)
 damp = 0.2                # damping coefficient
@@ -149,7 +149,8 @@ def addPlotData():
    if abs(e_z-strainGoal)/strainGoal > stabilityRatio:
       triax.goal[2] -= dstrain
    else:
-      numpy.save('./mcSimulations/'+str(table.num)+'/'+'%3.1f'%(table.conf/1e6)+'/'+str(table.key)+'.npy',plot.data)
+      #~ numpy.save('./mcSimulations/'+str(table.num)+'/'+'%3.1f'%(table.conf/1e6)+'/'+str(table.key)+'.npy',plot.data)
+      numpy.save('./covResults/'+str(table.num)+'/'+'%3.1f'%(table.conf/1e6)+'_'+str(table.key)+'.npy',plot.data)
       print 'triaxial shearing finished.'
       O.pause()
 

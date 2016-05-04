@@ -1,0 +1,4 @@
+100    ! simulation step
+2000   ! nsample : the number of particles
+3      ! xyu : the number of observation points
+5      ! the number of parameters to be identified

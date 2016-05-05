@@ -22,7 +22,7 @@ The following packages are needed:
  
 Files
 
-   *./PeriSp_n_0.68* are txt files that save configurations of DEM packing consist of n elements with 0.68 initial void ratio and negligible inter-particle forces.
+   *./PeriSp_n_0.68 are txt files that save configurations of DEM packing consist of n elements with 0.68 initial void ratio and negligible inter-particle forces.
 
    *./mcTriaxCL.py and ./mcTriaxHM.py are Yade scripts for DEM simulations of quasi-static compression tests. CL and HM stand for Cundall's Linear law and Hertz-Mindlin law.
 

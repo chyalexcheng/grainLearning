@@ -6,12 +6,12 @@ Monte Carlo simulations are prepared by parallel Yade sessions with parameter se
 
 The following packages are needed:
 
-  Primary:
+* Primary:
     Discrete Element Method: Yade (http://yade-dem.org/)
     Halton number generator: ghalton (https://pypi.python.org/pypi/ghalton)
     Particle filter code:    particle_filter.f90 (compilable with gfortran)
 
-  Others:
+* Others:
     numpy
     matplotlib
  

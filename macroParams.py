@@ -14,7 +14,7 @@ if law == 2: law = 'CL'
 
 # write macro-parameters corresponding to each set of micro-parameters (particle set)
 fout = file('%d/'%num+law+'/'+'%2.1f/'%conf+'macroParams.dat','w')
-fout.write(' '.join([' E_50','v_50','phi','psi','\n']))
+fout.write(' '.join([' E_50','v_50','phi','\n']))
 
 # loop over particle filter
 for i in xrange(2000):
@@ -43,15 +43,6 @@ for i in xrange(2000):
    e_r_50 = e_r[n50]+(e_r[n50+1]-e_r[n50])/(devSig[n50+1]-devSig[n50])*(devSig_50-devSig[n50])
    E_50 = devSig_50/(e_a_50*0.01)
    v_50 = -e_r_50/e_a_50
-
-   # dilatancy angle
-   de_r = [e_r[j+1]-e_r[j] for j in xrange(len(e_r)-1)]
-   de_a = [e_a[j+1]-e_a[j] for j in xrange(len(e_a)-1)]
-   epsRatio = np.array(de_a)/np.array(de_r)
-   epsRatioMax = -1e4
-   for j in xrange(len(epsRatio)):
-      if epsRatio[j]>epsRatioMax and epsRatio[j]<0:
-         epsRatioMax = epsRatio[j]
-   dilaAngle = degrees(asin((1+epsRatioMax)/(1-epsRatioMax)))
+   
    # write macro-parameters
-   fout.write('%15.5e'%E_50+'%15.5e'%v_50+'%15.5e'%frictAngle+'%15.5e'%dilaAngle+'\n')
+   fout.write('%15.5e'%E_50+'%15.5e'%v_50+'%15.5e'%frictAngle+'\n')

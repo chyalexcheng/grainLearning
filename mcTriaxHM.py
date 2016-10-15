@@ -25,6 +25,7 @@ strainGoal = 0.085        # target strain level
 dstrain = strainGoal/100  # strain increment
 rate = 0.1                # loading rate (strain rate)
 damp = 0.2                # damping coefficient
+stressTolRatio = 1.e-4    # tolerance for stress goal
 stabilityRatio = 1.e-3    # threshold for quasi-static condition
 # corners to define specimen size
 mn,mx=Vector3.Zero,Vector3(0.1,0.1,0.2)
@@ -85,7 +86,7 @@ O.engines=[
       # wait until the unbalanced force goes below this value
       maxUnbalanced=stabilityRatio,
       # turn on checkVoidRatio after finishing initial compression
-      relStressTol=stabilityRatio,
+      relStressTol=stressTolRatio,
    ),
    NewtonIntegrator(damping=damp,label='newton'),
    ]
@@ -149,8 +150,8 @@ def addPlotData():
    if abs(e_z-strainGoal)/strainGoal > stabilityRatio:
       triax.goal[2] -= dstrain
    else:
-      #~ numpy.save('./mcSimulations/'+str(table.num)+'/'+'%3.1f'%(table.conf/1e6)+'/'+str(table.key)+'.npy',plot.data)
-      numpy.save('./covResults/'+str(table.num)+'/'+'%3.1f'%(table.conf/1e6)+'_'+str(table.key)+'.npy',plot.data)
+      numpy.save('./mcSimulations/HM/'+str(table.num)+'/'+'%3.1f'%(table.conf/1e6)+'/'+str(table.key)+'.npy',plot.data)
+      #~ numpy.save('./covResults/HM/'+str(table.num)+'/'+'%3.1f'%(table.conf/1e6)+'_'+str(table.key)+'.npy',plot.data)
       print 'triaxial shearing finished.'
       O.pause()
 

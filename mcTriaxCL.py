@@ -149,7 +149,7 @@ def addPlotData():
       triax.goal[2] -= dstrain
    else:
       numpy.save('./mcSimulations/CL/'+str(table.num)+'/'+'%3.1f'%(table.conf/1e6)+'/'+str(table.key)+'.npy',plot.data)
-      numpy.save('./covResults/CL'+str(table.num)+'/'+'%3.1f'%(table.conf/1e6)+'_'+str(table.key)+'.npy',plot.data)
+      #~ numpy.save('./covResults/CL/'+str(table.num)+'/'+'%3.1f'%(table.conf/1e6)+'_'+str(table.key)+'.npy',plot.data)
       print 'triaxial shearing finished.'
       O.pause()
 

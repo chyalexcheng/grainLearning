@@ -1,4 +1,4 @@
       100 ! simulation step
-     1000 ! nsample in particle_filter.f90
-        3 ! number of observation points (xyu) in particle_filter.f90
+      100 ! nsample in particle_filter.f90
+        3 ! number of measurement points (xyu) in particle_filter.f90
         5 ! number of parameters to be identified

@@ -1,6 +1,11 @@
 # encoding: utf-8
-# quasi-static drained triaxial compression
+""" Quasi-static drained triaxial compression on Toyoura sand
+    (e_0 = 0.68) under 0.5 MPa confining pressure. Simulation data 
+    are extracted at every 0.1% axial strain increment until axial
+    compression reaches 10%.
+"""
 
+# read parameter values from table
 readParamsFromTable(
    E = 4e9,
    v = 0.33,
@@ -66,7 +71,7 @@ else:
    if num==2000: O.cell.hSize=Matrix3(0.05013,0,0, 0,0.05015,0, 0,0,0.09945)
    if num==5000: O.cell.hSize=Matrix3(0.04617,0,0, 0,0.04626,0, 0,0,0.09201)
    if num==10000:O.cell.hSize=Matrix3(0.04609,0,0, 0,0.04616,0, 0,0,0.09221)
-   sp.load('PeriSp_'+str(num)+'_'+str(e)+'.txt')
+   sp.load('../PeriSp_'+str(num)+'_'+str(e)+'.txt')
 
 # load spheres to simulation
 spIds=sp.toSimulation(material=spMat)

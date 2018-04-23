@@ -26,15 +26,15 @@ class smc:
 		self._obsData, self._obsCtrlData, self._numObs, self._numSteps = self.getObsData(obsDataFile,obsCtrl)
 		# assume all measurements are independent
 		self._obsMatrix = np.identity(self._numObs)
-		self._sampleDataFile = ''
+		self._sampleDataFiles = ['']
 		self._paramRanges = {}
-		self._smcSamples = np.zeros(self._numSamples)
+		self._smcSamples = []
 		# a flag that defines whether Yade is called within python
 		self._standAlone = standAlone
 		
 	def initialize(self, paramRanges, numSamples, sampleDataFile='', thread=4, loadSamples=False):
 		if loadSamples: self.getParamsFromTable(sampleDataFile, paramRanges)
-		else: self.setParams(paramRanges, numSamples, thread)
+		else: self.getInitParams(paramRanges, numSamples, thread)
 		if self._standAlone:
 			# simulation data
 			self._yadeData = np.zeros([self._numSteps, self._numSamples, self._numObs])
@@ -44,13 +44,13 @@ class smc:
 			self._posterior = np.zeros([self._numSamples, self._numSteps])
 			self._likelihood = np.zeros([self._numSamples, self._numSteps])
 
-	def run(self,skipDEM=False):
+	def run(self,skipDEM=False,iterNO=-1):
 		if self._standAlone:
 			if not skipDEM:
 				# run DEM simulations in batch. 
 				raw_input("*** Press Enter if the file name is correct... ***\n"+self._name\
 						  +"\n(Add 'key%03d'%key of sampleDataFiles into DEM filenames)" )
-				system(' '.join([self._yadeVersion, self._sampleDataFile, self._name]))
+				system(' '.join([self._yadeVersion, self._sampleDataFiles[iterNO], self._name]))
 				print 'All simulations finished'
 			else: print 'Skipping DEM simulations, read in data now'
 			yadeDataFiles = glob.glob(self._yadeDataDir+'/*key*')
@@ -67,6 +67,7 @@ class smc:
 				self._ips[:,i], self._covs[:,i] = self.recursiveBayesian(i)
 		else:
 			raise RuntimeError,"Calling Yade within python is not yet supported..."
+		return self._ips, self._covs
 
 	def getYadeData(self, yadeDataFiles):
 		if 0 in self._yadeData.shape: raise RuntimeError,"number of Observations, samples or steps undefined!"
@@ -78,7 +79,7 @@ class smc:
 				obsData[:,j] = self._obsData[key]
 		return obsData
 
-	def recursiveBayesian(self,caliStep):
+	def recursiveBayesian(self,caliStep,iterNO=-1):
 		likelihood = self.getLikelihood(caliStep)
 		posterior = self.update(caliStep,likelihood)
 		# get ensemble averages and coefficients of variance
@@ -86,9 +87,9 @@ class smc:
 		covs = np.zeros(self._numParams)
 		for i in xrange(self._numParams):
 			# ensemble average
-			ips[i] = self._smcSamples[:,i].dot(posterior)
+			ips[i] = self._smcSamples[iterNO][:,i].dot(posterior)
 			# diagonal variance
-			covs[i] = ((self._smcSamples[:,i]-ips[i])**2).dot(posterior)
+			covs[i] = ((self._smcSamples[iterNO][:,i]-ips[i])**2).dot(posterior)
 			# get coefficient of variance cov
 			covs[i] = np.sqrt(covs[i])/ips[i]
 		return likelihood, posterior, ips, covs
@@ -99,7 +100,7 @@ class smc:
 		obsVec = self._obsData[caliStep,:]
 		# row-wise substraction obsVec[numObs]-stateVec[numSamples,numObs]
 		vecDiff = obsVec-stateVec
-		Sigma = self.getCovMatrix(self._obsWeights)
+		Sigma = self.getCovMatrix(caliStep,self._obsWeights)
 		invSigma = np.linalg.inv(Sigma)
 		likelihood = np.zeros(self._numSamples)
 		# compute likelihood = exp(-0.5*(y_t-H(x_t))*Sigma_t^{-1}*(y_t-H(x_t)))
@@ -121,15 +122,15 @@ class smc:
 			posterior /= np.sum(posterior)
 		return posterior
 		
-	def getCovMatrix(self,weights):
+	def getCovMatrix(self,caliStep,weights):
 		Sigma = np.zeros([self._numObs,self._numObs])
 		# scale observation data with normalized variance parameter to get covariance matrix
 		for i in xrange(self._numObs):
 			# give smaller weights for better agreement  
-			Sigma[i,i] = self._sigma*weights[i]*np.mean(self._obsData[:,i])**2
+			Sigma[i,i] = self._sigma*weights[i]*self._obsData[caliStep,i]**2
 		return Sigma
 
-	def setParams(self, paramRanges, numSamples, thread):
+	def getInitParams(self, paramRanges, numSamples, thread):
 		if not isinstance(paramRanges,dict): raise RuntimeError,"paramRanges should be a dictionary"
 		self._numSamples = numSamples
 		self._paramRanges = paramRanges
@@ -140,15 +141,18 @@ class smc:
 			mins.append(min(minsAndMix[i]))
 			maxs.append(max(minsAndMix[i]))
 		print 'Parameters to be identified:', ", ".join(names), '\nMins:', mins, '\nMaxs:', maxs
-		self._smcSamples, self._sampleDataFile = paramsTable(keys=names,maxs=maxs,mins=mins,num=numSamples,thread=thread)
+		initSmcSamples, initSampleDataFile = initParamsTable(keys=names,maxs=maxs,mins=mins,num=numSamples,thread=thread)
+		self._smcSamples.append(initSmcSamples)
+		self._sampleDataFiles.append(initSampleDataFile)
 
-	def getParamsFromTable(self, sampleDataFile, paramRanges):
-		if len(sampleDataFile) != 0: self._sampleDataFile = sampleDataFile
+	def getParamsFromTable(self, sampleDataFile, paramRanges,iterNO=-1):
+		if len(sampleDataFile) != 0: self._sampleDataFiles.append(sampleDataFile)
 		else: raise RuntimeError,"Missing filename: file that contains smc samples cannot be found"
 		self._paramRanges = paramRanges
 		self._numParams = len(paramRanges)
-		self._smcSamples = np.genfromtxt(sampleDataFile,comments='!')[:,-self._numParams:]
-		self._numSamples,_ = self._smcSamples.shape
+		smcSamples = np.genfromtxt(sampleDataFile,comments='!')[:,-self._numParams:]
+		self._smcSamples.append(smcSamples)
+		self._numSamples,_ = self._smcSamples[iterNO].shape
 
 	def getObsData(self,obsDataFile,obsCtrl):
 		keysAndData = getKeysAndData(obsDataFile)
@@ -157,3 +161,22 @@ class smc:
 		numSteps = len(obsCtrlData)
 		numObs = len(keysAndData.keys())
 		return keysAndData, obsCtrlData, numObs, numSteps
+
+	def resampleParams(self,caliStep,maxNumComponents=10,thread=4,iterNO=-1):
+		names = self._paramRanges.keys()
+		smcSamples = self._smcSamples[iterNO]
+		numSamples = self._numSamples
+		# posterior at caliStep is used as the proposal distribution
+		proposal = self._posterior[:,caliStep]
+		newSmcSamples, newSampleDataFile = resampledParamsTable(keys=names,smcSamples=smcSamples,proposal=proposal,num=numSamples,thread=thread,maxNumComponents=maxNumComponents)
+ 		self._smcSamples.append(newSmcSamples)
+		self._sampleDataFiles.append(newSampleDataFile)
+	
+	def getPosterior(self):
+		return self._posterior
+
+	def getSmcSamples(self):
+		return self._smcSamples
+
+	def getNumSteps(self):
+		return self._numSteps

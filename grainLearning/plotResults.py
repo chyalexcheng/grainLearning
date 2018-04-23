@@ -25,80 +25,38 @@ def getWeight(wName):
 	for i in range(len(wLines)): wData.append(np.float64(wLines[i].split()))
 	return wData
 	
-def plotIPs(names,ips,nStep,weight,params):
-	# plot evolution of weighted average of each identified parameter
-	plt.figure('Weighted averages of parameters')
-
-	plt.subplot(221)
-	plt.plot(ips[:,0])
-	plt.xlabel('loading step')
-	plt.ylabel(names[0])
-	plt.grid(True)
-
-	plt.subplot(222)
-	plt.plot(ips[:,1])
-	plt.xlabel('loading step')
-	plt.ylabel(names[1])
-	plt.grid(True)
-
-	plt.subplot(223)
-	plt.plot(ips[:,2])
-	plt.xlabel('loading step')
-	plt.ylabel(names[2])
-	plt.grid(True)
-
-	plt.subplot(224)
-	plt.plot(ips[:,3])
-	plt.xlabel('loading step')
-	plt.ylabel(names[3])
-	plt.grid(True)
-
+def plotIPs(names,ips,covs,nStep,weight,params):
+	# plot weighted average for each parameter
+	plt.figure('Posterior means over parameters')
+	for i in range(4):
+		plt.subplot(2,2,i+1)
+		plt.plot(ips[:,i])
+		plt.xlabel('loading step')
+		plt.ylabel(r'$|'+names[i]+r'|$')
+		plt.grid(True)
+	plt.tight_layout()
+	
+	# plot coefficient of variance for each parameter
+	plt.figure('Posterior coefficients of variance over parameters')
+	for i in range(4):
+		plt.subplot(2,2,i+1)
+		plt.plot(covs[:,i])
+		plt.xlabel('loading step')
+		plt.ylabel(r'$COV('+names[i]+')$')
+		plt.grid(True)
+	plt.tight_layout()
+	
 	# plot probability density function of identified parameters
 	for i,name in enumerate(names):
 		plt.figure('PDF of '+name)
-		plt.subplot(231)
-		plt.plot(params[:,i],weight[:,int(nStep*1./6-1)],'o')
-		plt.title('NO.%3i loading step'%(int(nStep*1./6-1)))
-		plt.xlabel(name)
-		plt.ylabel('weight')
-		plt.grid(True)
-		
-		plt.subplot(232)
-		plt.plot(params[:,i],weight[:,int(nStep*2./6-1)],'o')
-		plt.title('NO.%3i loading step'%(int(nStep*2./6-1)))
-		plt.xlabel(name)
-		plt.ylabel('weight')
-		plt.grid(True)
-		
-		plt.subplot(233)
-		plt.plot(params[:,i],weight[:,int(nStep*3./6-1)],'o')
-		plt.title('NO.%3i loading step'%(int(nStep*3./6-1)))
-		plt.xlabel(name)
-		plt.ylabel('weight')
-		plt.grid(True)
-		
-		plt.subplot(234)
-		plt.plot(params[:,i],weight[:,int(nStep*4./6-1)],'o')
-		plt.title('NO.%3i loading step'%(int(nStep*4./6-1)))
-		plt.xlabel(name)
-		plt.ylabel('weight')
-		plt.grid(True)
-
-		plt.subplot(235)
-		plt.plot(params[:,i],weight[:,int(nStep*5./6-1)],'o')
-		plt.title('NO.%3i loading step'%(int(nStep*5./6-1)))
-		plt.xlabel(name)
-		plt.ylabel('weight')
-		plt.grid(True)
-
-		plt.subplot(236)
-		plt.plot(params[:,i],weight[:,int(nStep*6./6-1)],'o')
-		plt.title('NO.%3i loading step'%(int(nStep*6./6-1)))
-		plt.xlabel(name)
-		plt.ylabel('weight')
-		plt.grid(True)
-		
-	plt.show()
+		for j in range(6):
+			plt.subplot(2,3,j+1)
+			plt.plot(params[:,i],weight[:,int(nStep*(j+1)/6-1)],'o')
+			plt.title('NO.%3i loading step'%(int(nStep*(j+1)/6-1)))
+			plt.xlabel(r'$'+name+'$')
+			plt.ylabel('Posterior PDF')
+			plt.grid(True)
+		plt.tight_layout()
 
 	# get ensemble average
 	enAvg0 = params[:,0].dot(weight)
@@ -121,7 +79,21 @@ def plotIPs(names,ips,nStep,weight,params):
 	enStd1 = np.sqrt(enVar1)
 	enStd2 = np.sqrt(enVar2)
 	enStd3 = np.sqrt(enVar3)
+
+	plt.show()
+	
 	return enAvg0, enStd0, enAvg1, enStd1, enAvg2, enStd2, enAvg3, enStd3
+
+def plotAllSamples(smcSamples,names):
+	numOfIters = len(smcSamples)
+	plt.figure('Resampled parameter space')
+	plt.subplot(121);
+	for i in range(numOfIters): plt.plot(smcSamples[i][:,0],smcSamples[i][:,1],'o',label='iterNO. %.2i'%i)
+	plt.xlabel(r'$'+names[0]+'$'); plt.xlabel(r'$'+names[1]+'$'); plt.legend()
+	plt.subplot(122);
+	for i in range(numOfIters): plt.plot(smcSamples[i][:,2],smcSamples[i][:,3],'o',label='iterNO. %.2i'%i)
+	plt.xlabel(r'$'+names[2]+'$'); plt.xlabel(r'$'+names[3]+'$'); plt.legend()
+	plt.tight_layout(); plt.show()
 
 def numAndExpData(numFiles, p0, q0, n0, e_a0, e_r0):
 

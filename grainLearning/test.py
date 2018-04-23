@@ -2,7 +2,7 @@ from smc import *
 from plotResults import *
 
 # normalized variance parameter
-sigma = 0.3
+sigma = 0.5
 obsWeights = [1,1,0.01]
 yadeFile = 'mcTriax_e.py'
 yadeDataDir = 'iterPF0'
@@ -10,15 +10,27 @@ obsDataFile = 'obsdata.dat'
 obsCtrl = 'e_a'
 
 # ranges of parameters (E, \mu, kr, \mu_r)
-paraNames = ['E', 'mu', 'kr','mu_r']
-paramRanges = {'E':[100e9,200e9],'mu':[0.3,0.5],'kr':[0,1e4],'mu_r':[0.1,0.5]}
+paraNames = ['E', '\mu', 'k_r','\mu_r']
+paramRanges = {'E':[100e9,200e9],'\mu':[0.3,0.5],'k_r':[0,1e4],'\mu_r':[0.1,0.5]}
 numSamples = 100
-sampleDataFile = 'smcTable.txt'
+sampleDataFile = 'smcTable'+yadeDataDir[-1]+'.txt'
 smcTest = smc(sigma, obsWeights, yadeFile, yadeDataDir, obsDataFile, obsCtrl)
 smcTest.initialize(paramRanges, numSamples, sampleDataFile=sampleDataFile, loadSamples=True)
-smcTest.run(skipDEM=True)
 
-ips = smcTest._ips
-posterior = smcTest._posterior
-smcSamples = smcTest._smcSamples
-_ = plotIPs(paraNames,ips.T,smcTest._numSteps,posterior,smcSamples)
+# run sequential Monte Carlo; return means and coefficients of variance of PDF over the parameters
+ips, covs = smcTest.run(skipDEM=True)
+
+# get the parameter samples (ensemble) and posterior probability
+posterior = smcTest.getPosterior()
+smcSamples = smcTest.getSmcSamples()
+
+# plot means of PDF over the parameters
+_ = plotIPs(paraNames,ips.T,covs.T,smcTest.getNumSteps(),posterior,smcSamples[-1])
+
+# resample parameters
+caliStep = -1
+maxNumComponents = 10
+smcTest.resampleParams(caliStep=caliStep,maxNumComponents=maxNumComponents)
+
+# plot initial and resampled parameters
+plotAllSamples(smcTest.getSmcSamples(),paraNames)

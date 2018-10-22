@@ -89,10 +89,10 @@ def plotAllSamples(smcSamples,names):
 	plt.figure('Resampled parameter space')
 	plt.subplot(121);
 	for i in range(numOfIters): plt.plot(smcSamples[i][:,0],smcSamples[i][:,1],'o',label='iterNO. %.2i'%i)
-	plt.xlabel(r'$'+names[0]+'$'); plt.xlabel(r'$'+names[1]+'$'); plt.legend()
+	plt.xlabel(r'$'+names[0]+'$'); plt.ylabel(r'$'+names[1]+'$'); plt.legend()
 	plt.subplot(122);
 	for i in range(numOfIters): plt.plot(smcSamples[i][:,2],smcSamples[i][:,3],'o',label='iterNO. %.2i'%i)
-	plt.xlabel(r'$'+names[2]+'$'); plt.xlabel(r'$'+names[3]+'$'); plt.legend()
+	plt.xlabel(r'$'+names[2]+'$'); plt.ylabel(r'$'+names[3]+'$'); plt.legend()
 	plt.tight_layout(); plt.show()
 
 def numAndExpData(numFiles, p0, q0, n0, e_a0, e_r0):

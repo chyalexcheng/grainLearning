@@ -6,7 +6,9 @@ import sys
 import os
 import glob
 import numpy as np
+import pickle
 from tools import * 
+from sklearn import mixture
 
 class smc:
 	"""
@@ -23,17 +25,19 @@ class smc:
 		# normalized variance parameter
 		self._sigma = sigma
 		self._obsWeights = obsWeights
-		self._obsData, self._obsCtrlData, self._numObs, self._numSteps = self.getObsData(obsDataFile,obsCtrl)
+		self._obsData, self._obsCtrlData, self._numObs, self._numSteps = self.getObsDataFromFile(obsDataFile,obsCtrl)
 		# assume all measurements are independent
 		self._obsMatrix = np.identity(self._numObs)
 		self._sampleDataFiles = ['']
+		self._paramNames = []
 		self._paramRanges = {}
 		self._smcSamples = []
 		# a flag that defines whether Yade is called within python
 		self._standAlone = standAlone
 		
-	def initialize(self, paramRanges, numSamples, sampleDataFile='', thread=4, loadSamples=False):
-		if loadSamples: self.getParamsFromTable(sampleDataFile, paramRanges)
+	def initialize(self, paramNames, paramRanges, numSamples, sampleDataFile='', thread=4, loadSamples=False, proposalFile=''):
+		self._paramNames = paramNames
+		if loadSamples: self.getParamsFromTable(sampleDataFile, paramNames, paramRanges)
 		else: self.getInitParams(paramRanges, numSamples, thread)
 		if self._standAlone:
 			# simulation data
@@ -43,7 +47,20 @@ class smc:
 			self._covs = np.zeros([self._numParams, self._numSteps])
 			self._posterior = np.zeros([self._numSamples, self._numSteps])
 			self._likelihood = np.zeros([self._numSamples, self._numSteps])
+			self._proposal = np.ones([self._numSamples, self._numSteps])/self._numSamples
+			if proposalFile != '': self.loadProposalFromFile(proposalFile)
 
+	def loadProposalFromFile(self,proposalFile):
+		if len(self.getSmcSamples()) == 0:
+			RuntimeError,"SMC samples not yet loaded..."
+		elif len(self.getSmcSamples()) == 2:
+			RuntimeError,"SMC samples already resampled..."
+		else:
+			proposalModelList = pickle.load(open(proposalFile, 'rb'))
+			for i, proposalModel in enumerate(proposalModelList):
+				proposal = np.exp(proposalModel.score_samples(self.getSmcSamples()[0]))
+				self._proposal[:,i] = proposal/sum(proposal)
+	
 	def run(self,skipDEM=False,iterNO=-1):
 		if self._standAlone:
 			if not skipDEM:
@@ -53,7 +70,7 @@ class smc:
 				system(' '.join([self._yadeVersion, self._sampleDataFiles[iterNO], self._name]))
 				print 'All simulations finished'
 			else: print 'Skipping DEM simulations, read in data now'
-			yadeDataFiles = glob.glob(self._yadeDataDir+'/*key*')
+			yadeDataFiles = glob.glob(self._yadeDataDir+'/*txt*')
 			yadeDataFiles.sort()
 			while len(yadeDataFiles) == 0:
 				key = raw_input("No DEM filename has key, tell me the key...\n ")
@@ -64,7 +81,7 @@ class smc:
 			# loop over data assimilation steps
 			for i in xrange(self._numSteps):
 				self._likelihood[:,i], self._posterior[:,i], \
-				self._ips[:,i], self._covs[:,i] = self.recursiveBayesian(i)
+				self._ips[:,i], self._covs[:,i] = self.recursiveBayesian(i,self._proposal[:,i])
 		else:
 			raise RuntimeError,"Calling Yade within python is not yet supported..."
 		return self._ips, self._covs
@@ -79,9 +96,9 @@ class smc:
 				obsData[:,j] = self._obsData[key]
 		return obsData
 
-	def recursiveBayesian(self,caliStep,iterNO=-1):
+	def recursiveBayesian(self,caliStep,proposal,iterNO=-1):
 		likelihood = self.getLikelihood(caliStep)
-		posterior = self.update(caliStep,likelihood)
+		posterior = self.update(caliStep,likelihood,proposal)
 		# get ensemble averages and coefficients of variance
 		ips = np.zeros(self._numParams)
 		covs = np.zeros(self._numParams)
@@ -111,15 +128,15 @@ class smc:
 		likelihood /= np.sum(likelihood)
 		return likelihood
 
-	def update(self,caliStep,likelihood):
+	def update(self,caliStep,likelihood,proposal):
 		# update posterior probability according to Bayes' rule
 		posterior = np.zeros(self._numSamples)
 		if caliStep == 0:
-			posterior = likelihood
+			posterior = likelihood/proposal
 		else: 
-			posterior = self._posterior[:,caliStep-1]*likelihood
+			posterior = self._posterior[:,caliStep-1]*likelihood/proposal
 			# regularize likelihood
-			posterior /= np.sum(posterior)
+		posterior /= np.sum(posterior)
 		return posterior
 		
 	def getCovMatrix(self,caliStep,weights):
@@ -135,7 +152,7 @@ class smc:
 		self._numSamples = numSamples
 		self._paramRanges = paramRanges
 		self._numParams = len(paramRanges)
-		names = paramRanges.keys(); mins = []; maxs = []
+		names = self.getNames(); mins = []; maxs = []
 		minsAndMix = paramRanges.values()
 		for i,_ in enumerate(names):
 			mins.append(min(minsAndMix[i]))
@@ -145,16 +162,31 @@ class smc:
 		self._smcSamples.append(initSmcSamples)
 		self._sampleDataFiles.append(initSampleDataFile)
 
-	def getParamsFromTable(self, sampleDataFile, paramRanges,iterNO=-1):
-		if len(sampleDataFile) != 0: self._sampleDataFiles.append(sampleDataFile)
-		else: raise RuntimeError,"Missing filename: file that contains smc samples cannot be found"
+	def getParamsFromTable(self, sampleDataFile, paramRanges, names, iterNO=-1):
 		self._paramRanges = paramRanges
 		self._numParams = len(paramRanges)
-		smcSamples = np.genfromtxt(sampleDataFile,comments='!')[:,-self._numParams:]
-		self._smcSamples.append(smcSamples)
-		self._numSamples,_ = self._smcSamples[iterNO].shape
-
-	def getObsData(self,obsDataFile,obsCtrl):
+		if len(sampleDataFile) != 0: self._sampleDataFiles.append(sampleDataFile)
+		else: raise RuntimeError,"Missing filename: file that contains smc samples cannot be found"
+		if os.path.exists(sampleDataFile):
+			smcSamples = np.genfromtxt(sampleDataFile,comments='!')[:,-self._numParams:]
+			self._smcSamples.append(smcSamples)
+			self._numSamples,_ = self._smcSamples[iterNO].shape
+		else:
+			yadeDataFiles = glob.glob(self._yadeDataDir+'/*key*')
+			yadeDataFiles.sort()
+			while len(yadeDataFiles) == 0:
+				key = raw_input("No DEM filename has key, tell me the key...\n ")
+				yadeDataFiles = glob.glob(self._yadeDataDir+'/*'+key+'*')
+				yadeDataFiles.sort()
+			smcSamples = np.zeros([len(yadeDataFiles),len(paramRanges)])
+			for i,f in enumerate(yadeDataFiles):
+				f = f.split('.txt')[0]
+				_, key, E, mu_i, mu, k_r, mu_r = f.split('_')
+				smcSamples[i,:] = eval(' '.join(['float('+name+'),' for name in names])[:-1])
+			self._smcSamples.append(smcSamples)
+			self._numSamples,_ = self._smcSamples[iterNO].shape
+			
+	def getObsDataFromFile(self,obsDataFile,obsCtrl):
 		keysAndData = getKeysAndData(obsDataFile)
 		# separate obsCtrl for controlling simulations from obsData
 		obsCtrlData = keysAndData.pop(obsCtrl)
@@ -162,15 +194,17 @@ class smc:
 		numObs = len(keysAndData.keys())
 		return keysAndData, obsCtrlData, numObs, numSteps
 
-	def resampleParams(self,caliStep,maxNumComponents=10,thread=4,iterNO=-1):
-		names = self._paramRanges.keys()
+	def resampleParams(self,caliStep,maxNumComponents=10,thread=4,iterNO=0):
+		names = self.getNames()
 		smcSamples = self._smcSamples[iterNO]
 		numSamples = self._numSamples
 		# posterior at caliStep is used as the proposal distribution
 		proposal = self._posterior[:,caliStep]
-		newSmcSamples, newSampleDataFile = resampledParamsTable(keys=names,smcSamples=smcSamples,proposal=proposal,num=numSamples,thread=thread,maxNumComponents=maxNumComponents)
+		newSmcSamples, newSampleDataFile, gmm, maxNumComponents = \
+			resampledParamsTable(keys=names,smcSamples=smcSamples,proposal=proposal,num=numSamples,thread=thread,maxNumComponents=maxNumComponents)
  		self._smcSamples.append(newSmcSamples)
 		self._sampleDataFiles.append(newSampleDataFile)
+		return gmm, maxNumComponents
 	
 	def getPosterior(self):
 		return self._posterior
@@ -180,3 +214,22 @@ class smc:
 
 	def getNumSteps(self):
 		return self._numSteps
+
+	def getEffectiveSampleSize(self):
+		nEff = 1./sum(self.getPosterior()**2)
+		return nEff/self._numSamples
+
+	def getNames(self):
+		return self._paramNames
+	
+	def getObsData(self):
+		return np.hstack((self._obsCtrlData.reshape(self._numSamples,1),self._obsData))
+
+	def trainGMMinTime(self,maxNumComponents,iterNO=0):
+		gmmList = []
+		smcSamples = self._smcSamples[iterNO]
+		for i in xrange(self._numSteps):
+			print 'Train DP mixture at time %i...'%i
+			posterior = self._posterior[:,i]
+			gmmList.append(getGMMFromPosterior(smcSamples,posterior,maxNumComponents))
+		return gmmList

@@ -67,4 +67,12 @@ def resampledParamsTable(keys,smcSamples,proposal,num=100,thread=4,maxNumCompone
 	smcNewSamples, _ = gmm.sample(num)
 	# write parameters in the format for Yade batch mode
 	writeToTable(tableName,smcNewSamples,dim,num,thread,keys)
-	return smcNewSamples, tableName
+	return smcNewSamples, tableName, gmm, n_components+1
+
+def getGMMFromPosterior(smcSamples,posterior,maxNumComponents):
+	# resample parameters from a proposal PDF
+	ResampleIndices = residual_resample(posterior)
+	smcNewSamples = smcSamples[ResampleIndices]
+	gmm = mixture.BayesianGaussianMixture(n_components=maxNumComponents, covariance_type='full',tol = 1e-5,max_iter=int(1e5),n_init=100)
+	gmm.fit(smcNewSamples)
+	return gmm	

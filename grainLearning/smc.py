@@ -48,7 +48,21 @@ class smc:
 			self._posterior = np.zeros([self._numSamples, self._numSteps])
 			self._likelihood = np.zeros([self._numSamples, self._numSteps])
 			self._proposal = np.ones([self._numSamples, self._numSteps])/self._numSamples
-			if proposalFile != '': self.loadProposalFromFile(proposalFile)
+			self._prior = np.ones([self._numSamples])/self._numSamples
+			if proposalFile != '':
+				self._prior = self.getPriorFromSamples()
+				self.loadProposalFromFile(proposalFile)
+
+	def getPriorFromSamples(self,n_components=15):
+		if len(self.getSmcSamples()) == 0:
+			RuntimeError,"SMC samples not yet loaded..."
+		elif len(self.getSmcSamples()) == 2:
+			RuntimeError,"SMC samples already resampled..."
+		else:
+			gmm = mixture.BayesianGaussianMixture(n_components=n_components, covariance_type='full',tol = 1e-5,max_iter=int(1e5),n_init=100)
+			gmm.fit(self.getSmcSamples()[0])
+			prior = np.exp(gmm.score_samples(self.getSmcSamples()[0]))
+		return prior/sum(prior)
 
 	def loadProposalFromFile(self,proposalFile):
 		if len(self.getSmcSamples()) == 0:
@@ -60,14 +74,7 @@ class smc:
 			for i, proposalModel in enumerate(proposalModelList):
 				proposal = np.exp(proposalModel.score_samples(self.getSmcSamples()[0]))
 				self._proposal[:,i] = proposal/sum(proposal)
-				
-			#~ gmm = mixture.BayesianGaussianMixture(n_components=15, covariance_type='full',tol = 1e-5,max_iter=int(1e5),n_init=100)
-			#~ gmm.fit(self.getSmcSamples()[0])
-			#~ proposal = np.exp(gmm.score_samples(self.getSmcSamples()[0]))
-			#~ proposal = proposal/sum(proposal)
-			#~ for i in range(self._numSteps):
-				#~ self._proposal[:,i] = proposal
-			
+
 	def run(self,skipDEM=False,iterNO=-1):
 		if self._standAlone:
 			if not skipDEM:
@@ -88,20 +95,7 @@ class smc:
 			# loop over data assimilation steps
 			for i in xrange(self._numSteps):
 				self._likelihood[:,i], self._posterior[:,i], \
-				self._ips[:,i], self._covs[:,i] = self.recursiveBayesian(i,self._proposal[:,i])
-
-				#~ effIDs = np.where(self._posterior[:,i]<0.5)[0]
-				#~ self._proposal = self._proposal[effIDs,:]
-				#~ self._likelihood = self._likelihood[effIDs,:]
-				#~ self._posterior = self._posterior[effIDs,:]
-				#~ self._smcSamples[0] = self._smcSamples[0][effIDs,:]
-				#~ self._yadeData = self._yadeData[:,effIDs,:]
-				#~ self._numSamples = len(effIDs)
-				#~ 
-				#~ self._proposal[:,:i] /= sum(self._proposal[:,:i])
-				#~ self._likelihood[:,:i] /= sum(self._likelihood[:,:i])
-				#~ self._posterior[:,:i] /= sum(self._posterior[:,:i])
-				
+				self._ips[:,i], self._covs[:,i] = self.recursiveBayesian(i,self._proposal[:,i])			
 		else:
 			raise RuntimeError,"Calling Yade within python is not yet supported..."
 		return self._ips, self._covs
@@ -152,9 +146,9 @@ class smc:
 		# update posterior probability according to Bayes' rule
 		posterior = np.zeros(self._numSamples)
 		if caliStep == 0:
-			posterior = likelihood/proposal
+			posterior = likelihood*self._prior/proposal
 		else: 
-			posterior = self._posterior[:,caliStep-1]*likelihood/proposal
+			posterior = self._posterior[:,caliStep-1]*likelihood*self._prior/proposal
 			# regularize likelihood
 		posterior /= np.sum(posterior)
 		return posterior

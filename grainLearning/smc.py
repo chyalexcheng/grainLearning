@@ -60,7 +60,14 @@ class smc:
 			for i, proposalModel in enumerate(proposalModelList):
 				proposal = np.exp(proposalModel.score_samples(self.getSmcSamples()[0]))
 				self._proposal[:,i] = proposal/sum(proposal)
-	
+				
+			#~ gmm = mixture.BayesianGaussianMixture(n_components=15, covariance_type='full',tol = 1e-5,max_iter=int(1e5),n_init=100)
+			#~ gmm.fit(self.getSmcSamples()[0])
+			#~ proposal = np.exp(gmm.score_samples(self.getSmcSamples()[0]))
+			#~ proposal = proposal/sum(proposal)
+			#~ for i in range(self._numSteps):
+				#~ self._proposal[:,i] = proposal
+			
 	def run(self,skipDEM=False,iterNO=-1):
 		if self._standAlone:
 			if not skipDEM:
@@ -82,6 +89,19 @@ class smc:
 			for i in xrange(self._numSteps):
 				self._likelihood[:,i], self._posterior[:,i], \
 				self._ips[:,i], self._covs[:,i] = self.recursiveBayesian(i,self._proposal[:,i])
+
+				#~ effIDs = np.where(self._posterior[:,i]<0.5)[0]
+				#~ self._proposal = self._proposal[effIDs,:]
+				#~ self._likelihood = self._likelihood[effIDs,:]
+				#~ self._posterior = self._posterior[effIDs,:]
+				#~ self._smcSamples[0] = self._smcSamples[0][effIDs,:]
+				#~ self._yadeData = self._yadeData[:,effIDs,:]
+				#~ self._numSamples = len(effIDs)
+				#~ 
+				#~ self._proposal[:,:i] /= sum(self._proposal[:,:i])
+				#~ self._likelihood[:,:i] /= sum(self._likelihood[:,:i])
+				#~ self._posterior[:,:i] /= sum(self._posterior[:,:i])
+				
 		else:
 			raise RuntimeError,"Calling Yade within python is not yet supported..."
 		return self._ips, self._covs
@@ -162,7 +182,7 @@ class smc:
 		self._smcSamples.append(initSmcSamples)
 		self._sampleDataFiles.append(initSampleDataFile)
 
-	def getParamsFromTable(self, sampleDataFile, paramRanges, names, iterNO=-1):
+	def getParamsFromTable(self, sampleDataFile, names, paramRanges, iterNO=-1):
 		self._paramRanges = paramRanges
 		self._numParams = len(paramRanges)
 		if len(sampleDataFile) != 0: self._sampleDataFiles.append(sampleDataFile)
@@ -172,7 +192,7 @@ class smc:
 			self._smcSamples.append(smcSamples)
 			self._numSamples,_ = self._smcSamples[iterNO].shape
 		else:
-			yadeDataFiles = glob.glob(self._yadeDataDir+'/*key*')
+			yadeDataFiles = glob.glob(self._yadeDataDir+'/*txt')
 			yadeDataFiles.sort()
 			while len(yadeDataFiles) == 0:
 				key = raw_input("No DEM filename has key, tell me the key...\n ")

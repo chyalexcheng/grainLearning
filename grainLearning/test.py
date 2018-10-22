@@ -3,7 +3,7 @@ from plotResults import *
 import pickle
 
 # normalized variance parameter
-sigma = 0.43; ess = 1.0
+sigma = 1.0; ess = 1.0
 obsWeights = [1,1,0.01]
 yadeFile = 'mcTriax_e.py'
 yadeDataDir = 'iterPF1'

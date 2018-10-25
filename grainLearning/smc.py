@@ -146,10 +146,12 @@ class smc:
 		# update posterior probability according to Bayes' rule
 		posterior = np.zeros(self._numSamples)
 		if caliStep == 0:
-			posterior = likelihood*self._prior/proposal
+			posterior = likelihood*self._prior
 		else: 
-			posterior = self._posterior[:,caliStep-1]*likelihood*self._prior/proposal
+			posterior = self._posterior[:,caliStep-1]*likelihood*self._prior
 			# regularize likelihood
+		posterior /= np.sum(posterior)
+		posterior[np.where(posterior<proposal)] /= proposal[np.where(posterior<proposal)]
 		posterior /= np.sum(posterior)
 		return posterior
 		
@@ -247,3 +249,16 @@ class smc:
 			posterior = self._posterior[:,i]
 			gmmList.append(getGMMFromPosterior(smcSamples,posterior,maxNumComponents))
 		return gmmList
+
+	def removeDegeneracy(self,caliStep=-1):
+		effIDs = np.where(self._posterior[:,caliStep]<0.5)[0]
+		self._prior = self._prior[effIDs]
+		self._proposal = self._proposal[effIDs,:]
+		self._likelihood = self._likelihood[effIDs,:]
+		self._posterior = self._posterior[effIDs,:]
+		self._smcSamples[0] = self._smcSamples[0][effIDs,:]
+		self._yadeData = self._yadeData[:,effIDs,:]
+		self._numSamples = len(effIDs)
+		for i in xrange(self._numSteps):
+			self._likelihood[:,i], self._posterior[:,i], \
+			self._ips[:,i], self._covs[:,i] = self.recursiveBayesian(i,self._proposal[:,i])

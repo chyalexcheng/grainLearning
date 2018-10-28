@@ -34,9 +34,14 @@ class smc:
 		self._smcSamples = []
 		# a flag that defines whether Yade is called within python
 		self._standAlone = standAlone
-		
-	def initialize(self, paramNames, paramRanges, numSamples, sampleDataFile='', thread=4, loadSamples=False, proposalFile=''):
+		# hyperparameters of Bayesian Gaussian mixture
+		self._maxNumComponents = 0
+		self._priorWeight = 0
+
+	def initialize(self, paramNames, paramRanges, numSamples, maxNumComponents, priorWeight, sampleDataFile='', thread=4, loadSamples=False, proposalFile=''):
 		self._paramNames = paramNames
+		self._maxNumComponents = maxNumComponents
+		self._priorWeight = priorWeight
 		if loadSamples: self.getParamsFromTable(sampleDataFile, paramNames, paramRanges)
 		else: self.getInitParams(paramRanges, numSamples, thread)
 		if self._standAlone:
@@ -47,22 +52,23 @@ class smc:
 			self._covs = np.zeros([self._numParams, self._numSteps])
 			self._posterior = np.zeros([self._numSamples, self._numSteps])
 			self._likelihood = np.zeros([self._numSamples, self._numSteps])
-			self._proposal = np.ones([self._numSamples, self._numSteps])/self._numSamples
-			self._prior = np.ones([self._numSamples])/self._numSamples
+			self._proposal = np.ones([self._numSamples])/self._numSamples
 			if proposalFile != '':
-				self._prior = self.getPriorFromSamples()
-				self.loadProposalFromFile(proposalFile)
+				#~ # load proposal density from file
+				#~ self._proposal = self.loadProposalFromFile(proposalFile)
+				# estimate proposal density from samples
+				self._proposal = self.getProposalFromSamples()
 
-	def getPriorFromSamples(self,n_components=15):
+	def getProposalFromSamples(self):
 		if len(self.getSmcSamples()) == 0:
 			RuntimeError,"SMC samples not yet loaded..."
 		elif len(self.getSmcSamples()) == 2:
 			RuntimeError,"SMC samples already resampled..."
 		else:
-			gmm = mixture.BayesianGaussianMixture(n_components=n_components, covariance_type='full',tol = 1e-5,max_iter=int(1e5),n_init=100)
+			gmm = mixture.BayesianGaussianMixture(n_components=self._maxNumComponents,weight_concentration_prior=self._priorWeight,covariance_type='diag',tol = 1e-5,max_iter=int(1e5),n_init=100)
 			gmm.fit(self.getSmcSamples()[0])
-			prior = np.exp(gmm.score_samples(self.getSmcSamples()[0]))
-		return prior/sum(prior)
+			proposal = np.exp(gmm.score_samples(self.getSmcSamples()[0]))
+		return proposal/sum(proposal)
 
 	def loadProposalFromFile(self,proposalFile):
 		if len(self.getSmcSamples()) == 0:
@@ -70,12 +76,11 @@ class smc:
 		elif len(self.getSmcSamples()) == 2:
 			RuntimeError,"SMC samples already resampled..."
 		else:
-			proposalModelList = pickle.load(open(proposalFile, 'rb'))
-			for i, proposalModel in enumerate(proposalModelList):
-				proposal = np.exp(proposalModel.score_samples(self.getSmcSamples()[0]))
-				self._proposal[:,i] = proposal/sum(proposal)
+			proposalModel = pickle.load(open(proposalFile, 'rb'))
+			proposal = np.exp(proposalModel.score_samples(self.getSmcSamples()[0]))
+		return proposal/sum(proposal)
 
-	def run(self,skipDEM=False,iterNO=-1):
+	def run(self,skipDEM=False,iterNO=-1,reverse=False):
 		if self._standAlone:
 			if not skipDEM:
 				# run DEM simulations in batch. 
@@ -93,9 +98,13 @@ class smc:
 			# read simulation data into self._yadeData and drop keys in obsData
 			self._obsData = self.getYadeData(yadeDataFiles)
 			# loop over data assimilation steps
+			if reverse:
+				self._obsCtrlData = self._obsCtrlData[::-1]
+				self._obsData = self._obsData[::-1,:]
+				self._yadeData = self._yadeData[::-1,:,:]		
 			for i in xrange(self._numSteps):
 				self._likelihood[:,i], self._posterior[:,i], \
-				self._ips[:,i], self._covs[:,i] = self.recursiveBayesian(i,self._proposal[:,i])			
+				self._ips[:,i], self._covs[:,i] = self.recursiveBayesian(i)
 		else:
 			raise RuntimeError,"Calling Yade within python is not yet supported..."
 		return self._ips, self._covs
@@ -110,9 +119,9 @@ class smc:
 				obsData[:,j] = self._obsData[key]
 		return obsData
 
-	def recursiveBayesian(self,caliStep,proposal,iterNO=-1):
+	def recursiveBayesian(self,caliStep,iterNO=-1):
 		likelihood = self.getLikelihood(caliStep)
-		posterior = self.update(caliStep,likelihood,proposal)
+		posterior = self.update(caliStep,likelihood)
 		# get ensemble averages and coefficients of variance
 		ips = np.zeros(self._numParams)
 		covs = np.zeros(self._numParams)
@@ -142,16 +151,14 @@ class smc:
 		likelihood /= np.sum(likelihood)
 		return likelihood
 
-	def update(self,caliStep,likelihood,proposal):
+	def update(self,caliStep,likelihood):
 		# update posterior probability according to Bayes' rule
 		posterior = np.zeros(self._numSamples)
 		if caliStep == 0:
-			posterior = likelihood*self._prior
+			posterior = likelihood/self._proposal
 		else: 
-			posterior = self._posterior[:,caliStep-1]*likelihood*self._prior
+			posterior = self._posterior[:,caliStep-1]*likelihood
 			# regularize likelihood
-		posterior /= np.sum(posterior)
-		posterior[np.where(posterior<proposal)] /= proposal[np.where(posterior<proposal)]
 		posterior /= np.sum(posterior)
 		return posterior
 		
@@ -198,7 +205,7 @@ class smc:
 			for i,f in enumerate(yadeDataFiles):
 				f = f.split('.txt')[0]
 				_, key, E, mu_i, mu, k_r, mu_r = f.split('_')
-				smcSamples[i,:] = eval(' '.join(['float('+name+'),' for name in names])[:-1])
+				smcSamples[i,:] = eval(' '.join(['abs(float('+name+')),' for name in names])[:-1])
 			self._smcSamples.append(smcSamples)
 			self._numSamples,_ = self._smcSamples[iterNO].shape
 			
@@ -210,14 +217,14 @@ class smc:
 		numObs = len(keysAndData.keys())
 		return keysAndData, obsCtrlData, numObs, numSteps
 
-	def resampleParams(self,caliStep,maxNumComponents=10,thread=4,iterNO=0):
+	def resampleParams(self,caliStep,thread=4,iterNO=0):
 		names = self.getNames()
 		smcSamples = self._smcSamples[iterNO]
 		numSamples = self._numSamples
 		# posterior at caliStep is used as the proposal distribution
 		proposal = self._posterior[:,caliStep]
 		newSmcSamples, newSampleDataFile, gmm, maxNumComponents = \
-			resampledParamsTable(keys=names,smcSamples=smcSamples,proposal=proposal,num=numSamples,thread=thread,maxNumComponents=maxNumComponents)
+			resampledParamsTable(keys=names,smcSamples=smcSamples,proposal=proposal,num=numSamples,thread=thread,maxNumComponents=self._maxNumComponents,priorWeight=self._priorWeight)
  		self._smcSamples.append(newSmcSamples)
 		self._sampleDataFiles.append(newSampleDataFile)
 		return gmm, maxNumComponents
@@ -232,7 +239,12 @@ class smc:
 		return self._numSteps
 
 	def getEffectiveSampleSize(self):
-		nEff = 1./sum(self.getPosterior()**2)
+		#~ nEff = 1./sum(self.getPosterior()**2)
+		m = self.getNumSteps()
+		n = self._numSamples
+		posterior = self.getPosterior()*np.repeat(self._proposal,m).reshape(n,m)
+		posterior /= sum(posterior)
+		nEff = 1./sum(posterior**2)
 		return nEff/self._numSamples
 
 	def getNames(self):
@@ -252,7 +264,6 @@ class smc:
 
 	def removeDegeneracy(self,caliStep=-1):
 		effIDs = np.where(self._posterior[:,caliStep]<0.5)[0]
-		self._prior = self._prior[effIDs]
 		self._proposal = self._proposal[effIDs,:]
 		self._likelihood = self._likelihood[effIDs,:]
 		self._posterior = self._posterior[effIDs,:]

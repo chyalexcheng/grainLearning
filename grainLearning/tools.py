@@ -47,32 +47,25 @@ def getKeysAndData(fileName):
 	for key in keys: keysAndData[key] = data[:,keys.index(key)]
 	return keysAndData
 
-def resampledParamsTable(keys,smcSamples,proposal,num=100,thread=4,maxNumComponents=50,tableName='smcTableNew.txt'):
+def resampledParamsTable(keys,smcSamples,proposal,num=100,thread=4,maxNumComponents=10,priorWeight=1e3,tableName='smcTableNew.txt'):
 	dim = len(keys)
 	# resample parameters from a proposal PDF
 	ResampleIndices = residual_resample(proposal)
 	smcNewSamples = smcSamples[ResampleIndices]
 	# regenerate new SMC samples from Bayesian gaussian mixture model
-	scores = []
 	# details on http://scikit-learn.org/stable/modules/generated/sklearn.mixture.BayesianGaussianMixture.html
-	for i in range(maxNumComponents):
-		gmm = mixture.BayesianGaussianMixture(n_components=i+1, covariance_type='full',tol = 1e-5,max_iter=int(1e5),n_init=100)
-		gmm.fit(smcNewSamples);
-		print 'Log-likelihood: %.3f'%(gmm.score(smcNewSamples))
-		scores.append(gmm.score(smcNewSamples))
-	n_components = scores.index(max(scores))
-	print 'Optimal number of Gaussian mixtures: %.i'%(n_components+1)
-	gmm = mixture.BayesianGaussianMixture(n_components=n_components+1, covariance_type='full',tol = 1e-5,max_iter=int(1e5),n_init=100)
+	gmm = mixture.BayesianGaussianMixture(n_components=maxNumComponents,weight_concentration_prior=priorWeight,covariance_type='diag',tol = 1e-5,max_iter=int(1e5),n_init=100)
 	gmm.fit(smcNewSamples)
 	smcNewSamples, _ = gmm.sample(num)
 	# write parameters in the format for Yade batch mode
 	writeToTable(tableName,smcNewSamples,dim,num,thread,keys)
-	return smcNewSamples, tableName, gmm, n_components+1
+	return smcNewSamples, tableName, gmm, maxNumComponents
 
-def getGMMFromPosterior(smcSamples,posterior,maxNumComponents):
+def getGMMFromPosterior(smcSamples,posterior,priorWeight):
 	# resample parameters from a proposal PDF
 	ResampleIndices = residual_resample(posterior)
 	smcNewSamples = smcSamples[ResampleIndices]
-	gmm = mixture.BayesianGaussianMixture(n_components=maxNumComponents, covariance_type='full',tol = 1e-5,max_iter=int(1e5),n_init=100)
+	n_components = int(self._numSamples/5)
+	gmm = mixture.BayesianGaussianMixture(n_components=n_components,weight_concentration_prior=priorWeight,covariance_type='diag',tol = 1e-5,max_iter=int(1e5),n_init=100)
 	gmm.fit(smcNewSamples)
 	return gmm	

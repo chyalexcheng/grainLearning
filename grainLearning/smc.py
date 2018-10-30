@@ -239,12 +239,12 @@ class smc:
 		return self._numSteps
 
 	def getEffectiveSampleSize(self):
-		#~ nEff = 1./sum(self.getPosterior()**2)
-		m = self.getNumSteps()
-		n = self._numSamples
-		posterior = self.getPosterior()*np.repeat(self._proposal,m).reshape(n,m)
-		posterior /= sum(posterior)
-		nEff = 1./sum(posterior**2)
+		nEff = 1./sum(self.getPosterior()**2)
+		#~ m = self.getNumSteps()
+		#~ n = self._numSamples
+		#~ posterior = self.getPosterior()*np.repeat(self._proposal,m).reshape(n,m)
+		#~ posterior /= sum(posterior)
+		#~ nEff = 1./sum(posterior**2)
 		return nEff/self._numSamples
 
 	def getNames(self):

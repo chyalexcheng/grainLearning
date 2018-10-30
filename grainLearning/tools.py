@@ -50,7 +50,7 @@ def getKeysAndData(fileName):
 def resampledParamsTable(keys,smcSamples,proposal,num=100,thread=4,maxNumComponents=10,priorWeight=1e3,tableName='smcTableNew.txt'):
 	dim = len(keys)
 	# resample parameters from a proposal PDF
-	ResampleIndices = residual_resample(proposal)
+	ResampleIndices = unWeighted_resample(proposal,10*num)
 	smcNewSamples = smcSamples[ResampleIndices]
 	# regenerate new SMC samples from Bayesian gaussian mixture model
 	# details on http://scikit-learn.org/stable/modules/generated/sklearn.mixture.BayesianGaussianMixture.html

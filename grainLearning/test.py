@@ -13,18 +13,19 @@ obsCtrl = 'e_a'
 # ranges of parameters (E, \mu, kr, \mu_r)
 paramNames = ['E', 'mu', 'k_r','mu_r']
 paramRanges = {'E':[100e9,200e9],'mu':[0.3,0.5],'k_r':[0,1e4],'mu_r':[0.1,0.5]}
-numSamples = 100; maxNumComponents = int(numSamples/5); priorWeight = 1e3
+numSamples = 100; maxNumComponents = int(numSamples/3); priorWeight = 1e3
 iterNO = int(yadeDataDir[-1])
 sampleDataFile = 'smcTableNew%i.txt'%iterNO
 proposalFile = 'gmm_'+yadeDataDir[:-1]+'%i.pkl'%(iterNO-1) if int(yadeDataDir[-1]) != 0 else ''
+reverse = True if iterNO%2==1 else False
 
 #~ sigAndESS = []
 #~ while abs(ess-0.2)/0.2 > 1e-3:
 	#~ # initialize the problem
 	#~ smcTest = smc(sigma,obsWeights,yadeFile,yadeDataDir,obsDataFile,obsCtrl)
-	#~ smcTest.initialize(paramNames,paramRanges,numSamples,sampleDataFile=sampleDataFile,loadSamples=True,proposalFile=proposalFile)
+	#~ smcTest.initialize(paramNames,paramRanges,numSamples,maxNumComponents,priorWeight,sampleDataFile=sampleDataFile,loadSamples=True,proposalFile=proposalFile)
 	#~ # run sequential Monte Carlo; return means and coefficients of variance of PDF over the parameters
-	#~ ips, covs = smcTest.run(skipDEM=True,reverse=True)
+	#~ ips, covs = smcTest.run(skipDEM=True,reverse=reverse)
 	#~ # get the parameter samples (ensemble) and posterior probability
 	#~ posterior = smcTest.getPosterior()
 	#~ smcSamples = smcTest.getSmcSamples()

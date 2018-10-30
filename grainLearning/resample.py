@@ -15,6 +15,17 @@ import sys
 
 #~ sys.path.append('/usr/lib/python2.7/dist-packages')
 
+def unWeighted_resample(weights,N):
+    # take int(N*w) copies of each weight, which ensures particles with the same weight are drawn uniformly
+    num_copies = (np.floor(N*np.asarray(weights))).astype(int)
+    indexes = np.zeros(sum(num_copies), 'i')
+    k = 0
+    for i in range(len(weights)):
+        for _ in range(num_copies[i]): # make n copies
+            indexes[k] = i
+            k += 1
+    return indexes
+
 def residual_resample(weights):
     N = len(weights)
     indexes = np.zeros(N, 'i')

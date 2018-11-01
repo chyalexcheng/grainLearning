@@ -54,10 +54,10 @@ class smc:
 			self._likelihood = np.zeros([self._numSamples, self._numSteps])
 			self._proposal = np.ones([self._numSamples])/self._numSamples
 			if proposalFile != '':
-				# load proposal density from file
-				self._proposal = self.loadProposalFromFile(proposalFile)
-				#~ # estimate proposal density from samples
-				#~ self._proposal = self.getProposalFromSamples()
+				#~ # load proposal density from file
+				#~ self._proposal = self.loadProposalFromFile(proposalFile)
+				# estimate proposal density from samples
+				self._proposal = self.getProposalFromSamples()
 
 	def getProposalFromSamples(self):
 		if len(self.getSmcSamples()) == 0:

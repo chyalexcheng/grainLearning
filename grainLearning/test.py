@@ -17,10 +17,11 @@ paramRanges = {'E':[100e9,200e9],'mu':[0.3,0.5],'k_r':[0,1e4],'mu_r':[0.1,0.5]}
 numSamples = 100; maxNumComponents = int(numSamples/10); priorWeight = 1e-2
 iterNO = int(yadeDataDir[-1])
 sampleDataFile = 'smcTableNew%i.txt'%iterNO
-proposalFile = 'gmm_'+yadeDataDir[:-1]+'%i.pkl'%(iterNO-1) if int(yadeDataDir[-1]) != 0 else ''
+proposalFile = 'gmm_'+yadeDataDir[:-1]+'%i.pkl'%(iterNO-1) if iterNO != 0 else ''
 reverse = True if iterNO%2==1 else False
 
-if iterNO == 0:
+sigAndESS = []; numSig = 500
+for i in range(numSig):
 	# initialize the problem
 	smcTest = smc(sigma,obsWeights,yadeFile,yadeDataDir,obsDataFile,obsCtrl)
 	smcTest.initialize(paramNames,paramRanges,numSamples,maxNumComponents,priorWeight,sampleDataFile=sampleDataFile,loadSamples=True,proposalFile=proposalFile)
@@ -32,25 +33,14 @@ if iterNO == 0:
 	# calculate effective sample size
 	ess = smcTest.getEffectiveSampleSize()[-1]
 	print 'Effective sample size: %f'%ess
-else:
-	sigAndESS = []; numSig = 500
-	for i in range(numSig):
-		# initialize the problem
-		smcTest = smc((numSig-i)*sigma/numSig,obsWeights,yadeFile,yadeDataDir,obsDataFile,obsCtrl)
-		smcTest.initialize(paramNames,paramRanges,numSamples,maxNumComponents,priorWeight,sampleDataFile=sampleDataFile,loadSamples=True,proposalFile=proposalFile)
-		# run sequential Monte Carlo; return means and coefficients of variance of PDF over the parameters
-		ips, covs = smcTest.run(skipDEM=True,reverse=reverse)
-		# get the parameter samples (ensemble) and posterior probability
-		posterior = smcTest.getPosterior()
-		smcSamples = smcTest.getSmcSamples()
-		# calculate effective sample size
-		ess = smcTest.getEffectiveSampleSize()[-1]
-		print 'Effective sample size: %f'%ess
-		sigAndESS.append([(numSig-i)*sigma/numSig,ess])
-	plotSigAndESS(sigAndESS)
+	sigAndESS.append([sigma,ess])
+	sigma *= 0.999
 
 # define appropriate sigma
-sigma, ESS = sigAndESS[np.argmax(sigAndESS)[:,1]]
+plotSigAndESS(sigAndESS)
+if iterNO == 0: sigma, ESS = sigAndESS[np.argmax(np.array(sigAndESS)[:,1])]
+else: sigma, ESS = sigAndESS[np.argmin(abs(np.array(sigAndESS)[:,1]-0.2)**2)]
+
 # initialize the problem
 smcTest = smc(sigma,obsWeights,yadeFile,yadeDataDir,obsDataFile,obsCtrl)
 smcTest.initialize(paramNames,paramRanges,numSamples,maxNumComponents,priorWeight,sampleDataFile=sampleDataFile,loadSamples=True,proposalFile=proposalFile)

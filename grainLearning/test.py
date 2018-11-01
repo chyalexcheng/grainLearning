@@ -1,5 +1,6 @@
 from smc import *
 from plotResults import *
+from sciPlots import *
 import pickle
 
 # normalized variance parameter
@@ -19,26 +20,40 @@ sampleDataFile = 'smcTableNew%i.txt'%iterNO
 proposalFile = 'gmm_'+yadeDataDir[:-1]+'%i.pkl'%(iterNO-1) if int(yadeDataDir[-1]) != 0 else ''
 reverse = True if iterNO%2==1 else False
 
-#~ sigAndESS = []
-#~ while abs(ess-0.2)/0.2 > 1e-3:
-	#~ # initialize the problem
-	#~ smcTest = smc(sigma,obsWeights,yadeFile,yadeDataDir,obsDataFile,obsCtrl)
-	#~ smcTest.initialize(paramNames,paramRanges,numSamples,maxNumComponents,priorWeight,sampleDataFile=sampleDataFile,loadSamples=True,proposalFile=proposalFile)
-	#~ # run sequential Monte Carlo; return means and coefficients of variance of PDF over the parameters
-	#~ ips, covs = smcTest.run(skipDEM=True,reverse=reverse)
-	#~ # get the parameter samples (ensemble) and posterior probability
-	#~ posterior = smcTest.getPosterior()
-	#~ smcSamples = smcTest.getSmcSamples()
-	#~ # calculate effective sample size
-	#~ ess = smcTest.getEffectiveSampleSize()[-1]
-	#~ print 'Effective sample size: %f'%ess
-	#~ sigma *= 0.999
-	#~ sigAndESS.append([sigma,ess])
+if iterNO == 0:
+	# initialize the problem
+	smcTest = smc(sigma,obsWeights,yadeFile,yadeDataDir,obsDataFile,obsCtrl)
+	smcTest.initialize(paramNames,paramRanges,numSamples,maxNumComponents,priorWeight,sampleDataFile=sampleDataFile,loadSamples=True,proposalFile=proposalFile)
+	# run sequential Monte Carlo; return means and coefficients of variance of PDF over the parameters
+	ips, covs = smcTest.run(skipDEM=True,reverse=reverse)
+	# get the parameter samples (ensemble) and posterior probability
+	posterior = smcTest.getPosterior()
+	smcSamples = smcTest.getSmcSamples()
+	# calculate effective sample size
+	ess = smcTest.getEffectiveSampleSize()[-1]
+	print 'Effective sample size: %f'%ess
+else:
+	sigAndESS = []; numSig = 500
+	for i in range(numSig):
+		# initialize the problem
+		smcTest = smc((numSig-i)*sigma/numSig,obsWeights,yadeFile,yadeDataDir,obsDataFile,obsCtrl)
+		smcTest.initialize(paramNames,paramRanges,numSamples,maxNumComponents,priorWeight,sampleDataFile=sampleDataFile,loadSamples=True,proposalFile=proposalFile)
+		# run sequential Monte Carlo; return means and coefficients of variance of PDF over the parameters
+		ips, covs = smcTest.run(skipDEM=True,reverse=reverse)
+		# get the parameter samples (ensemble) and posterior probability
+		posterior = smcTest.getPosterior()
+		smcSamples = smcTest.getSmcSamples()
+		# calculate effective sample size
+		ess = smcTest.getEffectiveSampleSize()[-1]
+		print 'Effective sample size: %f'%ess
+		sigAndESS.append([(numSig-i)*sigma/numSig,ess])
+	plotSigAndESS(sigAndESS)
 
+# define appropriate sigma
+sigma, ESS = sigAndESS[np.argmax(sigAndESS)[:,1]]
 # initialize the problem
 smcTest = smc(sigma,obsWeights,yadeFile,yadeDataDir,obsDataFile,obsCtrl)
 smcTest.initialize(paramNames,paramRanges,numSamples,maxNumComponents,priorWeight,sampleDataFile=sampleDataFile,loadSamples=True,proposalFile=proposalFile)
-
 # run sequential Monte Carlo; return means and coefficients of variance of PDF over the parameters
 ips, covs = smcTest.run(skipDEM=True,reverse=reverse)
 # get the parameter samples (ensemble) and posterior probability
@@ -51,12 +66,6 @@ print 'Effective sample size: %f'%ess
 # plot time evolution of effective sample size
 plt.figure();plt.plot(smcTest.getEffectiveSampleSize());
 plt.figure();plt.plot(smcTest.getSmcSamples()[0][:,0],smcTest._proposal,'o',label='proposal'); plt.show()
-
-#~ for i in range(10): 
-	#~ plt.plot(smcTest.getSmcSamples()[0][:,0],smcTest._proposal,'o',label='proposal');
-	#~ plt.plot(smcTest.getSmcSamples()[0][:,0],smcTest._likelihood[:,i*10],'o',label='likelihood')
-	#~ plt.plot(smcTest.getSmcSamples()[0][:,0],smcTest._posterior[:,i*10],'o',label='posterior')
-	#~ plt.legend(); plt.show()
 
 # plot means of PDF over the parameters
 _ = plotIPs(paramNames,ips.T,covs.T,smcTest.getNumSteps(),posterior,smcSamples[0])
@@ -71,10 +80,7 @@ plotAllSamples(smcTest.getSmcSamples(),smcTest.getNames())
 # save trained Gaussian mixture model
 pickle.dump(gmm, open('gmm_'+yadeDataDir+'.pkl', 'wb'))
 
-m = smcTest.getNumSteps(); n = smcTest._numSamples
-posterior = smcTest.getPosterior()*np.repeat(smcTest._proposal,m).reshape(n,m)
-posterior /= sum(posterior)
-
+posterior = smcTest.getPosterior()
 plt.figure()
 for i in (-posterior[:,caliStep]).argsort()[:10]:
 	plt.plot(smcTest._obsCtrlData,smcTest._yadeData[:,i,0].T/smcTest._yadeData[:,i,1].T,'-',label=', '.join([paramNames[j]+': '+'%g'%smcSamples[0][i,j] for j in range(len(paramNames))]))

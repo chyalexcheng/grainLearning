@@ -240,11 +240,6 @@ class smc:
 
 	def getEffectiveSampleSize(self):
 		nEff = 1./sum(self.getPosterior()**2)
-		#~ m = self.getNumSteps()
-		#~ n = self._numSamples
-		#~ posterior = self.getPosterior()*np.repeat(self._proposal,m).reshape(n,m)
-		#~ posterior /= sum(posterior)
-		#~ nEff = 1./sum(posterior**2)
 		return nEff/self._numSamples
 
 	def getNames(self):
@@ -273,3 +268,8 @@ class smc:
 		for i in xrange(self._numSteps):
 			self._likelihood[:,i], self._posterior[:,i], \
 			self._ips[:,i], self._covs[:,i] = self.recursiveBayesian(i,self._proposal[:,i])
+
+	def writeBayeStatsToFile(self):
+		np.savetxt(self._yadeDataDir+'/particle.txt',self.getSmcSamples()[0])
+		np.savetxt(self._yadeDataDir+'/IP.txt',smcTest._ips.T)
+		np.savetxt(self._yadeDataDir+'/weight.txt',self.getPosterior())

@@ -4,8 +4,8 @@ from sciPlots import *
 import pickle
 
 # normalized variance parameter
-sigma = 3.0e-1; ess = 1.0
-obsWeights = [1,1,0.01]
+sigma = 0.00174; ess = 1.0
+obsWeights = [1,1,0.02]
 yadeFile = 'mcTriax_e.py'
 yadeDataDir = 'iterPFNew3'
 obsDataFile = 'obsdata.dat'
@@ -14,7 +14,7 @@ obsCtrl = 'e_a'
 # ranges of parameters (E, \mu, kr, \mu_r)
 paramNames = ['E', 'mu', 'k_r','mu_r']
 paramRanges = {'E':[100e9,200e9],'mu':[0.3,0.5],'k_r':[0,1e4],'mu_r':[0.1,0.5]}
-numSamples = 100; maxNumComponents = int(numSamples/10); priorWeight = 1e3
+numSamples = 100; maxNumComponents = int(numSamples/10); priorWeight = 1e-2
 iterNO = int(yadeDataDir[-1])
 sampleDataFile = 'smcTableNew%i.txt'%iterNO
 proposalFile = 'gmm_'+yadeDataDir[:-1]+'%i.pkl'%(iterNO-1) if iterNO != 0 else ''
@@ -34,7 +34,7 @@ for i in range(numSig):
 	ess = smcTest.getEffectiveSampleSize()[-1]
 	print 'Effective sample size: %f'%ess
 	sigAndESS.append([sigma,ess])
-	sigma *= 0.999
+	sigma *= 0.99
 
 # define appropriate sigma
 plotSigAndESS(sigAndESS)

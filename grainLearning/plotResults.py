@@ -148,7 +148,7 @@ def numAndExpData(numFiles, p0, q0, n0, e_a0, e_r0):
 	plt.savefig('q.png')	
 
 
-def plotExpAndNum(name, names, varsDir, weight, mcFiles, numFiles, label1, label2, label3, label4, p, q, n, e_a, e_r):
+def plotExpAndNum(name, names, iterNO, weight, mcFiles, numFiles, label1, label2, label3, label4, p, q, n, e_a, e_r):
 	params = {'lines.linewidth': 1.0,'backend': 'ps','axes.labelsize': 10,'font.size': 10, 'legend.fontsize': 9,'xtick.labelsize': 9,'ytick.labelsize': 9,'text.usetex': True,'font.family': 'serif','legend.edgecolor': 'k','legend.fancybox':False}
 	matplotlib.rcParams['text.latex.preamble']=[r"\usepackage{amsmath}"]
 	matplotlib.rcParams.update(params)
@@ -191,11 +191,11 @@ def plotExpAndNum(name, names, varsDir, weight, mcFiles, numFiles, label1, label
 	
 	fig = plt.figure(figsize=(20/2.54,6/2.54))
 	ax = fig.add_subplot(1, 2, 1)
-	lines = []; ls = ['--', '-.', ':','-']
+	lines = []; ls = ['-', '-.', ':','-']
 	for i in range(len(numFiles)):
 		C,CN,K0,e_r11,e_r21,e_a1,n1,overlap,p1,q1 = np.genfromtxt(numFiles[i]).transpose();
 		e_v1=e_a1+e_r11+e_r21
-		l2, = ax.plot(100*e_a1, q1/p1,label=r'$E_c$'+'=%.1f, '%(label1[i]/1e9)+r'$\mu$'+'=%.3f, '%label2[i]+r'$k_m$'+'=%.3f, '%(label3[i]/1e3)+r'$\eta_m$'+'=%.3f'%label4[i],ls = ls[i],color = 'gray')
+		l2, = ax.plot(100*e_a1, q1/p1,label=r'$E_c$'+'=%.1f GPa, '%(label1[i]/1e9)+r'$\mu$'+'=%.3f, '%label2[i]+r'$k_m$'+'=%.3f$\times10^{-3}$ N$\cdot$mm, '%(label3[i]/1e3)+r'$\eta_m$'+'=%.3f'%label4[i],ls = ls[i],color = 'k')
 		lines.append(l2)
 	l1, = ax.plot(e_a, np.array(q)/np.array(p), 'o',color='darkblue',ms=2.5); lines.append(l1)
 	l0, = ax.plot(e_a, enAvgQPRatio, '-',color='darkred'); lines.append(l0)
@@ -213,7 +213,7 @@ def plotExpAndNum(name, names, varsDir, weight, mcFiles, numFiles, label1, label
 	for i in range(len(numFiles)):
 		C,CN,K0,e_r11,e_r21,e_a1,n1,overlap,p1,q1 = np.genfromtxt(numFiles[i]).transpose();
 		e_v1=e_a1+e_r11+e_r21
-		l2, = ax.plot(1-n1[1:],p1[1:],label=r'$E_c$'+'=%.1f, '%(label1[i]/1e9)+r'$\mu$'+'=%.3f, '%label2[i]+r'$k_m$'+'=%.3f, '%(label3[i]/1e3)+r'$\eta_m$'+'=%.3f'%label4[i],ls = ls[i],color = 'gray')
+		l2, = ax.plot(1-n1[1:],p1[1:],label=r'$E_c$'+'=%.1f GPa, '%(label1[i]/1e9)+r'$\mu$'+'=%.3f, '%label2[i]+r'$k_m$'+'=%.3f$\times10^{-3}$ N$\cdot$mm, '%(label3[i]/1e3)+r'$\eta_m$'+'=%.3f'%label4[i],ls = ls[i],color = 'k')
 	l1, = ax.plot(1-np.array(n), p, 'o',color='darkblue',label='Experimental data',ms=2.5)
 	l0, = ax.plot(1-enAvgN, enAvgP, '-',color='darkred')
 	lowBound = enAvgP-2*enStdP; upBound = enAvgP+2*enStdP
@@ -227,9 +227,9 @@ def plotExpAndNum(name, names, varsDir, weight, mcFiles, numFiles, label1, label
 	ax.set_ylim(ymin=0)
 	ax.grid(True)
 	
-	fig.legend(tuple(lines),tuple([r'$E_c$'+'=%.1f, '%(label1[i]/1e9)+r'$\mu$'+'=%.3f\n'%label2[i]+r'$k_m$'+'=%.3f, '%(label3[i]/1e3)+r'$\eta_m$'+'=%.3f'%label4[i] for i in range(len(numFiles))]+['Experimental data']+['SIS ensemble']),loc = 'right',ncol=1,handlelength=1.45,labelspacing=1.5,frameon=False)
-	fig.subplots_adjust(left=0.06, bottom=0.18, right=0.77, top=0.98, hspace=0, wspace=0.35)
-	plt.savefig('expAndDEM'+varsDir[-2]+'.pdf')
+	fig.legend(tuple(lines),tuple([r'$E_c$'+'=%.1f GPa, '%(label1[i]/1e9)+r'$\mu$'+'=%.3f\n'%label2[i]+r'$k_m$'+r'=%.3f$\times10^{-3}$ N$\cdot$mm'%(label3[i]/1e3)+'\n'+r'$\eta_m$'+'=%.3f'%label4[i] for i in range(len(numFiles))]+['Experimental data']+['SIS ensemble']),loc = 'right',ncol=1,handlelength=1.45,labelspacing=1.5,frameon=False)
+	fig.subplots_adjust(left=0.06, bottom=0.18, right=0.74, top=0.98, hspace=0, wspace=0.35)
+	plt.savefig('expAndDEM'+iterNO+'.pdf')
 	plt.show()
 	
 	return enAvgP, enStdP, enAvgQPRatio, enStdQPRatio, enAvgN, enStdN, enAvgC, enStdC

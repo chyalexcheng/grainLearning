@@ -89,7 +89,7 @@ class smc:
 				system(' '.join([self._yadeVersion, self._sampleDataFiles[iterNO], self._name]))
 				print 'All simulations finished'
 			else: print 'Skipping DEM simulations, read in data now'
-			yadeDataFiles = glob.glob(self._yadeDataDir+'/*txt*')
+			yadeDataFiles = glob.glob(self._yadeDataDir+'/*_*txt*')
 			yadeDataFiles.sort()
 			while len(yadeDataFiles) == 0:
 				key = raw_input("No DEM filename has key, tell me the key...\n ")
@@ -195,7 +195,7 @@ class smc:
 			self._smcSamples.append(smcSamples)
 			self._numSamples,_ = self._smcSamples[iterNO].shape
 		else:
-			yadeDataFiles = glob.glob(self._yadeDataDir+'/*txt')
+			yadeDataFiles = glob.glob(self._yadeDataDir+'/*_*txt*')
 			yadeDataFiles.sort()
 			while len(yadeDataFiles) == 0:
 				key = raw_input("No DEM filename has key, tell me the key...\n ")

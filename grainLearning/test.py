@@ -58,7 +58,7 @@ plt.figure();plt.plot(smcTest.getEffectiveSampleSize());
 plt.figure();plt.plot(smcTest.getSmcSamples()[0][:,0],smcTest._proposal,'o',label='proposal'); plt.show()
 
 # plot means of PDF over the parameters
-microParamUQ = plotIPs(paramNames,ips.T,covs.T,smcTest.getNumSteps(),posterior,smcSamples[0])
+microParamUQ = plotIPs(paramNames,ips[:,::(-1)**reverse].T,covs[:,::(-1)**reverse].T,smcTest.getNumSteps(),posterior,smcSamples[0])
 
 # resample parameters
 caliStep = -1
@@ -70,31 +70,32 @@ plotAllSamples(smcTest.getSmcSamples(),smcTest.getNames())
 # save trained Gaussian mixture model
 pickle.dump(gmm, open('gmm_'+yadeDataDir+'.pkl', 'wb'))
 
-posterior = smcTest.getPosterior()
+m = smcTest.getNumSteps(); n = smcTest._numSamples
+weights = smcTest.getPosterior()*np.repeat(smcTest._proposal,m).reshape(n,m)
+weights /= sum(weights)
+
 plt.figure()
-for i in (-posterior[:,caliStep]).argsort()[:10]:
+for i in (-weights[:,caliStep]).argsort()[:10]:
 	plt.plot(smcTest._obsCtrlData,smcTest._yadeData[:,i,0].T/smcTest._yadeData[:,i,1].T,'-',label=', '.join([paramNames[j]+': '+'%g'%smcSamples[0][i,j] for j in range(len(paramNames))]))
 plt.plot(smcTest._obsCtrlData,smcTest._obsData[:,0].T/smcTest._obsData[:,1].T,'ko-',label='Test')
-means = np.sum(smcTest._yadeData.T*posterior,1)
+means = np.sum(smcTest._yadeData.T*weights,1)
 plt.plot(smcTest._obsCtrlData,means[0,:]/means[1,:],'b^-',label='Mean')
 plt.legend();plt.tight_layout();
 
 plt.figure()
-for i in (-posterior[:,caliStep]).argsort()[:10]:
+for i in (-weights[:,caliStep]).argsort()[:10]:
 	plt.plot(smcTest._obsCtrlData,smcTest._yadeData[:,i,2].T,'-',label=', '.join([paramNames[j]+': '+'%g'%smcSamples[0][i,j] for j in range(len(paramNames))]))
 plt.plot(smcTest._obsCtrlData,smcTest._obsData[:,2].T,'ko-',label='Test')
 plt.plot(smcTest._obsCtrlData,means[2,:],'b^-',label='Mean')
 plt.legend();plt.tight_layout(); plt.show()
 
-#~ compareStep = np.argmax(smcTest._obsData[:,1])
-compareStep = 55
 mcFiles = glob.glob(yadeDataDir+'/*txt'); mcFiles.sort()
 goodFiles = []; EValues = []; muValues = []; krValues = []; mu_rValues = []
-for i in (-posterior[:,compareStep]).argsort()[:3]:
+for i in (-weights[:,caliStep]).argsort()[:3]:
 	goodFiles.append(mcFiles[i]); 
 	EValues.append(smcSamples[0][i,0]); muValues.append(smcSamples[0][i,1])
 	krValues.append(smcSamples[0][i,2]); mu_rValues.append(smcSamples[0][i,3])
 keysAndData, obsCtrlData, _, _ = smcTest.getObsDataFromFile(obsDataFile,obsCtrl)
-macroParamUQ = plotExpAndNum('VAE3',paramNames,'%i'%iterNO,posterior,mcFiles,goodFiles,\
+macroParamUQ = plotExpAndNum('VAE3',paramNames,'%i'%iterNO,smcTest.getPosterior()[:,::(-1)**reverse],mcFiles,goodFiles,\
 	EValues,muValues,krValues,mu_rValues,\
 	keysAndData['p'],keysAndData['q'],keysAndData['n'],obsCtrlData*100,np.zeros(smcTest.getNumSteps()))

@@ -189,7 +189,7 @@ def plotExpAndNum(name, names, iterNO, weight, mcFiles, numFiles, label1, label2
 	enStdN = np.sqrt(enStdN)
 	enStdC = np.sqrt(enStdC)
 	
-	fig = plt.figure(figsize=(20/2.54,6/2.54))
+	fig = plt.figure(figsize=(20/2.54,5/2.54))
 	ax = fig.add_subplot(1, 2, 1)
 	lines = []; ls = ['-', '-.', ':','-']
 	for i in range(len(numFiles)):
@@ -227,8 +227,8 @@ def plotExpAndNum(name, names, iterNO, weight, mcFiles, numFiles, label1, label2
 	ax.set_ylim(ymin=0)
 	ax.grid(True)
 	
-	fig.legend(tuple(lines),tuple([r'$E_c$'+'=%.1f GPa, '%(label1[i]/1e9)+r'$\mu$'+'=%.3f\n'%label2[i]+r'$k_m$'+r'=%.3f$\times10^{-3}$ N$\cdot$mm'%(label3[i]/1e3)+'\n'+r'$\eta_m$'+'=%.3f'%label4[i] for i in range(len(numFiles))]+['Experimental data']+['SIS ensemble']),loc = 'right',ncol=1,handlelength=1.45,labelspacing=1.5,frameon=False)
-	fig.subplots_adjust(left=0.06, bottom=0.18, right=0.74, top=0.98, hspace=0, wspace=0.35)
+	fig.legend(tuple(lines),tuple([r'$E_c$'+'=%.1f GPa, '%(label1[i]/1e9)+r'$\mu$'+'=%.3f\n'%label2[i]+r'$k_m$'+r'=%.3f$\times10^{-3}$ N$\cdot$mm'%(label3[i]/1e3)+'\n'+r'$\eta_m$'+'=%.3f'%label4[i] for i in range(len(numFiles))]+['Experimental data']+['Posterior ensemble']),loc = 'right',ncol=1,handlelength=1.45,labelspacing=0.8,frameon=False)
+	fig.subplots_adjust(left=0.06, bottom=0.20, right=0.74, top=0.98, hspace=0, wspace=0.35)
 	plt.savefig('expAndDEM'+iterNO+'.pdf')
 	plt.show()
 	
@@ -305,16 +305,18 @@ def plotExpAndNumHalfPage(name, names, varsDir, numFiles, label1, label2, label3
 	#~ plt.savefig('expAndDEM'+varsDir[-2]+'.png',dpi=600); plt.savefig('expAndDEM'+varsDir[-2]+'.tif',dpi=600); plt.savefig('expAndDEM'+varsDir[-2]+'.pdf',dpi=600); 
 	plt.show()
 
-def microMacroPDF(name, step, pData, varsDir, weight, mcFiles):
+def microMacroPDF(name, step, pData, varsDir, weight, mcFiles, loadWeights=False):
 	import seaborn as sns
-	from resample import residual_resample
-	params = {'lines.linewidth': 1.5,'backend': 'ps','axes.labelsize': 20,'font.size': 20, 'legend.fontsize': 18,'xtick.labelsize': 18,'ytick.labelsize': 18,'text.usetex': True,'font.family': 'serif','legend.edgecolor': 'k','legend.fancybox':False}
+	from resample import unWeighted_resample
+	params = {'lines.linewidth': 1.5,'backend': 'ps','axes.labelsize': 18,'font.size': 18, 'legend.fontsize': 16,'xtick.labelsize': 16,'ytick.labelsize': 16,'text.usetex': True,'font.family': 'serif','legend.edgecolor': 'k','legend.fancybox':False}
 	matplotlib.rcParams['text.latex.preamble']=[r"\usepackage{amsmath}"]
 	matplotlib.rcParams.update(params)
 
 	# read in the original sampled parameter set
 	Xlabels = [r'$E_c$'+r' $(\mathrm{GPa})$', r'$\mu$', r'$k_m$'+r' $\mathrm{(10^{-6} N \cdot m)}$', r'$\eta_m$']
 	Ylabels = [r'$p$'+r' $(\mathrm{MPa})$', r'$q/p$', r'$n$', r'$C^*$']
+	if loadWeights: wPerPair = np.load(varsDir+'/wPerPair%i.npy'%step).item()
+	else: wPerPair = {}
 
 	# Monte Carlo sequence
 	nSample, numOfObs = weight.shape
@@ -323,7 +325,7 @@ def microMacroPDF(name, step, pData, varsDir, weight, mcFiles):
 		C,CN,K0,e_r11,e_r21,e_a1,n1,overlap,p1,q1 = np.genfromtxt(mcFiles[i]).transpose();
 		enQOIs[0,i] = p1[step]; enQOIs[1,i] = q1[step]/p1[step]; enQOIs[2,i] = n1[step]; enQOIs[3,i] = CN[step]
 	# importance resampling
-	ResampleIndices = residual_resample(weight[:,step])
+	ResampleIndices = unWeighted_resample(weight[:,step],nSample*10)
 	particles = np.copy(pData)
 	particles[0,:] /= 1e9; particles[2,:] /= 1e3
 	particles = particles[:,ResampleIndices]
@@ -331,7 +333,7 @@ def microMacroPDF(name, step, pData, varsDir, weight, mcFiles):
 
 	# plot figures
 	figNO = 0
-	fig = plt.figure(figsize=(18/2.54,18/2.54))
+	fig = plt.figure('microMacroUQ_iterPF'+varsDir[-1]+'_%i'%step, figsize=(12/2.54,12/2.54))
 	sns.set(style="ticks",rc=matplotlib.rcParams)
 	for i in range(4):
 		for j in range(4):
@@ -339,8 +341,18 @@ def microMacroPDF(name, step, pData, varsDir, weight, mcFiles):
 			# plot histograms at the initial and final steps
 			ax = fig.add_subplot(4, 4, figNO)
 			cmap = sns.dark_palette("black", as_cmap=True)
-			ax = sns.kdeplot(particles[j],enQOIs[i],cmap=cmap,kernel='gau',cut=3,n_levels=20,bw='silverman',linewidths=0.8); ax.grid()
-			ax.locator_params(axis='both',tight=True,nbins=3)
+			#~ ax = sns.kdeplot(,,cmap=cmap,kernel='gau',cut=3,n_levels=20,bw='silverman',linewidths=0.8); ax.grid()
+			if loadWeights:
+				minScore, maxScore, p0, w0 = wPerPair[figNO]
+			else:
+				data = np.array([particles[j],enQOIs[i]])
+				pMin = [min(particles[j]),min(enQOIs[i])]
+				pMax = [max(particles[j]),max(enQOIs[i])]
+				minScore, maxScore, p0, w0 = getLogWeightFromGMM(data.T,pMin,pMax,1e-2);
+				wPerPair[figNO] = (minScore, maxScore, p0, w0)
+			X,Y = p0
+			plt.contour(X, Y, w0, cmap=cmap,levels=np.linspace(minScore-abs(minScore)*0.1,maxScore,10)); plt.grid()
+			ax.locator_params(axis='both')
 			ax.tick_params(axis='both', which='both', bottom='off', top='off', labelbottom='off', right='off', left='off', labelleft='off')
 			if i == 3: 
 				ax.set_xlabel(Xlabels[j],size = params['font.size'],labelpad=10); ax.tick_params(axis='both', which='both', bottom='on', top='off', labelbottom='on', right='off', left='off', labelleft='off', labelsize = params['xtick.labelsize'])
@@ -376,12 +388,13 @@ def microMacroPDF(name, step, pData, varsDir, weight, mcFiles):
 				#~ if j == 3:
 					#~ ax.set_xticks([0.2,0.4,0.5])
 				#~ if i == 3: ax.set_yticks([5.14,5.18,5.22])
-
+	if not loadWeights: np.save(varsDir+'/wPerPair%i.npy'%step,wPerPair)
 	plt.tight_layout()
 	fig.subplots_adjust(left=0.165, bottom=0.12, right=0.98, top=0.99, hspace=0., wspace=0.)
-	plt.savefig('microMacroUQ_'+varsDir[-8:-1]+'_%i.pdf'%step,dpi=600); 
-	plt.show()
-
+	plt.savefig('microMacroUQ_iterPF'+varsDir[-1]+'_%i.pdf'%step,dpi=600);
+	#~ plt.show()
+	return wPerPair
+	
 # kde estimation
 def getPDF(pDataResampled,pMin,pMax):
 	kde = stats.gaussian_kde(pDataResampled)
@@ -392,7 +405,7 @@ def getPDF(pDataResampled,pMin,pMax):
 
 def macroMacroPDF(name, step, pData, varsDir, weight, mcFiles):
 	import seaborn as sns
-	from resample import residual_resample
+	from resample import unWeighted_resample
 	params = {'lines.linewidth': 1.5,'backend': 'ps','axes.labelsize': 20,'font.size': 20, 'legend.fontsize': 18,'xtick.labelsize': 18,'ytick.labelsize': 18,'text.usetex': True,'font.family': 'serif','legend.edgecolor': 'k','legend.fancybox':False}
 	matplotlib.rcParams['text.latex.preamble']=[r"\usepackage{amsmath}"]
 	matplotlib.rcParams.update(params)
@@ -407,7 +420,7 @@ def macroMacroPDF(name, step, pData, varsDir, weight, mcFiles):
 		C,CN,K0,e_r11,e_r21,e_a1,n1,overlap,p1,q1 = np.genfromtxt(mcFiles[i]).transpose();
 		enQOIs[0,i] = p1[step]; enQOIs[1,i] = q1[step]/p1[step]; enQOIs[2,i] = n1[step]; enQOIs[3,i] = CN[step]
 	# importance resampling
-	ResampleIndices = residual_resample(weight[:,step])
+	ResampleIndices = unWeighted_resample(weight[:,step],nSample*10)
 	sortedIndex = np.argsort(weight[:,step])
 	particles = np.copy(pData)
 	particles[0,:] /= 1e9; particles[2,:] /= 1e3

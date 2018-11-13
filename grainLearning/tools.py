@@ -54,7 +54,7 @@ def resampledParamsTable(keys,smcSamples,proposal,num=100,thread=4,maxNumCompone
 	smcNewSamples = smcSamples[ResampleIndices]
 	# regenerate new SMC samples from Bayesian gaussian mixture model
 	# details on http://scikit-learn.org/stable/modules/generated/sklearn.mixture.BayesianGaussianMixture.html
-	gmm = mixture.BayesianGaussianMixture(n_components=maxNumComponents,weight_concentration_prior=priorWeight,covariance_type='diag',tol = 1e-5,max_iter=int(1e5),n_init=100)
+	gmm = mixture.BayesianGaussianMixture(n_components=maxNumComponents,weight_concentration_prior=priorWeight,covariance_type='full',tol = 1e-5,max_iter=int(1e5),n_init=100)
 	gmm.fit(smcNewSamples)
 	smcNewSamples, _ = gmm.sample(num)
 	# write parameters in the format for Yade batch mode
@@ -66,6 +66,6 @@ def getGMMFromPosterior(smcSamples,posterior,priorWeight):
 	ResampleIndices = residual_resample(posterior)
 	smcNewSamples = smcSamples[ResampleIndices]
 	n_components = int(self._numSamples/5)
-	gmm = mixture.BayesianGaussianMixture(n_components=n_components,weight_concentration_prior=priorWeight,covariance_type='diag',tol = 1e-5,max_iter=int(1e5),n_init=100)
+	gmm = mixture.BayesianGaussianMixture(n_components=n_components,weight_concentration_prior=priorWeight,covariance_type='full',tol = 1e-5,max_iter=int(1e5),n_init=100)
 	gmm.fit(smcNewSamples)
 	return gmm	

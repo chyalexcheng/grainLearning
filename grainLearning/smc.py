@@ -65,7 +65,7 @@ class smc:
 		elif len(self.getSmcSamples()) == 2:
 			RuntimeError,"SMC samples already resampled..."
 		else:
-			gmm = mixture.BayesianGaussianMixture(n_components=self._maxNumComponents,weight_concentration_prior=self._priorWeight,covariance_type='diag',tol = 1e-5,max_iter=int(1e5),n_init=100)
+			gmm = mixture.BayesianGaussianMixture(n_components=self._maxNumComponents,weight_concentration_prior=self._priorWeight,covariance_type='full',tol = 1e-5,max_iter=int(1e5),n_init=100)
 			gmm.fit(self.getSmcSamples()[0])
 			proposal = np.exp(gmm.score_samples(self.getSmcSamples()[0]))
 		return proposal/sum(proposal)
@@ -269,7 +269,12 @@ class smc:
 			self._likelihood[:,i], self._posterior[:,i], \
 			self._ips[:,i], self._covs[:,i] = self.recursiveBayesian(i,self._proposal[:,i])
 
-	def writeBayeStatsToFile(self):
+	def writeBayeStatsToFile(self,reverse):
 		np.savetxt(self._yadeDataDir+'/particle.txt',self.getSmcSamples()[0])
-		np.savetxt(self._yadeDataDir+'/IP.txt',smcTest._ips.T)
-		np.savetxt(self._yadeDataDir+'/weight.txt',self.getPosterior())
+		np.savetxt(self._yadeDataDir+'/IP.txt',smcTest._ips[:,::(-1)**reverse].T)
+		np.savetxt(self._yadeDataDir+'/weight.txt',self.getPosterior()[:,::(-1)**reverse])
+
+#~ turns = [1,17,30,56,80,-1]
+#~ microMacroWeights = []
+#~ for i in turns:
+	#~ microMacroWeights.append(microMacroPDF('VAE3', i, smcTest.getSmcSamples()[0].T, smcTest._yadeDataDir, smcTest.getPosterior()[:,::(-1)**reverse], mcFiles, loadWeights=True))

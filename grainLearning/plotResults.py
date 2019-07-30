@@ -11,7 +11,7 @@ from os import system, listdir, path
 from matplotlib.offsetbox import AnchoredText
 from scipy import stats
 
-params = {'lines.linewidth': 1.5,'backend': 'ps','axes.labelsize': 12,'font.size': 12, 'legend.fontsize': 9,'xtick.labelsize': 9,'ytick.labelsize': 9,'text.usetex': True,'font.family': 'serif','legend.edgecolor': 'k','legend.fancybox':False}
+params = {'lines.linewidth': 1,'backend': 'ps','axes.labelsize': 12,'font.size': 12, 'legend.fontsize': 9,'xtick.labelsize': 9,'ytick.labelsize': 9,'text.usetex': True,'font.family': 'serif','legend.edgecolor': 'k','legend.fancybox':False}
 matplotlib.rcParams['text.latex.preamble']=[r"\usepackage{amsmath}"]
 matplotlib.rcParams.update(params)
 
@@ -313,7 +313,7 @@ def microMacroPDF(name, step, pData, varsDir, weight, mcFiles, loadWeights=False
 	matplotlib.rcParams.update(params)
 
 	# read in the original sampled parameter set
-	Xlabels = [r'$E_c$'+r' $(\mathrm{GPa})$', r'$\mu$', r'$k_m$'+r' $\mathrm{(10^{-6} N \cdot m)}$', r'$\eta_m$']
+	Xlabels = [r'$E_c$'+r' $(\mathrm{GPa})$', r'$\mu$', r'$k_m$'+r' $(\mu\mathrm{Nm)}$', r'$\eta_m$']
 	Ylabels = [r'$p$'+r' $(\mathrm{MPa})$', r'$q/p$', r'$n$', r'$C^*$']
 	if loadWeights: wPerPair = np.load(varsDir+'/wPerPair%i.npy'%step).item()
 	else: wPerPair = {}
@@ -330,16 +330,21 @@ def microMacroPDF(name, step, pData, varsDir, weight, mcFiles, loadWeights=False
 	particles[0,:] /= 1e9; particles[2,:] /= 1e3
 	particles = particles[:,ResampleIndices]
 	enQOIs = enQOIs[:,ResampleIndices]
+	# remove porosity as QOI if iterNO > 0
+	if 'iterPF0' not in mcFiles[0]:
+		enQOIs = np.vstack([enQOIs[:2,:],enQOIs[-1,:]])
+		for i in [9,10,11,12]: wPerPair[i]=wPerPair[i+4]
+		Ylabels = [r'$p$'+r' $(\mathrm{MPa})$', r'$q/p$', r'$C^*$']
 
 	# plot figures
 	figNO = 0
 	fig = plt.figure('microMacroUQ_iterPF'+varsDir[-1]+'_%i'%step, figsize=(12/2.54,12/2.54))
 	sns.set(style="ticks",rc=matplotlib.rcParams)
-	for i in range(4):
-		for j in range(4):
+	for i in range(enQOIs.shape[0]):
+		for j in range(particles.shape[0]):
 			figNO += 1
 			# plot histograms at the initial and final steps
-			ax = fig.add_subplot(4, 4, figNO)
+			ax = fig.add_subplot(enQOIs.shape[0],4,figNO)
 			cmap = sns.dark_palette("black", as_cmap=True)
 			#~ ax = sns.kdeplot(,,cmap=cmap,kernel='gau',cut=3,n_levels=20,bw='silverman',linewidths=0.8); ax.grid()
 			if loadWeights:
@@ -351,46 +356,25 @@ def microMacroPDF(name, step, pData, varsDir, weight, mcFiles, loadWeights=False
 				minScore, maxScore, p0, w0 = getLogWeightFromGMM(data.T,pMin,pMax,1e-2);
 				wPerPair[figNO] = (minScore, maxScore, p0, w0)
 			X,Y = p0
-			plt.contour(X, Y, w0, cmap=cmap,levels=np.linspace(minScore-abs(minScore)*0.1,maxScore,10)); plt.grid()
-			ax.locator_params(axis='both')
+			plt.contour(X, Y, w0, cmap=cmap,levels=np.linspace(minScore-abs(minScore)*0.1,maxScore,10),linewidths=0.7); plt.grid()
+			ax.locator_params(axis='both',nbins=2)
 			ax.tick_params(axis='both', which='both', bottom='off', top='off', labelbottom='off', right='off', left='off', labelleft='off')
-			if i == 3: 
+			if i == enQOIs.shape[0]-1: 
 				ax.set_xlabel(Xlabels[j],size = params['font.size'],labelpad=10); ax.tick_params(axis='both', which='both', bottom='on', top='off', labelbottom='on', right='off', left='off', labelleft='off', labelsize = params['xtick.labelsize'])
 			if j == 0: 
 				ax.set_ylabel(Ylabels[i],size = params['font.size'],labelpad=10); ax.tick_params(axis='both', which='both', bottom='off', top='off', labelbottom='off', right='off', left='on', labelleft='on', labelsize = params['xtick.labelsize'])
-			if i==3 and j==0: 
+			if i==enQOIs.shape[0]-1 and j==0: 
 				ax.tick_params(axis='both', which='both', bottom='on', top='off', labelbottom='on', right='off', left='on', labelleft='on', labelsize = params['xtick.labelsize'])
-			if i!=3 and j!=0:
+			if i!=enQOIs.shape[0]-1 and j!=0:
 				ax.tick_params(axis='both', which='both', bottom='off', top='off', labelbottom='off', right='off', left='off', labelleft='off')
-			if step == 17:
-				#~ if j == 0: ax.set_xlim(128.5)
-				#~ if i == 0: ax.set_ylim(20.6,21.8)
-				#~ if j == 1:
-					#~ ax.set_xticks([0.33,0.36,0.39])
-				#~ if i == 1: ax.set_yticks([0.36,0.37])
-				if j == 2:
-					ax.set_xticks([0,4,8])
-				#~ if i == 2:
-					#~ ax.set_yticks([0.3835,0.384])
-				#~ if j == 3:
-					#~ ax.set_xticks([0.25,0.5])
-				#~ if i == 3: ax.set_yticks([0.3,0.4])
-			if step == 55:
-				#~ if j == 0: ax.set_xlim(120)
-				#~ if i == 0: ax.set_ylim(18.2)
-				#~ if j == 1:
-					#~ ax.set_xticks([0.34,0.37,0.4]);ax.set_xlim(xmax=0.4)
-				#~ if i == 1: ax.set_yticks([0.36,0.37])
-				if j == 2:
-					ax.set_xticks([0,4,8])
-				#~ if i == 2:
-					#~ ax.set_yticks([0.383,0.384]); ax.set_ylim(0.3828)
-				#~ if j == 3:
-					#~ ax.set_xticks([0.2,0.4,0.5])
-				#~ if i == 3: ax.set_yticks([5.14,5.18,5.22])
+			xMin, xMax = ax.get_xlim()
+			yMin, yMax = ax.get_ylim()
+			dx = (xMax-xMin)/4; dy = (yMax-yMin)/4;
+			ax.set_xticks(np.round([xMin+dx,xMax-dx],int(np.ceil(-np.log10(dx)))))
+			ax.set_yticks(np.round([yMin+dy,yMax-dy],int(np.ceil(-np.log10(dy)))))
 	if not loadWeights: np.save(varsDir+'/wPerPair%i.npy'%step,wPerPair)
 	plt.tight_layout()
-	fig.subplots_adjust(left=0.165, bottom=0.12, right=0.98, top=0.99, hspace=0., wspace=0.)
+	fig.subplots_adjust(left=0.21, bottom=0.16, right=0.99, top=0.99, hspace=0., wspace=0.)
 	plt.savefig('microMacroUQ_iterPF'+varsDir[-1]+'_%i.pdf'%step,dpi=600);
 	#~ plt.show()
 	return wPerPair

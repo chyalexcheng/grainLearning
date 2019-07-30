@@ -12,7 +12,8 @@ inputParams['iterPF3'] = [0.00174,[1,1,0.02]]
 
 # normalized variance parameter
 yadeFile = 'mcTriax_e.py'
-yadeDataDir = 'iterPF0'
+iterNO = int(raw_input("Skip DEM simulations for demonstration. Which iteration to look at?\niterNO (e.g., 0, 1, 2, 3): "))
+yadeDataDir = 'iterPF%i'%iterNO
 sigma = inputParams[yadeDataDir][0]; ess = 1.0
 obsWeights = inputParams[yadeDataDir][1]
 obsDataFile = 'obsdata.dat'
@@ -22,7 +23,6 @@ obsCtrl = 'e_a'
 paramNames = ['E', 'mu', 'k_r','mu_r']
 paramRanges = {'E':[100e9,200e9],'mu':[0.3,0.5],'k_r':[0,1e4],'mu_r':[0.1,0.5]}
 numSamples = 100; maxNumComponents = int(numSamples/10); priorWeight = 1e-2
-iterNO = int(yadeDataDir[-1])
 sampleDataFile = 'smcTablePF%i.txt'%iterNO
 proposalFile = 'gmm_'+yadeDataDir[:-1]+'%i.pkl'%(iterNO-1) if iterNO != 0 else ''
 reverse = True if iterNO%2==1 else False
@@ -40,8 +40,9 @@ ess = smcTest.getEffectiveSampleSize()[-1]
 print 'Effective sample size: %f'%ess
 
 # plot time evolution of effective sample size
-plt.figure();plt.plot(smcTest.getEffectiveSampleSize());
-plt.figure();plt.plot(smcTest.getSmcSamples()[0][:,0],smcTest._proposal,'o',label='proposal'); plt.show()
+plt.figure();plt.plot(smcTest.getEffectiveSampleSize());plt.xlabel('time');plt.ylabel('Effective sample size');
+plt.figure();plt.plot(smcTest.getSmcSamples()[0][:,0],smcTest._proposal,'o')
+plt.xlabel(paramNames[0]);plt.ylabel('Proposal density');plt.show()
 
 # plot means of PDF over the parameters
 microParamUQ = plotIPs(paramNames,ips[:,::(-1)**reverse].T,covs[:,::(-1)**reverse].T,smcTest.getNumSteps(),posterior,smcSamples[0])
@@ -53,8 +54,8 @@ gmm, maxNumComponents = smcTest.resampleParams(caliStep=caliStep)
 # plot initial and resampled parameters
 plotAllSamples(smcTest.getSmcSamples(),smcTest.getNames())
 
-# save trained Gaussian mixture model
-pickle.dump(gmm, open(yadeDataDir+'/gmm_'+yadeDataDir+'.pkl', 'wb'))
+#~ # save trained Gaussian mixture model
+#~ pickle.dump(gmm, open(yadeDataDir+'/gmm_'+yadeDataDir+'.pkl', 'wb'))
 
 # get top three realizations with high probabilities
 m = smcTest.getNumSteps(); n = smcTest._numSamples

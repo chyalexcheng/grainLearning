@@ -95,7 +95,7 @@ def runCollision(kwargs):
 	if 'mu' not in params.keys(): raise RuntimeError,"Friction coefficient mu not defined..."
 	else: table.mu = params['mu']
 	if 'safe' not in params.keys(): raise RuntimeError,"Timestepping safety coefficient not defined..."
-	else: table.safe = params['safe']
+	else: table.safe = abs(params['safe'])
 	print 'E: %s; nu: %s; mu: %s; safe: %s'%(table.E,table.nu,table.mu,table.safe)
 	
 	# run DEM simulation

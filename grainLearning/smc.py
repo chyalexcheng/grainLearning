@@ -7,7 +7,7 @@ import numpy as np
 import pickle
 from tools import * 
 from sklearn import mixture
-from collision import *
+from collision import createScene, runCollision, addSimData
 from itertools import repeat
 
 class smc:
@@ -17,6 +17,7 @@ class smc:
 		# simulation file name (_.py)
 		self._yadeVersion = yadeVersion
 		self._name = yadeFile
+		self._obsDataFile = obsDataFile
 		self._yadeDataDir = yadeDataDir
 		self._numParams = 0
 		self._numSamples = 0
@@ -43,13 +44,15 @@ class smc:
 		if not self._standAlone:
 			self.__pool = None; self.__scenes = None
 
-	def initialize(self, paramNames, paramRanges, numSamples, maxNumComponents, priorWeight, sampleDataFile='', threads=4, loadSamples=False, proposalFile=''):
+	def initialize(self, paramNames, paramRanges, numSamples, maxNumComponents, priorWeight, sampleDataFile='', threads=4, loadSamples=False, proposalFile='',scaleWithMax=False):
 		self._paramNames = paramNames
 		self._maxNumComponents = maxNumComponents
 		self._priorWeight = priorWeight
+		self._scaleWithMax = scaleWithMax
 		# initialize sample uniformly if no parameter table available
-		if loadSamples: self.getParamsFromTable(sampleDataFile, paramNames, paramRanges)
-		else: self.getInitParams(paramRanges, numSamples, threads)
+		if len(self._smcSamples) == 0:
+			if loadSamples: self.getParamsFromTable(sampleDataFile, paramNames, paramRanges)
+			else: self.getInitParams(paramRanges, numSamples, threads)
 		# simulation data
 		self._yadeData = np.zeros([self._numSteps, self._numSamples, self._numObs])
 		# identified optimal parameters
@@ -60,35 +63,35 @@ class smc:
 		self._proposal = np.ones([self._numSamples])/self._numSamples
 		if proposalFile != '':
 			# load proposal density from file
-			self._proposal = self.loadProposalFromFile(proposalFile)
+			self._proposal = self.loadProposalFromFile(proposalFile,-1)
 		# if run Bayesian filtering on the fly
 		if not self._standAlone:
 			self.__pool = get_pool(mpi=False,threads=self._numSamples)
 			self.__scenes = self.__pool.map(createScene,range(self._numSamples))
 			#~ self.__scenes = createScene(0)
 
-	def getProposalFromSamples(self):
+	def getProposalFromSamples(self,iterNO):
 		if len(self.getSmcSamples()) == 0:
 			RuntimeError,"SMC samples not yet loaded..."
-		elif len(self.getSmcSamples()) == 2:
-			RuntimeError,"SMC samples already resampled..."
 		else:
 			gmm = mixture.BayesianGaussianMixture(n_components=self._maxNumComponents,weight_concentration_prior=self._priorWeight,covariance_type='full',tol = 1e-5,max_iter=int(1e5),n_init=100)
-			gmm.fit(self.getSmcSamples()[0])
-			proposal = np.exp(gmm.score_samples(self.getSmcSamples()[0]))
+			gmm.fit(self.getSmcSamples()[iterNO])
+			proposal = np.exp(gmm.score_samples(self.getSmcSamples()[iterNO]))
 		return proposal/sum(proposal)
 
-	def loadProposalFromFile(self,proposalFile):
+	def loadProposalFromFile(self,proposalFile,iterNO):
 		if len(self.getSmcSamples()) == 0:
 			RuntimeError,"SMC samples not yet loaded..."
-		elif len(self.getSmcSamples()) == 2:
-			RuntimeError,"SMC samples already resampled..."
 		else:
 			proposalModel = pickle.load(open(proposalFile, 'rb'))
-			proposal = np.exp(proposalModel.score_samples(self.getSmcSamples()[0]))
+			proposal = np.exp(proposalModel.score_samples(self.getSmcSamples()[iterNO]))
 		return proposal/sum(proposal)
 
 	def run(self,skipDEM=False,iterNO=-1,reverse=False,threads=1):
+		# if iterating, reload observation data
+		if iterNO > 0:
+			self._obsData, self._obsCtrlData, self._numObs, self._numSteps = \
+				self.getObsDataFromFile(self._obsDataFile,self._obsCtrl)
 		# if simulation data already exist before Bayesian filtering
 		if self._standAlone:
 			if not skipDEM:
@@ -121,7 +124,7 @@ class smc:
 			for i in range(self._numSamples):
 				paramsForEach = {}
 				for j, name in enumerate(self._paramNames):
-					paramsForEach[name] = self._smcSamples[-1][i][j]
+					paramsForEach[name] = self._smcSamples[iterNO][i][j]
 				paramsList.append(paramsForEach)
 			# pass parameter list to simulation instances
 			simData = self.__pool.map(runCollision,zip(self.__scenes,paramsList,repeat(self._obsCtrlData)))
@@ -202,8 +205,8 @@ class smc:
 		# scale observation data with normalized variance parameter to get covariance matrix
 		for i in xrange(self._numObs):
 			# give smaller weights for better agreement
-			#~ Sigma[i,i] = self._sigma*weights[i]*self._obsData[caliStep,i]**2
-			Sigma[i,i] = self._sigma*weights[i]*max(self._obsData[:,i])**2
+			if self._scaleWithMax: Sigma[i,i] = self._sigma*weights[i]*max(self._obsData[:,i])**2
+			else: Sigma[i,i] = self._sigma*weights[i]*self._obsData[caliStep,i]**2
 		return Sigma
 
 	def getInitParams(self, paramRanges, numSamples, threads):

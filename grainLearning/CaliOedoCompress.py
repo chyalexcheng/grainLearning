@@ -48,7 +48,7 @@ reverse = True if iterNO%2==1 else False
 # initialize the problem
 smcTest = smc(sigma,obsWeights,yadeFile,yadeDataDir,obsDataFile,obsCtrl)
 smcTest.initialize(paramNames,paramRanges,numSamples,maxNumComponents,priorWeight,\
-	sampleDataFile=sampleDataFile,loadSamples=True,proposalFile=proposalFile)
+	sampleDataFile=sampleDataFile,loadSamples=True,proposalFile=proposalFile,scaleWithMax=False)
 
 # run sequential Monte Carlo; return means and coefficients of variance of PDF over the parameters
 ips, covs = smcTest.run(skipDEM=True,reverse=reverse)
@@ -81,7 +81,7 @@ plotAllSamples(smcTest.getSmcSamples(),smcTest.getNames())
 # get top three realizations with high probabilities
 m = smcTest.getNumSteps(); n = smcTest._numSamples
 weights = smcTest.getPosterior()*np.repeat(smcTest._proposal,m).reshape(n,m)
-weights /= sum(weights); mcFiles = glob.glob(yadeDataDir+'/*txt'); mcFiles.sort()
+weights /= sum(weights); mcFiles = glob.glob(yadeDataDir+'/*_*_*_*txt'); mcFiles.sort()
 goodFiles = []; EValues = []; muValues = []; krValues = []; mu_rValues = []
 for i in (-weights[:,caliStep]).argsort()[:3]:
 	goodFiles.append(mcFiles[i]); 

@@ -1,4 +1,4 @@
-""" Author: Hongyang Cheng <chyalexcheng@gmail>
+""" Author: Hongyang Cheng <chyalexcheng@gmail.com>
 	 An interface to generate parameter table with Halton sequence
 	 (requires ghalton library: https://pypi.python.org/pypi/ghalton)
 """
@@ -9,11 +9,11 @@ import numpy as np
 from resample import *
 from sklearn import mixture
 
-def initParamsTable(keys,maxs,mins,num=100,thread=4,tableName='smcTable.txt'):
+def initParamsTable(keys,maxs,mins,num=100,threads=4,tableName='smcTable.txt'):
 	"""
    :param dim: type integer, number of parameters
    :param num: type integer, number of sampling points for Monte Carlo Simulation
-   :param thread: type integer, number of thread for each parallel simulation
+   :param threads: type integer, number of thread for each parallel simulation
    :param maxs: type tuples, maximums ranges of parameters
    :param mins: type tuples, minimums ranges of parameters
    :param keys: type strings, names of parameters
@@ -27,7 +27,7 @@ def initParamsTable(keys,maxs,mins,num=100,thread=4,tableName='smcTable.txt'):
 			std  = .5*(maxs[i]-mins[i])
 			table[j][i] = mean+(table[j][i]-.5)*2*std
 	# write parameters in the format for Yade batch mode
-	writeToTable(tableName,table,dim,num,thread,keys)
+	writeToTable(tableName,table,dim,num,threads,keys)
 	return table, tableName
 	
 def writeToTable(tableName,table,dim,num,thread,keys):
@@ -69,3 +69,17 @@ def getGMMFromPosterior(smcSamples,posterior,priorWeight):
 	gmm = mixture.BayesianGaussianMixture(n_components=n_components,weight_concentration_prior=priorWeight,covariance_type='full',tol = 1e-5,max_iter=int(1e5),n_init=100)
 	gmm.fit(smcNewSamples)
 	return gmm	
+
+def get_pool(mpi=False,threads=1):
+   if mpi: # using MPI
+      from mpipool import MPIPool
+      pool = MPIPool()
+      pool.start()
+      if not pool.is_master():
+         sys.exit(0)
+   elif threads>1: # using multiprocessing
+      from multiprocessing import Pool
+      pool = Pool(processes=threads,maxtasksperchild=10)
+   else:
+      raise RuntimeError,"Wrong arguments: either mpi=True or threads>1."
+   return pool

@@ -24,33 +24,26 @@ readParamsFromTable(
    key = 0
 )
 
+# glass bead parameters (units: ug->1e-9kg; mm->1e-3m; ms->1e-3s)
+lenScale = 1e3                   # lenth in mm <- 1e-3 m
+sigScale = 1                     # Stress in ug/(mm*ms^2) <- Pa
+rhoScale = 1                     # Density in ug/mm^3 <- kg/m^3
+
 from yade.params import table
-from yade import plot
 import numpy as np
 
 # function to save simulation data and stop simulation
 def addSimData():
 	inter = O.interactions[0,1]
-	plot.addData(f=inter.phys.normalForce.norm(), u=inter.geom.penetrationDepth)
-	# stop simulation is normal force is too big
-	if inter.phys.normalForce.norm() > 1e9: O.pause()
+	u = inter.geom.penetrationDepth
+	if u > obsCtrlData[-1]:
+		simData['u'].append(u)
+		simData['f'].append(inter.phys.normalForce.norm())
+		obsCtrlData.pop()
+	if obsCtrlData == []: O.pause()
 
 # define material parameters
-def setParams(**kwargs):
-	# glass bead parameters (units: ug->1e-9kg; mm->1e-3m; ms->1e-3s)
-	lenScale = 1e3                   # lenth in mm <- 1e-3 m
-	sigScale = 1                     # Stress in ug/(mm*ms^2) <- Pa
-	rhoScale = 1                     # Density in ug/mm^3 <- kg/m^3
-	if 'rho' not in kwargs: raise RuntimeError,"Density rho not defined..."
-	else: table.rho = kwargs['rho']*rhoScale
-	if 'E' not in kwargs: raise RuntimeError,"Density E not defined..."
-	else: table.E = kwargs['E']*sigScale
-	if 'nu' not in kwargs: raise RuntimeError,"Poisson's ratio nu not defined..."
-	else: table.nu = kwargs['nu']
-	if 'mu' not in kwargs: raise RuntimeError,"Friction coefficient mu not defined..."
-	else: table.mu = kwargs['mu']
-	if 'safe' not in kwargs: raise RuntimeError,"Timestepping safety coefficient not defined..."
-	else: table.safe = kwargs['safe']
+def setParams():
 	# create materials
 	O.materials.append(FrictMat(young=table.E,poisson=table.nu,frictionAngle=atan(table.mu),density=table.rho))
 
@@ -67,16 +60,51 @@ def setInitialCondition():
 	# move particle 1
 	O.bodies[1].state.vel = Vector3(0,0,-0.01)
 
-# define engines
-O.engines=[
-	ForceResetter(),
-	InsertionSortCollider([Bo1_Sphere_Aabb()]),
-	InteractionLoop(
-		[Ig2_Sphere_Sphere_ScGeom()],
-		[Ip2_FrictMat_FrictMat_MindlinPhys()],
-		[Law2_ScGeom_MindlinPhys_Mindlin()]
-	),
-	NewtonIntegrator(damping=0.0,label='newton'),
-	# needs to add module collision before function name
-	PyRunner(command='addSimData()',iterPeriod=1000)
-]
+# define engines (TODO: wrapp everthing within a class)
+def createScene(ID=-1):
+	O.engines=[
+		ForceResetter(),
+		InsertionSortCollider([Bo1_Sphere_Aabb()]),
+		InteractionLoop(
+			[Ig2_Sphere_Sphere_ScGeom()],
+			[Ip2_FrictMat_FrictMat_MindlinPhys()],
+			[Law2_ScGeom_MindlinPhys_Mindlin()]
+		),
+		NewtonIntegrator(damping=0.0,label='newton'),
+		# needs to add module collision before function name
+		PyRunner(command='addSimData()',iterPeriod=100)
+	]
+	O.tags['id']=str(ID)
+	return O.sceneToString()
+
+def runCollision(kwargs):
+	# get simulation object
+	simObj = kwargs[0]
+	# get parameter list
+	params = kwargs[1]
+	# get data for simulation control 
+	global obsCtrlData, simData
+	obsCtrlData = list(kwargs[2]); obsCtrlData.reverse()
+	
+	# read in things need to be randomized
+	if 'rho' not in params.keys(): print "use default density..."
+	if 'E' not in params.keys(): raise RuntimeError,"Density E not defined..."
+	else: table.E = params['E']*sigScale
+	if 'nu' not in params.keys(): raise RuntimeError,"Poisson's ratio nu not defined..."
+	else: table.nu = params['nu']
+	if 'mu' not in params.keys(): raise RuntimeError,"Friction coefficient mu not defined..."
+	else: table.mu = params['mu']
+	if 'safe' not in params.keys(): raise RuntimeError,"Timestepping safety coefficient not defined..."
+	else: table.safe = params['safe']
+	print 'E: %s; nu: %s; mu: %s; safe: %s'%(table.E,table.nu,table.mu,table.safe)
+	
+	# run DEM simulation
+	O.stringToScene(simObj)
+	setParams()
+	addParticles()
+	setInitialCondition()
+	simData = {'u':[],'f':[]}
+	O.run(int(1e10),True)
+	
+	# return simulation data
+	return simData

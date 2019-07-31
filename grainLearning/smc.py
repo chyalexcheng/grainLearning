@@ -2,18 +2,18 @@
 	(https://en.wikipedia.org/wiki/Particle_filter)
 """
 
-import sys
-import os
-import glob
+import sys, os, glob
 import numpy as np
 import pickle
 from tools import * 
 from sklearn import mixture
+from collision import *
+from itertools import repeat
 
 class smc:
 	"""
 	"""
-	def __init__(self, sigma, obsWeights, yadeFile='', yadeDataDir='', obsDataFile='', obsCtrl='', yadeVersion='yade-batch', standAlone=True):
+	def __init__(self, sigma, obsWeights, yadeFile='', yadeDataDir='', obsDataFile='', obsCtrl='', simDataNames='', yadeVersion='yade-batch', standAlone=True):
 		# simulation file name (_.py)
 		self._yadeVersion = yadeVersion
 		self._name = yadeFile
@@ -25,6 +25,8 @@ class smc:
 		# normalized variance parameter
 		self._sigma = sigma
 		self._obsWeights = obsWeights
+		self._obsCtrl = obsCtrl
+		self._simDataNames = simDataNames
 		self._obsData, self._obsCtrlData, self._numObs, self._numSteps = self.getObsDataFromFile(obsDataFile,obsCtrl)
 		# assume all measurements are independent
 		self._obsMatrix = np.identity(self._numObs)
@@ -37,27 +39,33 @@ class smc:
 		# hyperparameters of Bayesian Gaussian mixture
 		self._maxNumComponents = 0
 		self._priorWeight = 0
+		# if run Bayesian filtering on the fly
+		if not self._standAlone:
+			self.__pool = None; self.__scenes = None
 
-	def initialize(self, paramNames, paramRanges, numSamples, maxNumComponents, priorWeight, sampleDataFile='', thread=4, loadSamples=False, proposalFile=''):
+	def initialize(self, paramNames, paramRanges, numSamples, maxNumComponents, priorWeight, sampleDataFile='', threads=4, loadSamples=False, proposalFile=''):
 		self._paramNames = paramNames
 		self._maxNumComponents = maxNumComponents
 		self._priorWeight = priorWeight
+		# initialize sample uniformly if no parameter table available
 		if loadSamples: self.getParamsFromTable(sampleDataFile, paramNames, paramRanges)
-		else: self.getInitParams(paramRanges, numSamples, thread)
-		if self._standAlone:
-			# simulation data
-			self._yadeData = np.zeros([self._numSteps, self._numSamples, self._numObs])
-			# identified optimal parameters
-			self._ips = np.zeros([self._numParams, self._numSteps])
-			self._covs = np.zeros([self._numParams, self._numSteps])
-			self._posterior = np.zeros([self._numSamples, self._numSteps])
-			self._likelihood = np.zeros([self._numSamples, self._numSteps])
-			self._proposal = np.ones([self._numSamples])/self._numSamples
-			if proposalFile != '':
-				# load proposal density from file
-				self._proposal = self.loadProposalFromFile(proposalFile)
-				#~ # estimate proposal density from samples
-				#~ self._proposal = self.getProposalFromSamples()
+		else: self.getInitParams(paramRanges, numSamples, threads)
+		# simulation data
+		self._yadeData = np.zeros([self._numSteps, self._numSamples, self._numObs])
+		# identified optimal parameters
+		self._ips = np.zeros([self._numParams, self._numSteps])
+		self._covs = np.zeros([self._numParams, self._numSteps])
+		self._posterior = np.zeros([self._numSamples, self._numSteps])
+		self._likelihood = np.zeros([self._numSamples, self._numSteps])
+		self._proposal = np.ones([self._numSamples])/self._numSamples
+		if proposalFile != '':
+			# load proposal density from file
+			self._proposal = self.loadProposalFromFile(proposalFile)
+		# if run Bayesian filtering on the fly
+		if not self._standAlone:
+			self.__pool = get_pool(mpi=False,threads=self._numSamples)
+			self.__scenes = self.__pool.map(createScene,range(self._numSamples))
+			#~ self.__scenes = createScene(0)
 
 	def getProposalFromSamples(self):
 		if len(self.getSmcSamples()) == 0:
@@ -80,7 +88,8 @@ class smc:
 			proposal = np.exp(proposalModel.score_samples(self.getSmcSamples()[0]))
 		return proposal/sum(proposal)
 
-	def run(self,skipDEM=False,iterNO=-1,reverse=False):
+	def run(self,skipDEM=False,iterNO=-1,reverse=False,threads=1):
+		# if simulation data already exist before Bayesian filtering
 		if self._standAlone:
 			if not skipDEM:
 				# run DEM simulations in batch. 
@@ -105,9 +114,35 @@ class smc:
 			for i in xrange(self._numSteps):
 				self._likelihood[:,i], self._posterior[:,i], \
 				self._ips[:,i], self._covs[:,i] = self.recursiveBayesian(i)
+		# if run Bayesian filtering on the fly (FIXME: importing simulation should be done in the main script)
 		else:
-			raise RuntimeError,"Calling Yade within python is not yet supported..."
-		return self._ips, self._covs
+			# parameter list
+			paramsList = []
+			for i in range(self._numSamples):
+				paramsForEach = {}
+				for j, name in enumerate(self._paramNames):
+					paramsForEach[name] = self._smcSamples[-1][i][j]
+				paramsList.append(paramsForEach)
+			# pass parameter list to simulation instances
+			simData = self.__pool.map(runCollision,zip(self.__scenes,paramsList,repeat(self._obsCtrlData)))
+			self.__pool.close()
+			#~ data = runCollision([self._smc__scenes,paramsList[0]])			
+			# get observation and simulation data ready for Bayesian filtering
+			self._obsData = np.array([self._obsData[name] for name in self._simDataNames]).transpose()
+			for i, data in enumerate(simData):
+				for j, name in enumerate(self._simDataNames):
+					#~ print len(data[name]),i
+					self._yadeData[:,i,j] = data[name]
+					#~ print np.linalg.norm(data[self._obsCtrl]-self._obsCtrlData)
+			# loop over data assimilation steps
+			if reverse:
+				self._obsCtrlData = self._obsCtrlData[::-1]
+				self._obsData = self._obsData[::-1,:]
+				self._yadeData = self._yadeData[::-1,:,:]		
+			for i in xrange(self._numSteps):
+				self._likelihood[:,i], self._posterior[:,i], \
+				self._ips[:,i], self._covs[:,i] = self.recursiveBayesian(i)
+  		return self._ips, self._covs
 
 	def getYadeData(self, yadeDataFiles):
 		if 0 in self._yadeData.shape: raise RuntimeError,"number of Observations, samples or steps undefined!"
@@ -166,23 +201,22 @@ class smc:
 		Sigma = np.zeros([self._numObs,self._numObs])
 		# scale observation data with normalized variance parameter to get covariance matrix
 		for i in xrange(self._numObs):
-			# give smaller weights for better agreement  
-			Sigma[i,i] = self._sigma*weights[i]*self._obsData[caliStep,i]**2
+			# give smaller weights for better agreement
+			#~ Sigma[i,i] = self._sigma*weights[i]*self._obsData[caliStep,i]**2
+			Sigma[i,i] = self._sigma*weights[i]*max(self._obsData[:,i])**2
 		return Sigma
 
-	def getInitParams(self, paramRanges, numSamples, thread):
-		if not isinstance(paramRanges,dict): raise RuntimeError,"paramRanges should be a dictionary"
+	def getInitParams(self, paramRanges, numSamples, threads):
 		self._numSamples = numSamples
 		self._paramRanges = paramRanges
 		self._numParams = len(paramRanges)
 		names = self.getNames(); mins = []; maxs = []
-		minsAndMix = paramRanges.values()
-		for i,_ in enumerate(names):
-			mins.append(min(minsAndMix[i]))
-			maxs.append(max(minsAndMix[i]))
+		minsAndMix = np.array(paramRanges)
+		mins = minsAndMix[:,0]
+		maxs = minsAndMix[:,1]
 		print 'Parameters to be identified:', ", ".join(names), '\nMins:', mins, '\nMaxs:', maxs
-		initSmcSamples, initSampleDataFile = initParamsTable(keys=names,maxs=maxs,mins=mins,num=numSamples,thread=thread)
-		self._smcSamples.append(initSmcSamples)
+		initSmcSamples, initSampleDataFile = initParamsTable(keys=names,maxs=maxs,mins=mins,num=numSamples,threads=threads)
+		self._smcSamples.append(np.array(initSmcSamples))
 		self._sampleDataFiles.append(initSampleDataFile)
 
 	def getParamsFromTable(self, sampleDataFile, names, paramRanges, iterNO=-1):
@@ -246,7 +280,7 @@ class smc:
 		return self._paramNames
 	
 	def getObsData(self):
-		return np.hstack((self._obsCtrlData.reshape(self._numSamples,1),self._obsData))
+		return np.hstack((self._obsCtrlData.reshape(self._numSteps,1),self._obsData))
 
 	def trainGMMinTime(self,maxNumComponents,iterNO=0):
 		gmmList = []

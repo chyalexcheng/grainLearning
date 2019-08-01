@@ -16,7 +16,7 @@ import matplotlib.pylab as plt
 # user-defined parameter: normalized covariance
 sigma = float(raw_input("Initialize the normalized covariance as : "))
 # target effective sample size
-ess = 0.2
+ess = 0.3
 obsWeights = [1.0]
 # number of iterations
 numOfIters = 4
@@ -35,9 +35,9 @@ paramNames = ['E', 'nu', 'mu', 'safe']
 # use uniform sampling within certin window if we are at the first iteration
 paramRanges = [[10e9,100e9],[0.1,0.5],[0,1.0],[0.01,1.0]]
 # set number of samples per iteration
-numSamples = 32
+numSamples = 12
 # set the maximum Gaussian components and prior weight
-maxNumComponents = int(numSamples/10); priorWeight = 1e-2
+maxNumComponents = int(numSamples/10); priorWeight = 1./maxNumComponents
 
 # write synthetic observation data to file
 obsDataFile = open('collisionObs.dat','w')

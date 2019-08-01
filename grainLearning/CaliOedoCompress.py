@@ -46,7 +46,7 @@ proposalFile = 'gmm_'+yadeDataDir[:-1]+'%i.pkl'%(iterNO-1) if iterNO != 0 else '
 reverse = True if iterNO%2==1 else False
 
 # initialize the problem
-smcTest = smc(sigma,obsWeights,yadeFile,yadeDataDir,obsDataFile,obsCtrl)
+smcTest = smc(sigma,ess,obsWeights,yadeFile,yadeDataDir,obsDataFile,obsCtrl)
 smcTest.initialize(paramNames,paramRanges,numSamples,maxNumComponents,priorWeight,\
 	sampleDataFile=sampleDataFile,loadSamples=True,proposalFile=proposalFile,scaleWithMax=False)
 

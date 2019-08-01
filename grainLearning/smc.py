@@ -13,7 +13,7 @@ from itertools import repeat
 class smc:
 	"""
 	"""
-	def __init__(self, sigma, obsWeights, yadeFile='', yadeDataDir='', obsDataFile='', obsCtrl='', simDataNames='', yadeVersion='yade-batch', standAlone=True):
+	def __init__(self, sigma, ess, obsWeights, yadeFile='', yadeDataDir='', obsDataFile='', obsCtrl='', simDataNames='', yadeVersion='yade-batch', standAlone=True):
 		# simulation file name (_.py)
 		self._yadeVersion = yadeVersion
 		self._name = yadeFile
@@ -25,6 +25,7 @@ class smc:
 		self._numSteps = 0
 		# normalized variance parameter
 		self._sigma = sigma
+		self._ess = ess
 		self._obsWeights = obsWeights
 		self._obsCtrl = obsCtrl
 		self._simDataNames = simDataNames
@@ -113,10 +114,19 @@ class smc:
 			if reverse:
 				self._obsCtrlData = self._obsCtrlData[::-1]
 				self._obsData = self._obsData[::-1,:]
-				self._yadeData = self._yadeData[::-1,:,:]		
+				self._yadeData = self._yadeData[::-1,:,:]
+			# loop over data assimilation steps
 			for i in xrange(self._numSteps):
 				self._likelihood[:,i], self._posterior[:,i], \
 				self._ips[:,i], self._covs[:,i] = self.recursiveBayesian(i)
+			# iterate if effective sample size is too big
+			sigma0 = self._sigma
+			while self.getEffectiveSampleSize()[-1] > self._ess:
+				self._sigma *= 0.9
+				for i in xrange(self._numSteps):
+					self._likelihood[:,i], self._posterior[:,i], \
+					self._ips[:,i], self._covs[:,i] = self.recursiveBayesian(i)				
+			self._sigma = sigma0
 		# if run Bayesian filtering on the fly (FIXME: importing simulation should be done in the main script)
 		else:
 			# parameter list
@@ -145,6 +155,14 @@ class smc:
 			for i in xrange(self._numSteps):
 				self._likelihood[:,i], self._posterior[:,i], \
 				self._ips[:,i], self._covs[:,i] = self.recursiveBayesian(i)
+			# iterate if effective sample size is too big
+			sigma0 = self._sigma
+			while self.getEffectiveSampleSize()[-1] > self._ess:
+				self._sigma *= 0.9
+				for i in xrange(self._numSteps):
+					self._likelihood[:,i], self._posterior[:,i], \
+					self._ips[:,i], self._covs[:,i] = self.recursiveBayesian(i)
+			self._sigma = sigma0
   		return self._ips, self._covs
 
 	def getYadeData(self, yadeDataFiles):
@@ -254,7 +272,7 @@ class smc:
 		numObs = len(keysAndData.keys())
 		return keysAndData, obsCtrlData, numObs, numSteps
 
-	def resampleParams(self,caliStep,thread=4,iterNO=0):
+	def resampleParams(self,caliStep,thread=4,iterNO=-1):
 		names = self.getNames()
 		smcSamples = self._smcSamples[iterNO]
 		numSamples = self._numSamples
@@ -285,7 +303,7 @@ class smc:
 	def getObsData(self):
 		return np.hstack((self._obsCtrlData.reshape(self._numSteps,1),self._obsData))
 
-	def trainGMMinTime(self,maxNumComponents,iterNO=0):
+	def trainGMMinTime(self,maxNumComponents,iterNO=-1):
 		gmmList = []
 		smcSamples = self._smcSamples[iterNO]
 		for i in xrange(self._numSteps):

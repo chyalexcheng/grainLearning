@@ -89,11 +89,11 @@ def runCollision(kwargs):
 	# read in things need to be randomized
 	if 'rho' not in params.keys(): print "use default density..."
 	if 'E' not in params.keys(): raise RuntimeError,"Density E not defined..."
-	else: table.E = params['E']*sigScale
+	else: table.E = abs(params['E']*sigScale)
 	if 'nu' not in params.keys(): raise RuntimeError,"Poisson's ratio nu not defined..."
-	else: table.nu = params['nu']
+	else: table.nu = abs(params['nu'])
 	if 'mu' not in params.keys(): raise RuntimeError,"Friction coefficient mu not defined..."
-	else: table.mu = params['mu']
+	else: table.mu = abs(params['mu'])
 	if 'safe' not in params.keys(): raise RuntimeError,"Timestepping safety coefficient not defined..."
 	else: table.safe = abs(params['safe'])
 	print 'E: %s; nu: %s; mu: %s; safe: %s'%(table.E,table.nu,table.mu,table.safe)

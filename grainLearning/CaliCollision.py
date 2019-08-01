@@ -15,8 +15,8 @@ import matplotlib.pylab as plt
 
 # user-defined parameter: normalized covariance
 sigma = float(raw_input("Initialize the normalized covariance as : "))
-# initialize effective sample size as one
-ess = 1.0
+# target effective sample size
+ess = 0.2
 obsWeights = [1.0]
 # number of iterations
 numOfIters = 4
@@ -35,7 +35,7 @@ paramNames = ['E', 'nu', 'mu', 'safe']
 # use uniform sampling within certin window if we are at the first iteration
 paramRanges = [[10e9,100e9],[0.1,0.5],[0,1.0],[0.01,1.0]]
 # set number of samples per iteration
-numSamples = 10
+numSamples = 32
 # set the maximum Gaussian components and prior weight
 maxNumComponents = int(numSamples/10); priorWeight = 1e-2
 
@@ -47,7 +47,7 @@ for i in range(len(ObsData[1])):
 obsDataFile.close()
 
 # initialize the problem
-smcTest = smc(sigma,obsWeights,obsCtrl=obsCtrl,simDataNames=simDataNames,obsDataFile='collisionObs.dat',standAlone=False)
+smcTest = smc(sigma,ess,obsWeights,obsCtrl=obsCtrl,simDataNames=simDataNames,obsDataFile='collisionObs.dat',standAlone=False)
 smcTest.initialize(paramNames,paramRanges,numSamples,maxNumComponents,priorWeight,loadSamples=False,scaleWithMax=True)
 
 # run sequential Monte Carlo; return means and coefficients of variance of PDF over the parameters
@@ -74,7 +74,7 @@ microParamUQ = plotIPs(paramNames,ips.T,covs.T,smcTest.getNumSteps(),posterior,s
 
 # resample parameters
 caliStep = -1
-gmm, maxNumComponents = smcTest.resampleParams(caliStep=caliStep)
+gmm, maxNumComponents = smcTest.resampleParams(caliStep=caliStep,iterNO=iterNO)
 
 # plot initial and resampled parameters
 plotAllSamples(smcTest.getSmcSamples(),smcTest.getNames())
@@ -93,13 +93,13 @@ for i in (-weights[:,caliStep]).argsort()[:3]: plt.plot(obsData[:,0],smcTest._ya
 plt.legend(); plt.show()
 
 # iterate the problem
-for i in range(5):
-	sigma = float(raw_input("Initialize the normalized covariance as : "))
+for i in range(numOfIters):
+	iterNO = i+1
 	# reinitialize the weights
 	smcTest.initialize(paramNames,paramRanges,numSamples,maxNumComponents,\
-		priorWeight,loadSamples=False,proposalFile='gmmForCollision_%i'%i+'.pkl',scaleWithMax=True)
+		priorWeight,loadSamples=False,scaleWithMax=True)
 	# rerun sequential Monte Carlo
-	ips, covs = smcTest.run(iterNO=i+1)
+	ips, covs = smcTest.run(iterNO=iterNO)
 	# get the parameter samples (ensemble) and posterior probability
 	posterior = smcTest.getPosterior()
 	smcSamples = smcTest.getSmcSamples()
@@ -111,7 +111,7 @@ for i in range(5):
 	microParamUQ = plotIPs(paramNames,ips.T,covs.T,smcTest.getNumSteps(),posterior,smcSamples[0])
 	# resample parameters
 	caliStep = -1
-	gmm, maxNumComponents = smcTest.resampleParams(caliStep=caliStep)
+	gmm, maxNumComponents = smcTest.resampleParams(caliStep=caliStep,iterNO=iterNO)
 	# plot initial and resampled parameters
 	plotAllSamples(smcTest.getSmcSamples(),smcTest.getNames())
 	# save trained Gaussian mixture model

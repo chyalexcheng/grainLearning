@@ -13,14 +13,6 @@ from sciPlots import *
 import pickle
 import matplotlib.pylab as plt
 
-# user-defined parameter: normalized covariance
-sigma = float(raw_input("Initialize the normalized covariance as : "))
-# target effective sample size
-ess = 0.3
-obsWeights = [1.0]
-# number of iterations
-numOfIters = 4
-
 # get observation data file (synthetic data from DEM simulation)
 obsDataFile = 'collision.dat'
 ObsData = np.loadtxt('collision.dat')
@@ -29,6 +21,18 @@ obsCtrl = 'u'
 simDataNames = ['f']
 # add Gaussian noise
 noise = np.random.normal(0,0.04*max(ObsData[1]),len(ObsData[1]))
+# plot synthetic data (with Gaussian noise)
+plt.plot(ObsData[0],(noise+ObsData[1])/1e6,label='Synthetic data',color='gray')
+plt.plot(ObsData[0],ObsData[1]/1e6,label='Hertzian contact law',color='black')
+plt.xlabel('Overlap (mm)');plt.ylabel('Force (N)');plt.legend(); plt.show()
+
+# user-defined parameter: normalized covariance
+sigma = float(raw_input("\nInitialize the modeling/measurement error: "))
+# target effective sample size
+ess = 0.3
+obsWeights = [1.0]
+# number of iterations
+numOfIters = 3
 
 # give ranges of parameter values (E, \mu, kr, \mu_r)
 paramNames = ['E', 'nu', 'mu', 'safe']
@@ -61,13 +65,13 @@ smcSamples = smcTest.getSmcSamples()
 ess = smcTest.getEffectiveSampleSize()[-1]
 print 'Effective sample size: %f'%ess
 
-# plot time evolution of effective sample size
-plt.figure();
-plt.plot(smcTest.getEffectiveSampleSize())
-plt.xlabel('time');plt.ylabel('Effective sample size');
-plt.figure();
-plt.plot(smcTest.getSmcSamples()[0][:,0],smcTest._proposal,'o')
-plt.xlabel(paramNames[0]);plt.ylabel('Proposal density');plt.show()
+#~ # plot time evolution of effective sample size
+#~ plt.figure();
+#~ plt.plot(smcTest.getEffectiveSampleSize())
+#~ plt.xlabel('time');plt.ylabel('Effective sample size');
+#~ plt.figure();
+#~ plt.plot(smcTest.getSmcSamples()[0][:,0],smcTest._proposal,'o')
+#~ plt.xlabel(paramNames[0]);plt.ylabel('Proposal density');plt.show()
 
 # plot means of PDF over the parameters
 microParamUQ = plotIPs(paramNames,ips.T,covs.T,smcTest.getNumSteps(),posterior,smcSamples[0])
@@ -88,9 +92,9 @@ n = smcTest._numSamples
 weights = smcTest.getPosterior()*np.repeat(smcTest._proposal,m).reshape(n,m)
 weights /= sum(weights)
 obsData = smcTest.getObsData()
-plt.plot(obsData[:,0],obsData[:,1],label='obs')
-for i in (-weights[:,caliStep]).argsort()[:3]: plt.plot(obsData[:,0],smcTest._yadeData[:,i,0],label='sim%i'%i)
-plt.legend(); plt.show()
+plt.plot(obsData[:,0],obsData[:,1]/1e6,label='obs')
+for i in (-weights[:,caliStep]).argsort()[:3]: plt.plot(obsData[:,0],smcTest._yadeData[:,i,0]/1e6,label='sim%i'%i)
+plt.xlabel('Overlap (mm)');plt.ylabel('Force (N)');plt.legend(); plt.show()
 
 # iterate the problem
 for i in range(numOfIters):

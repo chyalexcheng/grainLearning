@@ -28,27 +28,31 @@ ObsData = np.loadtxt('collision.dat')
 obsCtrl = 'u'
 simDataNames = ['f']
 # add Gaussian noise
-noise = np.random.normal(0,0.04*max(ObsData[1]),len(ObsData[1]))
+noise = np.random.normal(0, 0.04 * max(ObsData[1]), len(ObsData[1]))
 
 # give ranges of parameter values (E, \mu, kr, \mu_r)
 paramNames = ['E', 'nu', 'mu', 'safe']
 # use uniform sampling within certin window if we are at the first iteration
-paramRanges = [[10e9,100e9],[0.1,0.5],[0,1.0],[0.01,1.0]]
+paramRanges = {'E': [10e9, 100e9], 'nu': [0.1, 0.5], 'mu': [0, 1.0], 'safe': [0.01, 1.0]}
+
 # set number of samples per iteration
 numSamples = 12
 # set the maximum Gaussian components and prior weight
-maxNumComponents = int(numSamples/10); priorWeight = 1./maxNumComponents
+maxNumComponents = int(numSamples / 10);
+priorWeight = 1. / maxNumComponents
 
 # write synthetic observation data to file
-obsDataFile = open('collisionObs.dat','w')
+obsDataFile = open('collisionObs.dat', 'w')
 obsDataFile.write('#\t\tu\t\tf\n')
 for i in range(len(ObsData[1])):
-	obsDataFile.write('%s\t\t%s\n'%(ObsData[0][i],noise[i]+ObsData[1][i]))
+    obsDataFile.write('%s\t\t%s\n' % (ObsData[0][i], noise[i] + ObsData[1][i]))
 obsDataFile.close()
 
 # initialize the problem
-smcTest = smc(sigma,ess,obsWeights,obsCtrl=obsCtrl,simDataNames=simDataNames,obsDataFile='collisionObs.dat',standAlone=False)
-smcTest.initialize(paramNames,paramRanges,numSamples,maxNumComponents,priorWeight,loadSamples=False,scaleWithMax=True)
+smcTest = smc(sigma, ess, obsWeights, obsCtrl=obsCtrl, simDataNames=simDataNames, obsDataFile='collisionObs.dat',
+              standAlone=False)
+smcTest.initialize(paramNames, paramRanges, numSamples, maxNumComponents, priorWeight, loadSamples=False,
+                   scaleWithMax=True)
 
 # run sequential Monte Carlo; return means and coefficients of variance of PDF over the parameters
 iterNO = 0
@@ -59,69 +63,75 @@ posterior = smcTest.getPosterior()
 smcSamples = smcTest.getSmcSamples()
 # calculate effective sample size
 ess = smcTest.getEffectiveSampleSize()[-1]
-print 'Effective sample size: %f'%ess
+print 'Effective sample size: %f' % ess
 
 # plot time evolution of effective sample size
 plt.figure();
 plt.plot(smcTest.getEffectiveSampleSize())
-plt.xlabel('time');plt.ylabel('Effective sample size');
+plt.xlabel('time');
+plt.ylabel('Effective sample size');
 plt.figure();
-plt.plot(smcTest.getSmcSamples()[0][:,0],smcTest._proposal,'o')
-plt.xlabel(paramNames[0]);plt.ylabel('Proposal density');plt.show()
+plt.plot(smcTest.getSmcSamples()[0][:, 0], smcTest._proposal, 'o')
+plt.xlabel(paramNames[0]);
+plt.ylabel('Proposal density');
+plt.show()
 
 # plot means of PDF over the parameters
-microParamUQ = plotIPs(paramNames,ips.T,covs.T,smcTest.getNumSteps(),posterior,smcSamples[0])
+microParamUQ = plotIPs(paramNames, ips.T, covs.T, smcTest.getNumSteps(), posterior, smcSamples[0])
 
 # resample parameters
 caliStep = -1
-gmm, maxNumComponents = smcTest.resampleParams(caliStep=caliStep,iterNO=iterNO)
+gmm, maxNumComponents = smcTest.resampleParams(caliStep=caliStep, iterNO=iterNO)
 
 # plot initial and resampled parameters
-plotAllSamples(smcTest.getSmcSamples(),smcTest.getNames())
+plotAllSamples(smcTest.getSmcSamples(), smcTest.getNames())
 
 # save trained Gaussian mixture model
-pickle.dump(gmm, open('gmmForCollision_%i.pkl'%iterNO, 'wb'))
+pickle.dump(gmm, open('gmmForCollision_%i.pkl' % iterNO, 'wb'))
 
 # get top three realizations with high probabilities
 m = smcTest.getNumSteps()
 n = smcTest._numSamples
-weights = smcTest.getPosterior()*np.repeat(smcTest._proposal,m).reshape(n,m)
+weights = smcTest.getPosterior() * np.repeat(smcTest._proposal, m).reshape(n, m)
 weights /= sum(weights)
 obsData = smcTest.getObsData()
-plt.plot(obsData[:,0],obsData[:,1],label='obs')
-for i in (-weights[:,caliStep]).argsort()[:3]: plt.plot(obsData[:,0],smcTest._yadeData[:,i,0],label='sim%i'%i)
-plt.legend(); plt.show()
+plt.plot(obsData[:, 0], obsData[:, 1], label='obs')
+for i in (-weights[:, caliStep]).argsort()[:3]: plt.plot(obsData[:, 0], smcTest._yadeData[:, i, 0], label='sim%i' % i)
+plt.legend();
+plt.show()
 
 # iterate the problem
 for i in range(numOfIters):
-	iterNO = i+1
-	# reinitialize the weights
-	smcTest.initialize(paramNames,paramRanges,numSamples,maxNumComponents,\
-		priorWeight,loadSamples=False,scaleWithMax=True)
-	# rerun sequential Monte Carlo
-	ips, covs = smcTest.run(iterNO=iterNO)
-	# get the parameter samples (ensemble) and posterior probability
-	posterior = smcTest.getPosterior()
-	smcSamples = smcTest.getSmcSamples()
-	# calculate effective sample size
-	ess = smcTest.getEffectiveSampleSize()[-1]
-	print 'Effective sample size: %f'%ess
-	
-	# plot means of PDF over the parameters
-	microParamUQ = plotIPs(paramNames,ips.T,covs.T,smcTest.getNumSteps(),posterior,smcSamples[0])
-	# resample parameters
-	caliStep = -1
-	gmm, maxNumComponents = smcTest.resampleParams(caliStep=caliStep,iterNO=iterNO)
-	# plot initial and resampled parameters
-	plotAllSamples(smcTest.getSmcSamples(),smcTest.getNames())
-	# save trained Gaussian mixture model
-	pickle.dump(gmm, open('gmmForCollision_%i'%(i+1)+'.pkl', 'wb'))
-	# get top three realizations with high probabilities
-	m = smcTest.getNumSteps()
-	n = smcTest._numSamples
-	weights = smcTest.getPosterior()*np.repeat(smcTest._proposal,m).reshape(n,m)
-	weights /= sum(weights)
-	obsData = smcTest.getObsData()
-	plt.plot(obsData[:,0],obsData[:,1],label='obs')
-	for i in (-weights[:,caliStep]).argsort()[:3]: plt.plot(obsData[:,0],smcTest._yadeData[:,i,0],label='sim%i'%i)
-	plt.legend(); plt.show()
+    iterNO = i + 1
+    # reinitialize the weights
+    smcTest.initialize(paramNames, paramRanges, numSamples, maxNumComponents, \
+                       priorWeight, loadSamples=False, scaleWithMax=True)
+    # rerun sequential Monte Carlo
+    ips, covs = smcTest.run(iterNO=iterNO)
+    # get the parameter samples (ensemble) and posterior probability
+    posterior = smcTest.getPosterior()
+    smcSamples = smcTest.getSmcSamples()
+    # calculate effective sample size
+    ess = smcTest.getEffectiveSampleSize()[-1]
+    print 'Effective sample size: %f' % ess
+
+    # plot means of PDF over the parameters
+    microParamUQ = plotIPs(paramNames, ips.T, covs.T, smcTest.getNumSteps(), posterior, smcSamples[0])
+    # resample parameters
+    caliStep = -1
+    gmm, maxNumComponents = smcTest.resampleParams(caliStep=caliStep, iterNO=iterNO)
+    # plot initial and resampled parameters
+    plotAllSamples(smcTest.getSmcSamples(), smcTest.getNames())
+    # save trained Gaussian mixture model
+    pickle.dump(gmm, open('gmmForCollision_%i' % (i + 1) + '.pkl', 'wb'))
+    # get top three realizations with high probabilities
+    m = smcTest.getNumSteps()
+    n = smcTest._numSamples
+    weights = smcTest.getPosterior() * np.repeat(smcTest._proposal, m).reshape(n, m)
+    weights /= sum(weights)
+    obsData = smcTest.getObsData()
+    plt.plot(obsData[:, 0], obsData[:, 1], label='obs')
+    for i in (-weights[:, caliStep]).argsort()[:3]: plt.plot(obsData[:, 0], smcTest._yadeData[:, i, 0],
+                                                             label='sim%i' % i)
+    plt.legend();
+    plt.show()

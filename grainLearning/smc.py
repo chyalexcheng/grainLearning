@@ -299,6 +299,7 @@ class smc:
             return self._smcSamples[iterNO].shape
         # if paramsFile does not exist, get parameter values from the names of simulation files
         else:
+            print 'paramsFile does not exist... Now get it from the names of simulation files'
             yadeDataFiles = glob.glob(os.getcwd()+'/'+self._yadeDataDir + '/*' + self._simName + '*')
             yadeDataFiles.sort()
             while len(yadeDataFiles) == 0:
@@ -308,10 +309,10 @@ class smc:
             smcSamples = np.zeros([len(yadeDataFiles), len(self.getNames())])
             for i, f in enumerate(yadeDataFiles):
                 # FIXME how to make the split of parameters automated. Now this is the parameter names are hard coded
-                # f = f.split('.results')[0]
-                # _, key, psd, k_n, k_t, mu = f.split('_')
-                f = f.split('.txt')[0]
-                _, key, E, mu_i, mu, k_r, mu_r = f.split('_')
+                f = f.split('.results')[0]
+                _, key, psd, k_n, k_t, mu = f.split('_')
+                # f = f.split('.txt')[0]
+                # _, key, E, mu_i, mu, k_r, mu_r = f.split('_')
                 smcSamples[i, :] = eval(' '.join(['abs(float(' + name + ')),' for name in names])[:-1])
             self._smcSamples.append(smcSamples)
             return self._smcSamples[iterNO].shape

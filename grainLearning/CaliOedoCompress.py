@@ -51,12 +51,13 @@ reverse = True if iterNO % 2 == 1 else False
 
 # initialize the problem (if loadSamples is False, the script generates an initial parameter table.
 # Otherwise process the simulation data, either pre-run or run within python, to generate a new parameter table)
-smcTest = smc(sigma, ess, obsWeights, yadeFile, yadeDataDir, obsDataFile, obsCtrl)
+smcTest = smc(sigma, ess, obsWeights, yadeFile, yadeDataDir, obsDataFile, obsCtrl, scaleWithMax=False,
+              loadSamples=True, skipDEM=True, standAlone=True)
 smcTest.initialize(paramNames, paramRanges, numSamples, maxNumComponents, priorWeight, paramsFile=paramsFile,
-                   loadSamples=False, proposalFile=proposalFile, scaleWithMax=False)
+                   proposalFile=proposalFile)
 
 # run sequential Monte Carlo; return means and coefficients of variance of PDF over the parameters
-ips, covs = smcTest.run(skipDEM=True, reverse=reverse)
+ips, covs = smcTest.run(reverse=reverse)
 # get the parameter samples (ensemble) and posterior probability
 posterior = smcTest.getPosterior()
 smcSamples = smcTest.getSmcSamples()
@@ -70,7 +71,7 @@ plt.plot(smcTest.getEffectiveSampleSize())
 plt.xlabel('time');
 plt.ylabel('Effective sample size');
 plt.figure();
-plt.plot(smcTest.getSmcSamples()[0][:, 0], smcTest._proposal, 'o')
+plt.plot(smcTest.getSmcSamples()[0][:, 0], smcTest.proposal, 'o')
 plt.xlabel(paramNames[0]);
 plt.ylabel('Proposal density');
 plt.show()
@@ -91,8 +92,8 @@ pickle.dump(gmm, open(yadeDataDir + '/gmm_' + yadeDataDir + '.pkl', 'wb'))
 
 # get top three realizations with high probabilities
 m = smcTest.getNumSteps();
-n = smcTest._numSamples
-weights = smcTest.getPosterior() * np.repeat(smcTest._proposal, m).reshape(n, m)
+n = smcTest.numSamples
+weights = smcTest.getPosterior() * np.repeat(smcTest.proposal, m).reshape(n, m)
 weights /= sum(weights);
 mcFiles = glob.glob(yadeDataDir + '/*_*_*_*txt');
 mcFiles.sort()
@@ -115,3 +116,8 @@ macroParamUQ = plotExpAndNum('VAE3', paramNames, '%i' % iterNO, smcTest.getPoste
                              EValues, muValues, krValues, mu_rValues, \
                              keysAndData['p'], keysAndData['q'], keysAndData['n'], obsCtrlData * 100,
                              np.zeros(smcTest.getNumSteps()))
+
+# ~ turns = [1,17,30,56,80,-1]
+# ~ microMacroWeights = []
+# ~ for i in turns:
+# ~ microMacroWeights.append(microMacroPDF('VAE3', i, smcTest.getSmcSamples()[0].T, smcTest._yadeDataDir, smcTest.getPosterior()[:,::(-1)**reverse], mcFiles, loadWeights=True))

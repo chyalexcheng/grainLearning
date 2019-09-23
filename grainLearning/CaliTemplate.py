@@ -40,13 +40,13 @@ paramsFile = 'smcTable.txt'
 
 # initialize the problem
 smcTest = smc(sigma, ess, obsWeights, yadeDataDir=yadeDataDir, obsDataFile=obsDataFile, simName=simName,
-              standAlone=True)
-smcTest.initialize(paramNames, paramRanges, numSamples, maxNumComponents, priorWeight, loadSamples=True,
-                   scaleWithMax=True)
+              scaleWithMax=True, loadSamples=True, skipDEM=True, standAlone=True)
+
+smcTest.initialize(paramNames, paramRanges, numSamples, maxNumComponents, priorWeight)
 
 # run sequential Monte Carlo; return means and coefficients of variance of PDF over the parameters
 iterNO = 0
-ips, covs = smcTest.run(skipDEM=True, iterNO=iterNO)
+ips, covs = smcTest.run(iterNO=iterNO)
 
 # get the parameter samples (ensemble) and posterior probability
 posterior = smcTest.getPosterior()
@@ -74,12 +74,12 @@ plotAllSamples(smcTest.getSmcSamples(), smcTest.getNames())
 
 # get top three realizations with high probabilities
 m = smcTest.getNumSteps()
-n = smcTest._numSamples
-weights = smcTest.getPosterior() * np.repeat(smcTest._proposal, m).reshape(n, m)
+n = smcTest.numSamples
+weights = smcTest.getPosterior() * np.repeat(smcTest.proposal, m).reshape(n, m)
 weights /= sum(weights)
-obsData = smcTest._obsData
+obsData = smcTest.obsData
 plt.plot(np.genfromtxt(yadeDataDir + 'Void_Index.txt'), obsData, label='obs')
-for i in (-weights[:, caliStep]).argsort()[:10]: plt.plot(np.genfromtxt(yadeDataDir + 'Void_Index.txt'),
-                                                          smcTest._yadeData[:, i, 0], label='sim%i' % i)
+for i in (-weights[:, caliStep]).argsort()[:10]:
+    plt.plot(np.genfromtxt(yadeDataDir + 'Void_Index.txt'), smcTest.yadeData[:, i, 0], label='sim%i' % i)
 plt.legend()
 plt.show()

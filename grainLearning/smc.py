@@ -16,91 +16,90 @@ class smc:
     SMC base class: sequential Monte Carlo (SMC) filtering
     """
 
-    def __init__(self, sigma, ess, obsWeights, yadeFile='', yadeDataDir='', obsDataFile='', obsCtrl='', simDataNames='',
-                 simName = 'sim', yadeVersion='yade-batch', standAlone=True):
+    def __init__(self, sigma, ess, obsWeights, yadeFile='', yadeDataDir='', obsDataFile='', obsCtrl='', simDataKeys='',
+                 simName='sim', yadeVersion='yade-batch', scaleWithMax=True, loadSamples=True, skipDEM=True,
+                 standAlone=True):
         # simulation file name (_.py)
-        self._yadeVersion = yadeVersion
-        self._yadeFile = yadeFile
-        self._obsDataFile = obsDataFile
-        self._yadeDataDir = yadeDataDir
-        self._numParams = 0
-        self._numSamples = 0
-        self._numObs = 0
-        self._numSteps = 0
-        self._loadSamples = False
+        self.yadeVersion = yadeVersion
+        self.yadeFile = yadeFile
+        self.obsDataFile = obsDataFile
+        self.yadeDataDir = yadeDataDir
+        self.numParams = 0
+        self.numSamples = 0
+        self.numObs = 0
+        self.numSteps = 0
         # normalized variance parameter
-        self._sigma = sigma
-        self._ess = ess
-        self._obsWeights = obsWeights
-        self._obsCtrl = obsCtrl
-        self._simDataNames = simDataNames
-        self._simName = simName
-        self._obsData, self._obsCtrlData, self._numObs, self._numSteps = self.getObsDataFromFile(obsDataFile, obsCtrl)
+        self.__sigma = sigma
+        self.__ess = ess
+        self.obsWeights = obsWeights
+        self.obsCtrl = obsCtrl
+        self.simDataKeys = simDataKeys
+        self.simName = simName
+        self.obsData, self.obsCtrlData, self.numObs, self.numSteps = self.getObsDataFromFile(obsDataFile, obsCtrl)
         # assume all measurements are independent
-        self._obsMatrix = np.identity(self._numObs)
-        self._paramsFiles = []
-        self._paramNames = []
-        self._paramRanges = {}
-        self._smcSamples = []
+        self.__obsMatrix = np.identity(self.numObs)
+        self.paramsFiles = []
+        self.paramNames = []
+        self.paramRanges = {}
+        self.smcSamples = []
         # a flag that defines whether Yade is called within python
-        self._standAlone = standAlone
+        self.standAlone = standAlone
         # if run Bayesian filtering on the fly
-        if not self._standAlone:
+        if not self.standAlone:
             self.__pool = None
             self.__scenes = None
         # hyper-parameters of Bayesian Gaussian mixture
-        self._maxNumComponents = 0
-        self._priorWeight = 0
-        self._scaleWithMax = 0
+        self.__maxNumComponents = 0
+        self.__priorWeight = 0
         # simulation data
-        self._yadeData = None
-        self._ips = None
-        self._covs = None
-        self._posterior = None
-        self._likelihood = None
-        self._proposal = None
+        self.yadeData = None
+        self.ips = None
+        self.covs = None
+        self.posterior = None
+        self.likelihood = None
+        self.proposal = None
+        # whether change covariance matrix in time or set it constant (proportional to the maximum observation data)
+        self.scaleCovWithMax = scaleWithMax
+        # whether load existing parameter samples or create new ones
+        self.loadSamples = loadSamples
+        # whether run simulations DEM within GrainLearning
+        self.skipDEM = skipDEM
 
     def initialize(self, paramNames, paramRanges, numSamples, maxNumComponents, priorWeight, paramsFile='',
-                   threads=4, loadSamples=False, proposalFile='', scaleWithMax=False):
+                   proposalFile='', threads=4):
         # assign parameter names
-        self._paramNames = paramNames
+        self.paramNames = paramNames
         # initialize parameters for Gaussian mixture model
-        self._maxNumComponents = maxNumComponents
-        self._priorWeight = priorWeight
-        # whether change covariance matrix in time or set it constant (proportional to the maximum observation data)
-        self._scaleWithMax = scaleWithMax
+        self.__maxNumComponents = maxNumComponents
+        self.__priorWeight = priorWeight
         # initialize sample uniformly if no parameter table available
-        if len(self._smcSamples) == 0:
-            if loadSamples:
-                self._loadSamples = loadSamples
-                self._numSamples, _ = self.getParamsFromTable(paramsFile, paramNames, paramRanges)
+        if len(self.smcSamples) == 0:
+            if self.loadSamples:
+                self.numSamples, _ = self.getParamsFromTable(paramsFile, paramNames, paramRanges)
             else:
-                self._loadSamples = loadSamples
-                self._numSamples = self.getInitParams(paramRanges, numSamples, threads)
+                self.numSamples = self.getInitParams(paramRanges, numSamples, threads)
         # simulation data
-        self._yadeData = np.zeros([self._numSteps, self._numSamples, self._numObs])
+        self.yadeData = np.zeros([self.numSteps, self.numSamples, self.numObs])
         # identified optimal parameters
-        self._ips = np.zeros([self._numParams, self._numSteps])
-        self._covs = np.zeros([self._numParams, self._numSteps])
-        self._posterior = np.zeros([self._numSamples, self._numSteps])
-        self._likelihood = np.zeros([self._numSamples, self._numSteps])
-        self._proposal = np.ones([self._numSamples]) / self._numSamples
+        self.ips = np.zeros([self.numParams, self.numSteps])
+        self.covs = np.zeros([self.numParams, self.numSteps])
+        self.posterior = np.zeros([self.numSamples, self.numSteps])
+        self.likelihood = np.zeros([self.numSamples, self.numSteps])
+        self.proposal = np.ones([self.numSamples]) / self.numSamples
         if proposalFile != '':
             # load proposal density from file
-            self._proposal = self.loadProposalFromFile(proposalFile, -1)
+            self.proposal = self.loadProposalFromFile(proposalFile, -1)
         # if run Bayesian filtering on the fly
-        if not self._standAlone:
-            self.__pool = get_pool(mpi=False, threads=self._numSamples)
-            self.__scenes = self.__pool.map(createScene, range(self._numSamples))
-
-    # ~ self.__scenes = createScene(0)
+        if not self.standAlone:
+            self.__pool = get_pool(mpi=False, threads=self.numSamples)
+            self.__scenes = self.__pool.map(createScene, range(self.numSamples))
 
     def getProposalFromSamples(self, iterNO):
         if len(self.getSmcSamples()) == 0:
-            RuntimeError, "SMC samples not yet loaded..."
+            RuntimeError("SMC samples not yet loaded...")
         else:
-            gmm = mixture.BayesianGaussianMixture(n_components=self._maxNumComponents,
-                                                  weight_concentration_prior=self._priorWeight, covariance_type='full',
+            gmm = mixture.BayesianGaussianMixture(n_components=self.__maxNumComponents,
+                                                  weight_concentration_prior=self.__priorWeight, covariance_type='full',
                                                   tol=1e-5, max_iter=int(1e5), n_init=100)
             gmm.fit(self.getSmcSamples()[iterNO])
             proposal = np.exp(gmm.score_samples(self.getSmcSamples()[iterNO]))
@@ -108,141 +107,151 @@ class smc:
 
     def loadProposalFromFile(self, proposalFile, iterNO):
         if len(self.getSmcSamples()) == 0:
-            RuntimeError, "SMC samples not yet loaded..."
+            RuntimeError("SMC samples not yet loaded...")
         else:
             proposalModel = pickle.load(open(proposalFile, 'rb'))
             proposal = np.exp(proposalModel.score_samples(self.getSmcSamples()[iterNO]))
         return proposal / sum(proposal)
 
-    def run(self, skipDEM=False, iterNO=-1, reverse=False, threads=1):
+    def run(self, iterNO=-1, reverse=False, threads=1):
         # if iterating, reload observation data
         if iterNO > 0:
-            self._obsData, self._obsCtrlData, self._numObs, self._numSteps = \
-                self.getObsDataFromFile(self._obsDataFile, self._obsCtrl)
+            self.obsData, self.obsCtrlData, self.numObs, self.numSteps = \
+                self.getObsDataFromFile(self.obsDataFile, self.obsCtrl)
         # if use Bayesian filtering as a stand alone tool (data already exist before hand)
-        if self._standAlone:
+        if self.standAlone:
             # if run DEM simulations now, with the new parameter table
-            if not skipDEM and not self._loadSamples:
+            if not self.skipDEM and not self.loadSamples:
                 # run DEM simulations in batch.
-                raw_input("*** Press confirm if the yade file name is correct... ***\n" + self._yadeFile
+                raw_input("*** Press confirm if the yade file name is correct... ***\n" + self.yadeFile
                           + "\nAbout to run Yade in batch mode with " +
-                          ' '.join([self._yadeVersion, self._paramsFiles[iterNO], self._yadeFile]))
-                os.system(' '.join([self._yadeVersion, self._paramsFiles[iterNO], self._yadeFile]))
+                          ' '.join([self.yadeVersion, self.paramsFiles[iterNO], self.yadeFile]))
+                os.system(' '.join([self.yadeVersion, self.paramsFiles[iterNO], self.yadeFile]))
                 print 'All simulations finished'
             # if run DEM simulations outside, with the new parameter table
-            elif skipDEM and not self._loadSamples:
+            elif self.skipDEM and not self.loadSamples:
+                print 'Leaving GrainLearning... only the parameter table is generated'
                 sys.exit()
             # if process the simulation data obtained with the existing parameter table
             else:
-                print 'Skipping DEM simulations, read in data now'
+                print 'Skipping DEM simulations, read in pre-existing simulation data now'
             # get simulation data from yadeDataDir
-            yadeDataFiles = glob.glob(os.getcwd()+'/'+self._yadeDataDir + '/*' + self._simName + '*')
+            yadeDataFiles = glob.glob(os.getcwd() + '/' + self.yadeDataDir + '/*' + self.simName + '*')
             yadeDataFiles.sort()
-            # if glob.glob(self._yadeDataDir + '/*_*txt*') does not return the list of yade data file
+            # if glob.glob(self.yadeDataDir + '/*_*txt*') does not return the list of yade data file
             while len(yadeDataFiles) == 0:
-                self._simName = raw_input("No DEM filename can be found, tell me the simulation name...\n ")
-                yadeDataFiles = glob.glob(os.getcwd()+'/'+self._yadeDataDir + '/*' + self._simName + '*')
+                self.simName = raw_input("No DEM filename can be found, tell me the simulation name...\n ")
+                yadeDataFiles = glob.glob(os.getcwd() + '/' + self.yadeDataDir + '/*' + self.simName + '*')
                 yadeDataFiles.sort()
+            # check if parameter combinations match with the simulation filename.
+            for i, f in enumerate(yadeDataFiles):
+                # get the file name fore the suffix
+                f = f.split('.' + f.split('.')[-1])[0]
+                # get parameters from the remaining string
+                paramsString = f.split('_')[-self.numParams:]
+                # element wise comparison of the parameter vector
+                if not (np.equal(np.float64(paramsString), self.getSmcSamples()[-1][i]).all()):
+                    raise RuntimeError(
+                        "Parameters " + ", ".join(
+                            ["%s" % v for v in self.getSmcSamples()[-1][i]]) + " do not match with data file " + f)
             # read simulation data into yadeData and drop keys in obsData
             self.getYadeData(yadeDataFiles)
             # if iteration number is an odd number, reverse the data sequences to ensure continuity
             if reverse:
-                self._obsCtrlData = self._obsCtrlData[::-1]
-                self._obsData = self._obsData[::-1, :]
-                self._yadeData = self._yadeData[::-1, :, :]
+                self.obsCtrlData = self.obsCtrlData[::-1]
+                self.obsData = self.obsData[::-1, :]
+                self.yadeData = self.yadeData[::-1, :, :]
             # loop over data assimilation steps
-            for i in xrange(self._numSteps):
-                self._likelihood[:, i], self._posterior[:, i], \
-                self._ips[:, i], self._covs[:, i] = self.recursiveBayesian(i)
+            for i in xrange(self.numSteps):
+                self.likelihood[:, i], self.posterior[:, i], \
+                self.ips[:, i], self.covs[:, i] = self.recursiveBayesian(i)
             # iterate if effective sample size is too big
-            sigma = self._sigma
-            while self.getEffectiveSampleSize()[-1] > self._ess:
-                sigma *= 0.9
-                for i in xrange(self._numSteps):
-                    self._likelihood[:, i], self._posterior[:, i], \
-                    self._ips[:, i], self._covs[:, i] = self.recursiveBayesian(i)
+            while self.getEffectiveSampleSize()[-1] > self.__ess:
+                self.__sigma *= 0.9
+                for i in xrange(self.numSteps):
+                    self.likelihood[:, i], self.posterior[:, i], \
+                    self.ips[:, i], self.covs[:, i] = self.recursiveBayesian(i)
         # if perform Bayesian filtering while DEM simulations are running
         else:
             # parameter list
             paramsList = []
-            for i in range(self._numSamples):
+            for i in range(self.numSamples):
                 paramsForEach = {}
-                for j, name in enumerate(self._paramNames):
-                    paramsForEach[name] = self._smcSamples[iterNO][i][j]
+                for j, name in enumerate(self.paramNames):
+                    paramsForEach[name] = self.smcSamples[iterNO][i][j]
                 paramsList.append(paramsForEach)
             # pass parameter list to simulation instances FIXME: runCollision is the user-defined Yade script
-            simData = self.__pool.map(runCollision, zip(self.__scenes, paramsList, repeat(self._obsCtrlData)))
+            simData = self.__pool.map(runCollision, zip(self.__scenes, paramsList, repeat(self.obsCtrlData)))
             self.__pool.close()
-            # ~ data = runCollision([self._smc__scenes,paramsList[0]])
+            # ~ data = runCollision([self.smc__scenes,paramsList[0]])
             # get observation and simulation data ready for Bayesian filtering
-            self._obsData = np.array([self._obsData[name] for name in self._simDataNames]).transpose()
+            self.obsData = np.array([self.obsData[name] for name in self.simDataKeys]).transpose()
             for i, data in enumerate(simData):
-                for j, name in enumerate(self._simDataNames):
+                for j, name in enumerate(self.simDataKeys):
                     # ~ print len(data[name]),i
-                    self._yadeData[:, i, j] = data[name]
-            # ~ print np.linalg.norm(data[self._obsCtrl]-self._obsCtrlData)
+                    self.yadeData[:, i, j] = data[name]
+            # ~ print np.linalg.norm(data[self.obsCtrl]-self.obsCtrlData)
             # loop over data assimilation steps
             if reverse:
-                self._obsCtrlData = self._obsCtrlData[::-1]
-                self._obsData = self._obsData[::-1, :]
-                self._yadeData = self._yadeData[::-1, :, :]
-            for i in xrange(self._numSteps):
-                self._likelihood[:, i], self._posterior[:, i], \
-                self._ips[:, i], self._covs[:, i] = self.recursiveBayesian(i)
+                self.obsCtrlData = self.obsCtrlData[::-1]
+                self.obsData = self.obsData[::-1, :]
+                self.yadeData = self.yadeData[::-1, :, :]
+            for i in xrange(self.numSteps):
+                self.likelihood[:, i], self.posterior[:, i], \
+                self.ips[:, i], self.covs[:, i] = self.recursiveBayesian(i)
             # iterate if effective sample size is too big
-            sigma = self._sigma
-            while self.getEffectiveSampleSize()[-1] > self._ess:
-                sigma *= 0.9
-                for i in xrange(self._numSteps):
-                    self._likelihood[:, i], self._posterior[:, i], \
-                    self._ips[:, i], self._covs[:, i] = self.recursiveBayesian(i)
-        return self._ips, self._covs
+            while self.getEffectiveSampleSize()[-1] > self.__ess:
+                self.__sigma *= 0.9
+                for i in xrange(self.numSteps):
+                    self.likelihood[:, i], self.posterior[:, i], \
+                    self.ips[:, i], self.covs[:, i] = self.recursiveBayesian(i)
+        return self.ips, self.covs
 
     def getYadeData(self, yadeDataFiles):
-        if 0 in self._yadeData.shape: raise RuntimeError, "number of Observations, samples or steps undefined!"
+        if 0 in self.yadeData.shape: raise RuntimeError, "number of Observations, samples or steps undefined!"
         for i, f in enumerate(yadeDataFiles):
             # if do not know the data to control simulation
-            if self._obsCtrl == '':
+            if self.obsCtrl == '':
                 yadeData = np.genfromtxt(f)
-                for j in range(self._numObs):
-                    self._yadeData[:, i, j] = yadeData
+                for j in range(self.numObs):
+                    self.yadeData[:, i, j] = yadeData
             else:
                 yadeData = getKeysAndData(f)
-                for j, key in enumerate(self._obsData.keys()):
-                    self._yadeData[:, i, j] = yadeData[key]
+                for j, key in enumerate(self.obsData.keys()):
+                    self.yadeData[:, i, j] = yadeData[key]
         # if need to remove the data that controls the simulations
-        if self._obsCtrl != '':
-            obsData = np.zeros([self._numSteps, self._numObs])
-            for j, key in enumerate(self._obsData.keys()):
-                    obsData[:, j] = self._obsData[key]
-            self._obsData = obsData
+        if self.obsCtrl != '':
+            obsData = np.zeros([self.numSteps, self.numObs])
+            for j, key in enumerate(self.obsData.keys()):
+                obsData[:, j] = self.obsData[key]
+            self.obsData = obsData
 
     def recursiveBayesian(self, caliStep, iterNO=-1):
         likelihood = self.getLikelihood(caliStep)
         posterior = self.update(caliStep, likelihood)
         # get ensemble averages and coefficients of variance
-        ips = np.zeros(self._numParams)
-        covs = np.zeros(self._numParams)
-        for i in xrange(self._numParams):
+        ips = np.zeros(self.numParams)
+        covs = np.zeros(self.numParams)
+        for i in xrange(self.numParams):
             # ensemble average
-            ips[i] = self._smcSamples[iterNO][:, i].dot(posterior)
+            ips[i] = self.smcSamples[iterNO][:, i].dot(posterior)
             # diagonal variance
-            covs[i] = ((self._smcSamples[iterNO][:, i] - ips[i]) ** 2).dot(posterior)
+            covs[i] = ((self.smcSamples[iterNO][:, i] - ips[i]) ** 2).dot(posterior)
             # get coefficient of variance cov
             covs[i] = np.sqrt(covs[i]) / ips[i]
         return likelihood, posterior, ips, covs
 
     def getLikelihood(self, caliStep):
         # state vector y_t = H(x_t)+Sigma_t
-        stateVec = self._yadeData[caliStep, :, :].dot(self._obsMatrix)
-        obsVec = self._obsData[caliStep, :]
+        stateVec = self.yadeData[caliStep, :, :].dot(self.__obsMatrix)
+        obsVec = self.obsData[caliStep, :]
         # row-wise substraction obsVec[numObs]-stateVec[numSamples,numObs]
         vecDiff = obsVec - stateVec
-        Sigma = self.getCovMatrix(caliStep, self._obsWeights)
+        Sigma = self.getCovMatrix(caliStep, self.obsWeights)
         invSigma = np.linalg.inv(Sigma)
-        likelihood = np.zeros(self._numSamples)
+        likelihood = np.zeros(self.numSamples)
         # compute likelihood = exp(-0.5*(y_t-H(x_t))*Sigma_t^{-1}*(y_t-H(x_t)))
-        for i in xrange(self._numSamples):
+        for i in xrange(self.numSamples):
             power = (vecDiff[i, :]).dot(invSigma.dot(vecDiff[i, :].T))
             likelihood[i] = np.exp(-0.5 * power)
         # regularize likelihood
@@ -251,32 +260,32 @@ class smc:
 
     def update(self, caliStep, likelihood):
         # update posterior probability according to Bayes' rule
-        posterior = np.zeros(self._numSamples)
+        posterior = np.zeros(self.numSamples)
         if caliStep == 0:
-            posterior = likelihood / self._proposal
+            posterior = likelihood / self.proposal
         else:
-            posterior = self._posterior[:, caliStep - 1] * likelihood
+            posterior = self.posterior[:, caliStep - 1] * likelihood
         # regularize likelihood
         posterior /= np.sum(posterior)
         return posterior
 
     def getCovMatrix(self, caliStep, weights):
-        Sigma = np.zeros([self._numObs, self._numObs])
+        Sigma = np.zeros([self.numObs, self.numObs])
         # scale observation data with normalized variance parameter to get covariance matrix
-        for i in xrange(self._numObs):
+        for i in xrange(self.numObs):
             # give smaller weights for better agreement
-            if self._scaleWithMax:
-                Sigma[i, i] = self._sigma * weights[i] * max(self._obsData[:, i]) ** 2
+            if self.scaleCovWithMax:
+                Sigma[i, i] = self.__sigma * weights[i] * max(self.obsData[:, i]) ** 2
             else:
-                Sigma[i, i] = self._sigma * weights[i] * self._obsData[caliStep, i] ** 2
+                Sigma[i, i] = self.__sigma * weights[i] * self.obsData[caliStep, i] ** 2
         return Sigma
 
     def getInitParams(self, paramRanges, numSamples, threads):
         if len(paramRanges.values()) == 0:
             raise RuntimeError(
                 "Parameter range is not given. Define the dictionary-type variable paramRanges or loadSamples True")
-        self._paramRanges = paramRanges
-        self._numParams = len(self.getNames())
+        self.paramRanges = paramRanges
+        self.numParams = len(self.getNames())
         names = self.getNames()
         minsAndMaxs = np.array([paramRanges[key] for key in self.getNames()])
         mins = minsAndMaxs[:, 0]
@@ -284,42 +293,48 @@ class smc:
         print 'Parameters to be identified:', ", ".join(names), '\nMins:', mins, '\nMaxs:', maxs
         initSmcSamples, initparamsFile = initParamsTable(keys=names, maxs=maxs, mins=mins, num=numSamples,
                                                          threads=threads)
-        self._smcSamples.append(np.array(initSmcSamples))
-        self._paramsFiles.append(initparamsFile)
+        self.smcSamples.append(np.array(initSmcSamples))
+        self.paramsFiles.append(initparamsFile)
         return numSamples
 
     def getParamsFromTable(self, paramsFile, names, paramRanges, iterNO=-1):
-        self._paramRanges = paramRanges
-        self._numParams = len(self.getNames())
-        # if paramsFile exist, read in parameters and append data to self._smcSamples
+        self.paramRanges = paramRanges
+        self.numParams = len(self.getNames())
+        # if paramsFile exist, read in parameters and append data to self.smcSamples
         if os.path.exists(paramsFile):
-            self._paramsFiles.append(paramsFile)
-            smcSamples = np.genfromtxt(paramsFile, comments='!')[:, -self._numParams:]
-            self._smcSamples.append(smcSamples)
-            return self._smcSamples[iterNO].shape
-        # if paramsFile does not exist, get parameter values from the names of simulation files
+            self.paramsFiles.append(paramsFile)
+            smcSamples = np.genfromtxt(paramsFile, comments='!')[:, -self.numParams:]
+            self.smcSamples.append(smcSamples)
+            return self.smcSamples[iterNO].shape
+        # if cannot find paramsFile, get parameter values from the names of simulation files
         else:
-            print 'paramsFile does not exist... Now get it from the names of simulation files'
-            yadeDataFiles = glob.glob(os.getcwd()+'/'+self._yadeDataDir + '/*' + self._simName + '*')
+            print 'Cannot find paramsFile... Now get it from the names of simulation files'
+            yadeDataFiles = glob.glob(os.getcwd() + '/' + self.yadeDataDir + '/*' + self.simName + '*')
             yadeDataFiles.sort()
             while len(yadeDataFiles) == 0:
-                self._simName = raw_input("No DEM filename can be found, tell me the simulation name...\n ")
-                yadeDataFiles = glob.glob(os.getcwd()+'/'+self._yadeDataDir + '/*' + self._simName + '*')
+                self.simName = raw_input("No DEM filename can be found, tell me the simulation name...\n ")
+                yadeDataFiles = glob.glob(os.getcwd() + '/' + self.yadeDataDir + '/*' + self.simName + '*')
                 yadeDataFiles.sort()
             smcSamples = np.zeros([len(yadeDataFiles), len(self.getNames())])
             for i, f in enumerate(yadeDataFiles):
-                # FIXME how to make the split of parameters automated. Now this is the parameter names are hard coded
-                f = f.split('.results')[0]
-                _, key, psd, k_n, k_t, mu = f.split('_')
-                # f = f.split('.txt')[0]
-                # _, key, E, mu_i, mu, k_r, mu_r = f.split('_')
-                smcSamples[i, :] = eval(' '.join(['abs(float(' + name + ')),' for name in names])[:-1])
-            self._smcSamples.append(smcSamples)
-            return self._smcSamples[iterNO].shape
+                # get the suffix of the data file name
+                suffix = '.' + f.split('.')[-1]
+                # get the file name fore the suffix
+                f = f.split(suffix)[0]
+                # get parameters from the remaining string
+                paramsString = f.split('_')[-self.numParams:]
+                # if the number of parameters in the string is different from self.numParams, throw a warning
+                if len(f.split('_')[2:]) != self.numParams:
+                    RuntimeError(
+                        "Number of parameters found from the simulation fileName is different from self.numParams\n\
+                         Make sure your simulation file is named as 'simName_key_param0_param1_..paramN")
+                smcSamples[i, :] = np.float64(paramsString)
+            self.smcSamples.append(smcSamples)
+            return self.smcSamples[iterNO].shape
 
     def getObsDataFromFile(self, obsDataFile, obsCtrl):
         # if do not know the data to control simulation
-        if self._obsCtrl == '':
+        if self.obsCtrl == '':
             keysAndData = np.genfromtxt(obsDataFile)
             # if only one observation data vector exist, reshape it with [numSteps,1]
             if len(keysAndData.shape) == 1:
@@ -335,63 +350,58 @@ class smc:
 
     def resampleParams(self, caliStep, thread=4, iterNO=-1):
         names = self.getNames()
-        smcSamples = self._smcSamples[iterNO]
-        numSamples = self._numSamples
+        smcSamples = self.smcSamples[iterNO]
+        numSamples = self.numSamples
         # posterior at caliStep is used as the proposal distribution
-        proposal = self._posterior[:, caliStep]
+        proposal = self.posterior[:, caliStep]
         newSmcSamples, newparamsFile, gmm, maxNumComponents = \
             resampledParamsTable(keys=names, smcSamples=smcSamples, proposal=proposal, num=numSamples, thread=thread,
-                                 maxNumComponents=self._maxNumComponents, priorWeight=self._priorWeight)
-        self._smcSamples.append(newSmcSamples)
-        self._paramsFiles.append(newparamsFile)
+                                 maxNumComponents=self.__maxNumComponents, priorWeight=self.__priorWeight)
+        self.smcSamples.append(newSmcSamples)
+        self.paramsFiles.append(newparamsFile)
         return gmm, maxNumComponents
 
     def getPosterior(self):
-        return self._posterior
+        return self.posterior
 
     def getSmcSamples(self):
-        return self._smcSamples
+        return self.smcSamples
 
     def getNumSteps(self):
-        return self._numSteps
+        return self.numSteps
 
     def getEffectiveSampleSize(self):
         nEff = 1. / sum(self.getPosterior() ** 2)
-        return nEff / self._numSamples
+        return nEff / self.numSamples
 
     def getNames(self):
-        return self._paramNames
+        return self.paramNames
 
     def getObsData(self):
-        return np.hstack((self._obsCtrlData.reshape(self._numSteps, 1), self._obsData))
+        return np.hstack((self.obsCtrlData.reshape(self.numSteps, 1), self.obsData))
 
     def trainGMMinTime(self, maxNumComponents, iterNO=-1):
         gmmList = []
-        smcSamples = self._smcSamples[iterNO]
-        for i in xrange(self._numSteps):
+        smcSamples = self.smcSamples[iterNO]
+        for i in xrange(self.numSteps):
             print 'Train DP mixture at time %i...' % i
-            posterior = self._posterior[:, i]
+            posterior = self.posterior[:, i]
             gmmList.append(getGMMFromPosterior(smcSamples, posterior, maxNumComponents))
         return gmmList
 
     def removeDegeneracy(self, caliStep=-1):
-        effIDs = np.where(self._posterior[:, caliStep] < 0.5)[0]
-        self._proposal = self._proposal[effIDs, :]
-        self._likelihood = self._likelihood[effIDs, :]
-        self._posterior = self._posterior[effIDs, :]
-        self._smcSamples[0] = self._smcSamples[0][effIDs, :]
-        self._yadeData = self._yadeData[:, effIDs, :]
-        self._numSamples = len(effIDs)
-        for i in xrange(self._numSteps):
-            self._likelihood[:, i], self._posterior[:, i], \
-            self._ips[:, i], self._covs[:, i] = self.recursiveBayesian(i, self._proposal[:, i])
+        effIDs = np.where(self.posterior[:, caliStep] < 0.5)[0]
+        self.proposal = self.proposal[effIDs, :]
+        self.likelihood = self.likelihood[effIDs, :]
+        self.posterior = self.posterior[effIDs, :]
+        self.smcSamples[0] = self.smcSamples[0][effIDs, :]
+        self.yadeData = self.yadeData[:, effIDs, :]
+        self.numSamples = len(effIDs)
+        for i in xrange(self.numSteps):
+            self.likelihood[:, i], self.posterior[:, i], \
+            self.ips[:, i], self.covs[:, i] = self.recursiveBayesian(i, self.proposal[:, i])
 
     def writeBayeStatsToFile(self, reverse):
-        np.savetxt(self._yadeDataDir + '/particle.txt', self.getSmcSamples()[0])
-        np.savetxt(self._yadeDataDir + '/IP.txt', self._ips[:, ::(-1) ** reverse].T)
-        np.savetxt(self._yadeDataDir + '/weight.txt', self.getPosterior()[:, ::(-1) ** reverse])
-
-# ~ turns = [1,17,30,56,80,-1]
-# ~ microMacroWeights = []
-# ~ for i in turns:
-# ~ microMacroWeights.append(microMacroPDF('VAE3', i, smcTest.getSmcSamples()[0].T, smcTest._yadeDataDir, smcTest.getPosterior()[:,::(-1)**reverse], mcFiles, loadWeights=True))
+        np.savetxt(self.yadeDataDir + '/particle.txt', self.getSmcSamples()[0])
+        np.savetxt(self.yadeDataDir + '/IP.txt', self.ips[:, ::(-1) ** reverse].T)
+        np.savetxt(self.yadeDataDir + '/weight.txt', self.getPosterior()[:, ::(-1) ** reverse])

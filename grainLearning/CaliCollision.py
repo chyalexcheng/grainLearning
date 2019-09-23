@@ -1,7 +1,7 @@
 """ Author: Hongyang Cheng <chyalexcheng@gmail.com>
-	 Bayesian calibration of four DEM parameters for DEM simulation of oedometric compression
-	 (see the paper [1] for further details)
-	 [1] https://www.sciencedirect.com/science/article/pii/S0045782519300520
+    Bayesian calibration of four DEM parameters for DEM simulation of oedometric compression
+    (see the paper [1] for further details)
+    [1] https://www.sciencedirect.com/science/article/pii/S0045782519300520
 """
 
 import numpy as np
@@ -26,7 +26,7 @@ obsDataFile = 'collision.dat'
 ObsData = np.loadtxt('collision.dat')
 # select data sequence for simulation control
 obsCtrl = 'u'
-simDataNames = ['f']
+simDataKeys = ['f']
 # add Gaussian noise
 noise = np.random.normal(0, 0.04 * max(ObsData[1]), len(ObsData[1]))
 
@@ -49,10 +49,9 @@ for i in range(len(ObsData[1])):
 obsDataFile.close()
 
 # initialize the problem
-smcTest = smc(sigma, ess, obsWeights, obsCtrl=obsCtrl, simDataNames=simDataNames, obsDataFile='collisionObs.dat',
-              standAlone=False)
-smcTest.initialize(paramNames, paramRanges, numSamples, maxNumComponents, priorWeight, loadSamples=False,
-                   scaleWithMax=True)
+smcTest = smc(sigma, ess, obsWeights, obsCtrl=obsCtrl, simDataKeys=simDataKeys, obsDataFile='collisionObs.dat',
+              loadSamples=False, standAlone=False)
+smcTest.initialize(paramNames, paramRanges, numSamples, maxNumComponents, priorWeight)
 
 # run sequential Monte Carlo; return means and coefficients of variance of PDF over the parameters
 iterNO = 0
@@ -71,7 +70,7 @@ plt.plot(smcTest.getEffectiveSampleSize())
 plt.xlabel('time');
 plt.ylabel('Effective sample size');
 plt.figure();
-plt.plot(smcTest.getSmcSamples()[0][:, 0], smcTest._proposal, 'o')
+plt.plot(smcTest.getSmcSamples()[0][:, 0], smcTest.proposal, 'o')
 plt.xlabel(paramNames[0]);
 plt.ylabel('Proposal density');
 plt.show()
@@ -91,12 +90,12 @@ pickle.dump(gmm, open('gmmForCollision_%i.pkl' % iterNO, 'wb'))
 
 # get top three realizations with high probabilities
 m = smcTest.getNumSteps()
-n = smcTest._numSamples
-weights = smcTest.getPosterior() * np.repeat(smcTest._proposal, m).reshape(n, m)
+n = smcTest.numSamples
+weights = smcTest.getPosterior() * np.repeat(smcTest.proposal, m).reshape(n, m)
 weights /= sum(weights)
 obsData = smcTest.getObsData()
 plt.plot(obsData[:, 0], obsData[:, 1], label='obs')
-for i in (-weights[:, caliStep]).argsort()[:3]: plt.plot(obsData[:, 0], smcTest._yadeData[:, i, 0], label='sim%i' % i)
+for i in (-weights[:, caliStep]).argsort()[:3]: plt.plot(obsData[:, 0], smcTest.yadeData[:, i, 0], label='sim%i' % i)
 plt.legend();
 plt.show()
 
@@ -104,8 +103,8 @@ plt.show()
 for i in range(numOfIters):
     iterNO = i + 1
     # reinitialize the weights
-    smcTest.initialize(paramNames, paramRanges, numSamples, maxNumComponents, \
-                       priorWeight, loadSamples=False, scaleWithMax=True)
+    smcTest.initialize(paramNames, paramRanges, numSamples, maxNumComponents, priorWeight)
+
     # rerun sequential Monte Carlo
     ips, covs = smcTest.run(iterNO=iterNO)
     # get the parameter samples (ensemble) and posterior probability
@@ -126,12 +125,12 @@ for i in range(numOfIters):
     pickle.dump(gmm, open('gmmForCollision_%i' % (i + 1) + '.pkl', 'wb'))
     # get top three realizations with high probabilities
     m = smcTest.getNumSteps()
-    n = smcTest._numSamples
-    weights = smcTest.getPosterior() * np.repeat(smcTest._proposal, m).reshape(n, m)
+    n = smcTest.numSamples
+    weights = smcTest.getPosterior() * np.repeat(smcTest.proposal, m).reshape(n, m)
     weights /= sum(weights)
     obsData = smcTest.getObsData()
     plt.plot(obsData[:, 0], obsData[:, 1], label='obs')
-    for i in (-weights[:, caliStep]).argsort()[:3]: plt.plot(obsData[:, 0], smcTest._yadeData[:, i, 0],
+    for i in (-weights[:, caliStep]).argsort()[:3]: plt.plot(obsData[:, 0], smcTest.yadeData[:, i, 0],
                                                              label='sim%i' % i)
     plt.legend();
     plt.show()

@@ -19,7 +19,7 @@ sigma = float(raw_input("Initialize the normalized covariance as : "))
 ess = 0.3
 obsWeights = [1.0]
 
-yadeDataDir = 'FileBayesIteration0/'
+yadeDataDir = 'SimData/'
 # get observation data file (synthetic data from DEM simulation)
 obsDataFile = yadeDataDir + 'Target_Stress.txt'
 simName = 'BayesTest'

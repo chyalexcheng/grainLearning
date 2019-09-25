@@ -1,0 +1,8 @@
+The values expressed in the file's name are (in order):
+-Particle dispersity, range [1.2, 10];
+-Loading stiffness, range [1e2, 5e3];
+-Relative tangential stiffness, range [0, 1];
+-Sliding friction, range [0, 0.3].
+In addition to those files there are two more files:
+-Target_Stress.txt: target values of the problem;
+-Void_Index: values in which the stress is mesured.

@@ -2,7 +2,7 @@
 
 GrainLearning: a Bayesian calibration tool for discrete element simulations of granular materials
 
-Given an initial guess of parameter values, parameter space is iteratively explored, with a multi-level sampling algorithm to target at parameter subspaces where the posterior probabilities are high. Sampled parameter values are passed to the open-source DEM package YADE (http://yade-dem.org/) for model evaluations. smc.py contains the class that bridge the simulation data and experimental data with Bayesian statistics. A python script should be provided by the user to run DEM simulations for specific applications. 
+Given an initial guess of parameter values, parameter space is iteratively explored, with a multi-level sampling algorithm to target at parameter subspaces where the posterior probabilities are high. Sampled parameter values are passed to the open-source DEM package YADE (http://yade-dem.org/) for model evaluations. smc.py contains the class that bridge the simulation data and experimental data with Bayesian statistics. A python script should be provided by the user to run DEM simulations for specific applications. Make sure the simulation data file is named as 'simName_key_irrelevantParams_unKnownParam0_unKnownParam1_..unKnownParamN 
 
 The following packages are needed:
 

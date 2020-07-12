@@ -7,95 +7,165 @@ import numpy as np
 import pickle
 from tools import *
 from sklearn import mixture
-from collision import createScene, runCollision, addSimData
 from itertools import repeat
 
 
 class smc:
     """
-    SMC base class: sequential Monte Carlo (SMC) filtering
+    Base class for sequential Monte Carlo (SMC) filtering
     """
 
-    def __init__(self, sigma, ess, obsWeights, yadeFile='', yadeDataDir='', obsDataFile='', obsCtrl='', simDataKeys='',
-                 simName='sim', yadeVersion='yade-batch', scaleWithMax=True, loadSamples=True, skipDEM=True,
+    def __init__(self, sigma, ess, obsWeights,
+                 yadeVersion='yade-batch', yadeScript='', yadeDataDir='',
+                 obsFileName='', obsCtrl='', simDataKeys='', simName='sim',
+                 scaleCovWithMax=True, loadSamples=True, skipDEM=True,
                  standAlone=True):
-        # simulation file name (_.py)
-        self.yadeVersion = yadeVersion
-        self.yadeFile = yadeFile
-        self.obsDataFile = obsDataFile
-        self.yadeDataDir = yadeDataDir
-        self.numParams = 0
-        self.numSamples = 0
-        self.numObs = 0
-        self.numSteps = 0
-        # normalized variance parameter
+        """
+        :param sigma: float, default=1.0
+            Normalized (co)variance coefficient
+
+        :param ess: float, default=0.3
+            Effective sample size
+
+        :param obsWeights: ndarray of shape (numObs,)
+            Relative weights on observation data e.g., np.ones(numObs)
+
+        :param yadeVersion: string, default='yade-batch'
+
+        :param yadeScript: string
+            Name of the python script to run Yade
+
+        :param yadeDataDir: string
+            Name of the directory where Yade-DEM data is stored
+
+        :param obsFileName: string
+            Name of the file where observation data is stored
+
+        :param obsCtrl: string, default=''
+            Name of the data sequence to be neglected in Bayesian filtering,
+            e.g., strain in strain-controlled triaxial experiments and simulations
+
+        :param simDataKeys: a list of strings, default=['']
+            Name of the data sequence to be neglected in Bayesian filtering,
+            e.g., strain in strain-controlled triaxial experiments and simulations
+
+        :param simName: string, default='sim'
+            Prefix of a simulation file, e.g., <simName>_<key>_<param0>_<param1>_..._<paramN>.txt
+
+        :param loadSamples: bool, default=True
+            Whether to load parameter samples from an existing parameter table
+            (set to False in the first iteration to create uniform samples from a halton sequence)
+
+        :param scaleCovWithMax: bool, default=True
+            Whether to have a time varying covariance matrix or a constant one
+
+        :param skipDEM: bool, default=True
+            Whether to skip DEM simulations
+
+        :param standAlone: bool, default=True
+            Whether to use GrainLearning as a stand-alone tool to postprocess DEM data
+        """
+
+        # SMC parameters
         self.__sigma = sigma
         self.__ess = ess
         self.obsWeights = obsWeights
-        self.obsCtrl = obsCtrl
-        self.simDataKeys = simDataKeys
-        self.simName = simName
-        self.obsData, self.obsCtrlData, self.numObs, self.numSteps = self.getObsDataFromFile(obsDataFile, obsCtrl)
-        # assume all measurements are independent
-        self.__obsMatrix = np.identity(self.numObs)
-        self.paramsFiles = []
-        self.paramNames = []
-        self.paramRanges = {}
+        self.numParams = 0
+        self.numSamples = 0
         self.smcSamples = []
-        # a flag that defines whether Yade is called within python
-        self.standAlone = standAlone
-        # if run Bayesian filtering on the fly
-        if not self.standAlone:
-            self.__pool = None
-            self.__scenes = None
-        # hyper-parameters of Bayesian Gaussian mixture
-        self.__maxNumComponents = 0
-        self.__priorWeight = 0
-        # simulation data
-        self.yadeData = None
+
+        # SMC data
         self.ips = None
         self.covs = None
         self.posterior = None
         self.likelihood = None
         self.proposal = None
-        # whether change covariance matrix in time or set it constant (proportional to the maximum observation data)
-        self.scaleCovWithMax = scaleWithMax
-        # whether load existing parameter samples or create new ones
+
+        # hyper-parameters of Bayesian Gaussian mixture
+        self.__maxNumComponents = 0
+        self.__priorWeight = 0
+
+        # DEM configurations
+        self.yadeVersion = yadeVersion
+        self.yadeScript = yadeScript
+        self.yadeDataDir = yadeDataDir
+        self.yadeData = None
+        self.paramsFiles = []
+        self.paramNames = []
+        self.paramRanges = {}
+
+        # Control parameters for observations and simulations
+        self.obsFileName = obsFileName
+        self.obsCtrl = obsCtrl
+        self.simDataKeys = simDataKeys
+        self.simName = simName
+
+        # Load observation data
+        self.obsData, self.obsCtrlData, self.numObs, self.numSteps = self.getObsDataFromFile(obsFileName, obsCtrl)
+        # Assume all observation/reference data are independent
+        self.__obsMatrix = np.identity(self.numObs)
+
+        # Whether to use GrainLearning as a stand-alone tool to postprocess DEM data
+        self.standAlone = standAlone
+        # Whether to have a time varying covariance matrix or a constant one (proportional to maximum observation data)
+        self.scaleCovWithMax = scaleCovWithMax
+        # Whether to load parameter samples from an existing parameter table
         self.loadSamples = loadSamples
-        # whether run simulations DEM within GrainLearning
+        # whether to skip DEM simulations
         self.skipDEM = skipDEM
+
+        # if run Yade within GrainLearning in Python, initiate a thread pool and parallel scenes
+        if not self.standAlone:
+            from collision import createScene, runCollision, addSimData
+            self.__pool = get_pool(mpi=False, threads=self.numSamples)
+            self.__scenes = self.__pool.map(createScene, range(self.numSamples))
 
     def initialize(self, paramNames, paramRanges, numSamples, maxNumComponents, priorWeight, paramsFile='',
                    proposalFile='', threads=4):
-        # assign parameter names
+        """
+        :param paramNames: list of size (numParams)
+        :param paramRanges: dictionary with paramNames being the key
+        :param numSamples: int
+        :param maxNumComponents: int, default=numSamples/10
+        :param priorWeight: float, default=1./maxNumComponents
+            weight_concentration_prior of the BayesianGaussianMixture class
+            (https://scikit-learn.org/stable/modules/generated/sklearn.mixture.BayesianGaussianMixture.html)
+        :param paramsFile: string
+            Current parameter table in a text file
+        :param proposalFile: string
+            Proposal density trained in the previous iteration and used to generate samples in paramsFile
+        :param threads: int
+        """
         self.paramNames = paramNames
-        # initialize parameters for Gaussian mixture model
+        self.numParams = len(self.getNames())
+
+        # initialize parameters for training Variational Gaussian mixture models
         self.__maxNumComponents = maxNumComponents
         self.__priorWeight = priorWeight
-        # initialize sample uniformly if no parameter table available
-        if len(self.smcSamples) == 0:
+        # read in parameters if self.smcSamples is an empty list
+        if not self.smcSamples:
+            # read in parameters from paramsFile, either generated by a halton sequence or a Gaussian mixture model
             if self.loadSamples:
-                self.numSamples, _ = self.getParamsFromTable(paramsFile, paramNames, paramRanges)
+                self.numSamples, _ = self.getParamsFromTable(paramsFile)
+            # initialize parameter samples uniformly for the first iteration
             else:
                 self.numSamples = self.getInitParams(paramRanges, numSamples, threads)
-        # simulation data
+
+        # DEM simulation data
         self.yadeData = np.zeros([self.numSteps, self.numSamples, self.numObs])
-        # identified optimal parameters
+        # SMC data (ensemble mean, coefficient of variation, posterior, likelihood, and proposal probability
         self.ips = np.zeros([self.numParams, self.numSteps])
         self.covs = np.zeros([self.numParams, self.numSteps])
         self.posterior = np.zeros([self.numSamples, self.numSteps])
         self.likelihood = np.zeros([self.numSamples, self.numSteps])
-        self.proposal = np.ones([self.numSamples]) / self.numSamples
-        if proposalFile != '':
+        if proposalFile:
             # load proposal density from file
             self.proposal = self.loadProposalFromFile(proposalFile, -1)
-        # if run Bayesian filtering on the fly
-        if not self.standAlone:
-            self.__pool = get_pool(mpi=False, threads=self.numSamples)
-            self.__scenes = self.__pool.map(createScene, range(self.numSamples))
+        else:
+            self.proposal = np.ones([self.numSamples]) / self.numSamples
 
     def getProposalFromSamples(self, iterNO):
-        if len(self.getSmcSamples()) == 0:
+        if not self.getSmcSamples():
             RuntimeError("SMC samples not yet loaded...")
         else:
             gmm = mixture.BayesianGaussianMixture(n_components=self.__maxNumComponents,
@@ -106,27 +176,27 @@ class smc:
         return proposal / sum(proposal)
 
     def loadProposalFromFile(self, proposalFile, iterNO):
-        if len(self.getSmcSamples()) == 0:
+        if not self.getSmcSamples():
             RuntimeError("SMC samples not yet loaded...")
         else:
             proposalModel = pickle.load(open(proposalFile, 'rb'))
             proposal = np.exp(proposalModel.score_samples(self.getSmcSamples()[iterNO]))
         return proposal / sum(proposal)
 
-    def run(self, iterNO=-1, reverse=False, threads=1):
+    def run(self, iterNO=-1, reverse=False):
         # if iterating, reload observation data
         if iterNO > 0:
             self.obsData, self.obsCtrlData, self.numObs, self.numSteps = \
-                self.getObsDataFromFile(self.obsDataFile, self.obsCtrl)
+                self.getObsDataFromFile(self.obsFileName, self.obsCtrl)
         # if use Bayesian filtering as a stand alone tool (data already exist before hand)
         if self.standAlone:
             # if run DEM simulations now, with the new parameter table
             if not self.skipDEM and not self.loadSamples:
                 # run DEM simulations in batch.
-                raw_input("*** Press confirm if the yade file name is correct... ***\n" + self.yadeFile
+                raw_input("*** Press confirm if the yade file name is correct... ***\n" + self.yadeScript
                           + "\nAbout to run Yade in batch mode with " +
-                          ' '.join([self.yadeVersion, self.paramsFiles[iterNO], self.yadeFile]))
-                os.system(' '.join([self.yadeVersion, self.paramsFiles[iterNO], self.yadeFile]))
+                          ' '.join([self.yadeVersion, self.paramsFiles[iterNO], self.yadeScript]))
+                os.system(' '.join([self.yadeVersion, self.paramsFiles[iterNO], self.yadeScript]))
                 print 'All simulations finished'
             # if run DEM simulations outside, with the new parameter table
             elif self.skipDEM and not self.loadSamples:
@@ -281,67 +351,85 @@ class smc:
         return Sigma
 
     def getInitParams(self, paramRanges, numSamples, threads):
-        if len(paramRanges.values()) == 0:
+        """
+        Generate the initial parameter sample using a halton sequence
+        :param paramRanges: dictionary with paramNames being the ke
+        :param numSamples: int
+        :param threads: int
+        :return: number of parameter samples
+        """
+        if not paramRanges:
             raise RuntimeError(
-                "Parameter range is not given. Define the dictionary-type variable paramRanges or loadSamples True")
+                "Parameter range not given. Define the dictionary-type paramRanges or set loadSamples True")
         self.paramRanges = paramRanges
-        self.numParams = len(self.getNames())
         names = self.getNames()
-        minsAndMaxs = np.array([paramRanges[key] for key in self.getNames()])
+        minsAndMaxs = np.array([paramRanges[key] for key in names])
         mins = minsAndMaxs[:, 0]
         maxs = minsAndMaxs[:, 1]
-        print 'Parameters to be identified:', ", ".join(names), '\nMins:', mins, '\nMaxs:', maxs
+        print('Parameters to be identified:', ", ".join(names), '\nMins:', mins, '\nMaxs:', maxs)
         initSmcSamples, initparamsFile = initParamsTable(keys=names, maxs=maxs, mins=mins, num=numSamples,
                                                          threads=threads)
         self.smcSamples.append(np.array(initSmcSamples))
         self.paramsFiles.append(initparamsFile)
         return numSamples
 
-    def getParamsFromTable(self, paramsFile, names, paramRanges, iterNO=-1):
-        self.paramRanges = paramRanges
-        self.numParams = len(self.getNames())
-        # if paramsFile exist, read in parameters and append data to self.smcSamples
+    def getParamsFromTable(self, paramsFile, iterNO=-1):
+        """
+        :param paramsFile: string
+            Current parameter table in a text file
+        :param iterNO: int, default=-1
+            Index of self.smcSamples
+        :return: number of parameter samples and number of unknown parameters
+        """
+
+        # if a paramsFile exist, read in parameters directly
         if os.path.exists(paramsFile):
             self.paramsFiles.append(paramsFile)
+            # TODO The following assumes unknown parameters in the last self.numParams columns. How to generalize?
             smcSamples = np.genfromtxt(paramsFile, comments='!')[:, -self.numParams:]
-            self.smcSamples.append(smcSamples)
-            return self.smcSamples[iterNO].shape
-        # if cannot find paramsFile, get parameter values from the names of simulation files
+            # TODO Still check whether samples read from the paramsFile and simData fileNames are the same
+
+        # if cannot find a paramsFile, extract parameter values from the names of simulation data files
         else:
-            print 'Cannot find paramsFile... Now get it from the names of simulation files'
+            print('Cannot find your paramsFile. Will try to get them from the names of simData files...')
             yadeDataFiles = glob.glob(os.getcwd() + '/' + self.yadeDataDir + '/*' + self.simName + '*')
             yadeDataFiles.sort()
+            # if self.simName is incorrect and thus cannot get the simulation data files
             while len(yadeDataFiles) == 0:
-                self.simName = raw_input("No DEM filename can be found, tell me the simulation name...\n ")
+                self.simName = raw_input("Simulation files cannot be found. Please give the correct simName...\n ")
                 yadeDataFiles = glob.glob(os.getcwd() + '/' + self.yadeDataDir + '/*' + self.simName + '*')
                 yadeDataFiles.sort()
-            smcSamples = np.zeros([len(yadeDataFiles), len(self.getNames())])
+            # initialize the current smcSamples
+            smcSamples = np.zeros([len(yadeDataFiles), self.numParams])
             for i, f in enumerate(yadeDataFiles):
-                # get the suffix of the data file name
+                # get the file type (e.g., txt)
                 suffix = '.' + f.split('.')[-1]
-                # get the file name fore the suffix
+                # get the string before the file type
                 f = f.split(suffix)[0]
                 # get parameters from the remaining string
+                # TODO The following assumes the last self.numParams values is the parameter sample. How to generalize?
                 paramsString = f.split('_')[-self.numParams:]
-                # if the number of parameters in the string is different from self.numParams, throw a warning
+                # if the number of strings after <simName> and <key> is different from self.numParams, throw an error
                 if len(f.split('_')[2:]) != self.numParams:
                     RuntimeError(
-                        "Number of parameters found from the simulation fileName is different from self.numParams\n\
-                         Make sure your simulation file is named as 'simName_key_param0_param1_..paramN")
+                        'Number of parameters extracted from the file name is different from self.numParams\n\
+                         Check if your simulation data file is named as <simName>_<key>_<param0>_<param1>_..._<paramN>.txt')
+                # convert strings to float numbers
                 smcSamples[i, :] = np.float64(paramsString)
-            self.smcSamples.append(smcSamples)
-            return self.smcSamples[iterNO].shape
+        # append parameter samples to self.smcSamples
+        self.smcSamples.append(smcSamples)
+        return self.smcSamples[iterNO].shape
 
-    def getObsDataFromFile(self, obsDataFile, obsCtrl):
+    def getObsDataFromFile(self, obsFileName, obsCtrl):
         # if do not know the data to control simulation
         if self.obsCtrl == '':
-            keysAndData = np.genfromtxt(obsDataFile)
+            keysAndData = np.genfromtxt(obsFileName)
             # if only one observation data vector exist, reshape it with [numSteps,1]
             if len(keysAndData.shape) == 1:
                 keysAndData = keysAndData.reshape([keysAndData.shape[0], 1])
             return keysAndData, None, keysAndData.shape[1], keysAndData.shape[0]
         else:
-            keysAndData = getKeysAndData(obsDataFile)
+            keysAndData = getKeysAndData(obsFileName)
             # separate obsCtrl for controlling simulations from obsData
             obsCtrlData = keysAndData.pop(obsCtrl)
             numSteps = len(obsCtrlData)

@@ -51,7 +51,7 @@ reverse = True if iterNO % 2 == 1 else False
 
 # initialize the problem (if loadSamples is False, the script generates an initial parameter table.
 # Otherwise process the simulation data, either pre-run or run within python, to generate a new parameter table)
-smcTest = smc(sigma, ess, obsWeights, yadeFile, yadeDataDir, obsDataFile, obsCtrl, scaleWithMax=False,
+smcTest = smc(sigma, ess, obsWeights, yadeScript=yadeFile, yadeDataDir=yadeDataDir, obsFileName=obsDataFile, obsCtrl=obsCtrl, scaleCovWithMax=False,
               loadSamples=True, skipDEM=True, standAlone=True)
 smcTest.initialize(paramNames, paramRanges, numSamples, maxNumComponents, priorWeight, paramsFile=paramsFile,
                    proposalFile=proposalFile)

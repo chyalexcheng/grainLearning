@@ -38,7 +38,7 @@ paramRanges = {'E': [10e9, 100e9], 'nu': [0.1, 0.5], 'mu': [0, 1.0], 'safe': [0.
 # set number of samples per iteration
 numSamples = 12
 # set the maximum Gaussian components and prior weight
-maxNumComponents = int(numSamples / 10);
+maxNumComponents = int(numSamples / 10)
 priorWeight = 1. / maxNumComponents
 
 # write synthetic observation data to file
@@ -49,7 +49,7 @@ for i in range(len(ObsData[1])):
 obsDataFile.close()
 
 # initialize the problem
-smcTest = smc(sigma, ess, obsWeights, obsCtrl=obsCtrl, simDataKeys=simDataKeys, obsDataFile='collisionObs.dat',
+smcTest = smc(sigma, ess, obsWeights, obsCtrl=obsCtrl, simDataKeys=simDataKeys, obsFileName='collisionObs.dat',
               loadSamples=False, standAlone=False)
 smcTest.initialize(paramNames, paramRanges, numSamples, maxNumComponents, priorWeight)
 

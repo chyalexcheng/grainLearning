@@ -52,11 +52,18 @@ def resampledParamsTable(keys,smcSamples,proposal,num=100,thread=4,maxNumCompone
 	# resample parameters from a proposal PDF
 	ResampleIndices = unWeighted_resample(proposal,10*num)
 	smcNewSamples = smcSamples[ResampleIndices]
+	# normalize parameter samples
+	sampleMaxs = np.zeros(smcSamples.shape[1])
+	for i in range(sampleMaxs.shape[0]):
+		sampleMaxs[i] = max(smcNewSamples[:,i])
+		smcNewSamples[:,i] /= sampleMaxs[i]
 	# regenerate new SMC samples from Bayesian gaussian mixture model
 	# details on http://scikit-learn.org/stable/modules/generated/sklearn.mixture.BayesianGaussianMixture.html
 	gmm = mixture.BayesianGaussianMixture(n_components=maxNumComponents,weight_concentration_prior=priorWeight,covariance_type='full',tol = 1e-5,max_iter=int(1e5),n_init=100)
 	gmm.fit(smcNewSamples)
 	smcNewSamples, _ = gmm.sample(num)
+	# scale resampled parameters back to their right units
+	for i in range(sampleMaxs.shape[0]): smcNewSamples[:,i] *= sampleMaxs[i]
 	# write parameters in the format for Yade batch mode
 	writeToTable(tableName,smcNewSamples,dim,num,thread,keys)
 	return smcNewSamples, tableName, gmm, maxNumComponents

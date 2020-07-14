@@ -18,8 +18,7 @@ class smc:
     def __init__(self, sigma, ess, obsWeights,
                  yadeVersion='yade-batch', yadeScript='', yadeDataDir='',
                  obsFileName='', obsCtrl='', simDataKeys='', simName='sim',
-                 scaleCovWithMax=True, loadSamples=True, runYadeInGL=False,
-                 standAlone=True):
+                 scaleCovWithMax=True, loadSamples=True, runYadeInGL=False, standAlone=True):
         """
         :param sigma: float, default=1.0
             Normalized (co)variance coefficient
@@ -118,7 +117,8 @@ class smc:
         # if run Yade within GrainLearning in Python, initiate a thread pool and parallel scenes
         if not self.standAlone:
             from collision import createScene, runCollision, addSimData
-            self.__pool = get_pool(mpi=False, threads=self.numSamples)
+            from multiprocessing import cpu_count
+            self.__pool = get_pool(mpi=False, threads=cpu_count())
             self.__scenes = self.__pool.map(createScene, range(self.numSamples))
 
     def initialize(self, paramNames, paramRanges, numSamples, maxNumComponents, priorWeight=0, paramsFile='',
@@ -206,7 +206,7 @@ class smc:
             - Postprocess in memory without writing the data into text files
         3. Interactive mode with Yade running outside GrainLearning
             (self.standAlone=False and self.runYadeInGL=False)
-            - Run Yade in the batch mode with parameter samples stored in a text file
+            - Run Yade in batch mode with parameter samples stored in a text file
             - Postprocess the data stored in self.YadeDataDir
 
         :param iterNO: int, default=-1
@@ -486,7 +486,7 @@ class smc:
 
         initSmcSamples, initparamsFile = initParamsTable(keys=names, maxs=maxs, mins=mins, num=numSamples,
                                                          threads=threads)
-        self.smcSamples.append(np.array(initSmcSamples))
+        self.smcSamples.append(initSmcSamples)
         self.paramsFiles.append(initparamsFile)
         return numSamples
 
@@ -558,7 +558,7 @@ class smc:
         # posterior probability at caliStep is used as the proposal distribution
         proposal = self.posterior[:, caliStep]
         newSmcSamples, newparamsFile, gmm, maxNumComponents = \
-            resampledParamsTable(keys=names, smcSamples=smcSamples, proposal=proposal, num=numSamples, thread=thread,
+            resampledParamsTable(keys=names, smcSamples=smcSamples, proposal=proposal, num=numSamples, threads=thread,
                                  maxNumComponents=self.__maxNumComponents, priorWeight=self.__priorWeight)
         self.smcSamples.append(newSmcSamples)
         self.paramsFiles.append(newparamsFile)
@@ -583,11 +583,9 @@ class smc:
     def getObsData(self):
         return np.hstack((self.obsCtrlData.reshape(self.numSteps, 1), self.obsData))
 
-    def trainGMMinTime(self, maxNumComponents, iterNO=-1):
+    def trainGMMinTime(self, iterNO=-1):
         """
         Train a Gaussian mixture model at every calibration step
-
-        :param maxNumComponents: int, default=numSamples/10
 
         :param iterNO: int, default=-1
             Index of self.smcSamples, i.e., iteration NO.
@@ -599,7 +597,7 @@ class smc:
         for i in xrange(self.numSteps):
             print 'Train DP mixture at time %i...' % i
             posterior = self.posterior[:, i]
-            gmmList.append(getGMMFromPosterior(smcSamples, posterior, maxNumComponents))
+            gmmList.append(getGMMFromPosterior(smcSamples, posterior, self.__maxNumComponents, self.__priorWeight))
         return gmmList
 
     def removeDegeneracy(self, caliStep=-1, threshold=0.5):

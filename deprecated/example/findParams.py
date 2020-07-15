@@ -41,7 +41,7 @@ names = ['E', 'v', 'kr', 'eta', 'mu']
 print " ".join(['Parameters to be identified:']+names)
 
 # whether a Monte Carlo simulation database is available
-mcsData = raw_input("Use an existing Monte Carlo simulation database? (Y/N)\n")
+mcsData = input("Use an existing Monte Carlo simulation database? (Y/N)\n")
 if mcsData == 'Y': 
 	mcsData = True
 else: mcsData = False
@@ -58,12 +58,12 @@ nObs  = len(obs[0])
 ## if no available database
 if not mcsData:
 	# upper bounds of parameter ranges
-	string_input = raw_input("Upper bounds of parameter ranges: \n e.g., 5.5e8 0.2 0.6 0.2 31 \n")
+	string_input = input("Upper bounds of parameter ranges: \n e.g., 5.5e8 0.2 0.6 0.2 31 \n")
 	maxs = string_input.split()
 	maxs = [float(maxValue) for maxValue in maxs]
 	
 	# lower bounds of parameter ranges
-	string_input = raw_input("Lower bounds of parameter ranges: \n e.g., 5.4e8 0.0 0.5 0.1 29 \n")
+	string_input = input("Lower bounds of parameter ranges: \n e.g., 5.4e8 0.0 0.5 0.1 29 \n")
 	mins = string_input.split()
 	mins = [float(minValue) for minValue in mins]
 
@@ -84,16 +84,16 @@ else:
 #########################################
 
 # Monte Carlo simulation data file
-fout = file('MCS.dat','w')
-for i in xrange(nSample):
+fout = open('MCS.dat','w')
+for i in range(nSample):
    fout.write(str(i+1)+'\n')
    data = np.load('mcSimulations/'+str(i)+'.npy').item()
-   for j in xrange(nStep):
+   for j in range(nStep):
       fout.write('%15.5e'%data['e_r'][j]+'%15.5e'%data['s33_over_s11'][j]+'%15.5e'%data['e_v'][j]+'\n')
 fout.close()
 
 # control variables for PF.exe
-fout = file('control_parameter.txt','w')
+fout = open('control_parameter.txt','w')
 fout.write('%9i'%nStep     +' ! simulation step\n')
 fout.write('%9i'%nSample   +' ! nsample in particle_filter.f90\n')
 fout.write('%9i'%nObs      +' ! number of measurement points (xyu) in particle_filter.f90\n')
@@ -102,18 +102,18 @@ fout.close()
 
 # co-variance matrix for PF.exe
 cov = input("assume coveriance:")
-fout = file('co-variance_matrix.txt','w')
+fout = open('co-variance_matrix.txt','w')
 covMatrix = np.zeros([nObs,nObs])
-for i in xrange(nObs):
+for i in range(nObs):
 	covMatrix[i,i] = cov
-	fout.write(' '.join(['%10.6f'%covMatrix[i,j] for j in xrange(nObs)]+['\n']))
+	fout.write(' '.join(['%10.6f'%covMatrix[i,j] for j in range(nObs)]+['\n']))
 fout.close()
 
 # measurement matrix for PF.exe
-fout = file('obs_matrix.txt','w')
+fout = open('obs_matrix.txt','w')
 obsMatrix = np.identity(nObs)
-for i in xrange(nObs):
-	fout.write(' '.join(['%1i'%obsMatrix[i,j] for j in xrange(nObs)]+['\n']))
+for i in range(nObs):
+	fout.write(' '.join(['%1i'%obsMatrix[i,j] for j in range(nObs)]+['\n']))
 fout.close()
 
 ######################################

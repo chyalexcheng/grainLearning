@@ -19,8 +19,8 @@ def paramsTable(keys,maxs,mins,num=2000,thread=4,large=1e5):
 	dim = len(keys)
 	sequencer = ghalton.Halton(dim)
 	table = sequencer.get(num)
-	for i in xrange(dim):
-		for j in xrange(num):
+	for i in range(dim):
+		for j in range(num):
 			# for other parameters of small values
 			if mins[i] < large:
 				mean = .5*(maxs[i]+mins[i])
@@ -35,16 +35,16 @@ def paramsTable(keys,maxs,mins,num=2000,thread=4,large=1e5):
 				power = meanPow+(table[j][i]-.5)*2*stdPow
 				table[j][i] = 10**power
 	# output parameter table with thread number for each Yade simulation session
-	fout = file('table.dat','w')
+	fout = open('table.dat','w')
 	fout.write(' '.join(['!OMP_NUM_THREADS','key']+keys+['\n']))
-	for j in xrange(num):
-		fout.write(' '.join(['%2i'%thread,'%9i'%j]+['%15.5e'%table[j][i] for i in xrange(dim)]+['\n']))
+	for j in range(num):
+		fout.write(' '.join(['%2i'%thread,'%9i'%j]+['%15.5e'%table[j][i] for i in range(dim)]+['\n']))
 	fout.close()
 
 	# prepare parameter table for the particle-filter calibration
-	fout = file('particle.txt','w')
-	for j in xrange(num):
-		for i in xrange(dim):
+	fout = open('particle.txt','w')
+	for j in range(num):
+		for i in range(dim):
 			fout.write('%15.5e'%table[j][i])
 		fout.write('\n')
 	fout.close()

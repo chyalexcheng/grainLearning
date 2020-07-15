@@ -4,7 +4,7 @@
 """
 
 from math import *
-import ghalton
+# import ghalton
 import numpy as np
 from resample import *
 from sklearn import mixture
@@ -36,8 +36,8 @@ def initParamsTable(keys, maxs, mins, num=100, threads=4, tableName='smcTable.tx
     dim = len(keys)
     sequencer = ghalton.Halton(dim)
     table = sequencer.get(num)
-    for i in xrange(dim):
-        for j in xrange(num):
+    for i in range(dim):
+        for j in range(num):
             mean = .5 * (maxs[i] + mins[i])
             std = .5 * (maxs[i] - mins[i])
             table[j][i] = mean + (table[j][i] - .5) * 2 * std
@@ -50,10 +50,10 @@ def writeToTable(tableName, table, dim, num, threads, keys):
     """
     write parameter samples into a text file in order to run Yade in batch mode
     """
-    fout = file(tableName, 'w')
+    fout = open(tableName, 'w')
     fout.write(' '.join(['!OMP_NUM_THREADS', 'key'] + keys + ['\n']))
-    for j in xrange(num):
-        fout.write(' '.join(['%2i' % threads, '%9i' % j] + ['%15.5e' % table[j][i] for i in xrange(dim)] + ['\n']))
+    for j in range(num):
+        fout.write(' '.join(['%2i' % threads, '%9i' % j] + ['%15.5e' % table[j][i] for i in range(dim)] + ['\n']))
     fout.close()
 
 

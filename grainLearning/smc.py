@@ -116,7 +116,7 @@ class smc:
 
         # if run Yade within GrainLearning in Python, initiate a thread pool and parallel scenes
         if not self.standAlone:
-            from collision import createScene, runCollision, addSimData
+            from collision import createScene, runDEM, addSimData
             from multiprocessing import cpu_count
             self.__pool = get_pool(mpi=False, threads=cpu_count())
             self.__scenes = self.__pool.map(createScene, range(self.numSamples))
@@ -159,7 +159,7 @@ class smc:
             # initialize parameter samples uniformly for the first iteration
             elif not self.loadSamples and self.standAlone:
                 self.numSamples = self.getInitParams(paramRanges, numSamples, threads)
-                print 'Leaving GrainLearning; only a parameter table is created.'
+                print('Leaving GrainLearning; only a parameter table is created.')
                 sys.exit()
 
         # DEM simulation data
@@ -190,7 +190,9 @@ class smc:
         if not self.getSmcSamples():
             RuntimeError("SMC samples not yet loaded...")
         else:
-            proposalModel = pickle.load(open(proposalFile, 'rb'))
+            # note the encoding 'latin1' is to convert Python bytestring data to Python 3 strings
+            # see https://stackoverflow.com/questions/28218466/unpickling-a-python-2-object-with-python-3
+            proposalModel = pickle.load(open(proposalFile, 'rb'), encoding='latin1')
             proposal = np.exp(proposalModel.score_samples(self.getSmcSamples()[iterNO]))
         return proposal / sum(proposal)
 
@@ -272,7 +274,7 @@ class smc:
         """
         Run Yade interactive within GrainLearning using a thread pool
         """
-        from collision import createScene, runCollision, addSimData
+        from collision import createScene, runDEM, addSimData
         # get parameter list
         paramsList = []
         for i in range(self.numSamples):
@@ -280,10 +282,10 @@ class smc:
             for j, name in enumerate(self.paramNames):
                 paramsForEach[name] = self.smcSamples[iterNO][i][j]
             paramsList.append(paramsForEach)
-        # pass parameter list to simulation instances FIXME: runCollision is the user-defined Yade script
-        simData = self.__pool.map(runCollision, zip(self.__scenes, paramsList, repeat(self.obsCtrlData)))
+        # pass parameter list to simulation instances FIXME: runDEM is the user-defined Yade script
+        simData = self.__pool.map(runDEM, zip(self.__scenes, paramsList, repeat(self.obsCtrlData)))
         self.__pool.close()
-        # ~ data = runCollision([self.smc__scenes,paramsList[0]])
+        # ~ data = runDEM([self.smc__scenes,paramsList[0]])
         # get observation and simulation data ready for Bayesian filtering
         self.obsData = np.array([self.obsData[name] for name in self.simDataKeys]).transpose()
         for i, data in enumerate(simData):
@@ -296,7 +298,7 @@ class smc:
         """
         Run Yade-batch with parameter samples in paramsFile[iterNO]
         """
-        raw_input("*** Please check if the yade script is correct... ***\n" + self.yadeScript
+        input("*** Please check if the yade script is correct... ***\n" + self.yadeScript
                   + "\nAbout to run Yade in batch mode with " +
                   ' '.join([self.yadeVersion, self.paramsFiles[iterNO], self.yadeScript]))
         os.system(' '.join([self.yadeVersion, self.paramsFiles[iterNO], self.yadeScript]))
@@ -310,7 +312,7 @@ class smc:
         ess = 1.0
         # iterate if effective sample size is too big
         while ess > self.__ess:
-            for i in xrange(self.numSteps):
+            for i in range(self.numSteps):
                 self.likelihood[:, i], self.posterior[:, i], \
                 self.ips[:, i], self.covs[:, i] = self.recursiveBayesian(i)
             ess = self.getEffectiveSampleSize()[-1]
@@ -323,7 +325,7 @@ class smc:
         yadeDataFiles.sort()
         # if self.simName is incorrect and thus cannot get the simulation data files
         while not yadeDataFiles:
-            self.simName = raw_input("Simulation files cannot be found. Please give the correct simName...\n ")
+            self.simName = input("Simulation files cannot be found. Please give the correct simName...\n ")
             yadeDataFiles = glob.glob(os.getcwd() + '/' + self.yadeDataDir + '/*' + self.simName + '*')
             yadeDataFiles.sort()
         self.yadeDataFiles = yadeDataFiles
@@ -381,7 +383,7 @@ class smc:
         # get ensemble averages and coefficients of variance
         ips = np.zeros(self.numParams)
         covs = np.zeros(self.numParams)
-        for i in xrange(self.numParams):
+        for i in range(self.numParams):
             # ensemble average
             ips[i] = self.smcSamples[iterNO][:, i].dot(posterior)
             # diagonal variance
@@ -412,7 +414,7 @@ class smc:
         likelihood = np.zeros(self.numSamples)
 
         # compute likelihood = exp(-0.5*(y_t-H(x_t))*Sigma_t^{-1}*(y_t-H(x_t)))
-        for i in xrange(self.numSamples):
+        for i in range(self.numSamples):
             power = (vecDiff[i, :]).dot(invSigma.dot(vecDiff[i, :].T))
             likelihood[i] = np.exp(-0.5 * power)
 
@@ -451,7 +453,7 @@ class smc:
 
         Sigma = np.zeros([self.numObs, self.numObs])
         # scale observation data with normalized variance parameter to get covariance matrix
-        for i in xrange(self.numObs):
+        for i in range(self.numObs):
             # use smaller weights for higher precision
             if self.scaleCovWithMax:
                 Sigma[i, i] = self.__sigma * weights[i] * max(self.obsData[:, i]) ** 2
@@ -594,8 +596,8 @@ class smc:
         """
         gmmList = []
         smcSamples = self.smcSamples[iterNO]
-        for i in xrange(self.numSteps):
-            print 'Train DP mixture at time %i...' % i
+        for i in range(self.numSteps):
+            print('Train DP mixture at time %i...' % i)
             posterior = self.posterior[:, i]
             gmmList.append(getGMMFromPosterior(smcSamples, posterior, self.__maxNumComponents, self.__priorWeight))
         return gmmList
@@ -617,7 +619,7 @@ class smc:
         self.smcSamples[0] = self.smcSamples[0][effIDs, :]
         self.yadeData = self.yadeData[:, effIDs, :]
         self.numSamples = len(effIDs)
-        for i in xrange(self.numSteps):
+        for i in range(self.numSteps):
             self.likelihood[:, i], self.posterior[:, i], \
             self.ips[:, i], self.covs[:, i] = self.recursiveBayesian(i, self.proposal[:, i])
 

@@ -13,7 +13,7 @@ import pickle
 # name of the driver script for triaxial compression
 yadeFile = 'mcTriax_e.py'
 # use pre-run simulation data for calibration
-iterNO = int(raw_input("Skip DEM simulations for demonstration. \
+iterNO = int(input("Skip DEM simulations for demonstration. \
     Which iteration to look at?\niterNO (e.g., 0, 1, 2, 3): "))
 yadeDataDir = 'iterPF%i' % iterNO
 

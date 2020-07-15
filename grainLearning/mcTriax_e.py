@@ -94,7 +94,7 @@ debug = False
 # isotropic compression test
 if testName[2:] == 'I2_':
 	loadFile = 'e'+testName[:-1]+'.txt'
-	fin = file(loadFile,'r')
+	fin = open(loadFile,'r')
 	lines = fin.readlines(); loadData = []
 	for l in lines: loadData.append(-Vector3.Ones*float(l)/3.)
 	loadData.reverse()
@@ -102,7 +102,7 @@ if testName[2:] == 'I2_':
 # anisotropic compression test
 if testName == 'K02_':
 	loadFile = 'e'+testName+'.txt'
-	fin = file(loadFile,'r')
+	fin = open(loadFile,'r')
 	lines = fin.readlines(); loadData = []
 	for l in lines: 
 		e_r, e_a = l.split()
@@ -112,7 +112,7 @@ if testName == 'K02_':
 # eodometric compressoin test
 if testName == 'VAE3_':
 	loadFile = 'e'+testName+'full.txt'
-	fin = file(loadFile,'r')
+	fin = open(loadFile,'r')
 	lines = fin.readlines(); loadData = []
 	for l in lines: 
 		loadData.append(-Vector3(0,0,float(l)))
@@ -121,7 +121,7 @@ if testName == 'VAE3_':
 # volumetric strain at which wave velocities are checked
 if checkWaveSpeed:
 	loadFile = testName+'waveCheckStrain.txt'
-	fin = file(loadFile,'r')
+	fin = open(loadFile,'r')
 	lines = fin.readlines(); checkStrain = []
 	for l in lines: checkStrain.append(float(l))
 	checkStrain.reverse()

@@ -14,7 +14,7 @@ import pickle
 import matplotlib.pylab as plt
 
 # user-defined parameter: normalized covariance
-sigma = float(raw_input("Initialize the normalized covariance as : "))
+sigma = float(input("Initialize the normalized covariance as : "))
 # target effective sample size
 ess = 0.3
 obsWeights = [1.0]

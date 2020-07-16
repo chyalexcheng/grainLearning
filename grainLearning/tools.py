@@ -53,7 +53,7 @@ def writeToTable(tableName, table, dim, num, threads, keys):
     fout = open(tableName, 'w')
     fout.write(' '.join(['!OMP_NUM_THREADS', 'key'] + keys + ['\n']))
     for j in range(num):
-        fout.write(' '.join(['%2i' % threads, '%9i' % j] + ['%15.5e' % table[j][i] for i in range(dim)] + ['\n']))
+        fout.write(' '.join(['%2i' % threads, '%9i' % j] + ['%20.10e' % table[j][i] for i in range(dim)] + ['\n']))
     fout.close()
 
 
@@ -70,7 +70,10 @@ def getKeysAndData(fileName):
     keys = (fopen.read().splitlines()[0]).split('\t\t')
     if '#' in keys: keys.remove('#')
     keysAndData = {}
-    for key in keys: keysAndData[key] = data[:, keys.index(key)]
+    for key in keys:
+        if '#' in key: keyNoHash = key.split(' ')[-1]
+        else: keyNoHash = key
+        keysAndData[keyNoHash] = data[:, keys.index(key)]
     return keysAndData
 
 

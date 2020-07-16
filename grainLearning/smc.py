@@ -123,7 +123,7 @@ class smc:
         self.__scenes = None
 
     def initialize(self, paramNames, paramRanges, numSamples, maxNumComponents, priorWeight=0.0, covType='full',
-                   paramsFile='', proposalFile='', threads=4):
+                   paramsFile='', proposalFile='', threads=0):
         """
         :param paramNames: list of size (numParams)
 
@@ -173,7 +173,8 @@ class smc:
                 self.numSamples, _ = self.getParamsFromTable(paramsFile)
             # initialize parameter samples uniformly for the first iteration
             else:
-                self.numSamples = self.getInitParams(paramRanges, numSamples, threads)
+                numThreads = threads if threads else cpu_count()
+                self.numSamples = self.getInitParams(paramRanges, numSamples, numThreads)
                 if self.standAlone:
                     print('Leaving GrainLearning; only a parameter table is created.')
                     sys.exit()
@@ -260,6 +261,7 @@ class smc:
                 self.runYadePython(iterNO)
             else:
                 self.runYadeBatch(iterNO)
+                self.getYadeDataFilesFromSamples()
                 self.checkParamsError()
                 self.getYadeData()
 
@@ -279,8 +281,6 @@ class smc:
         """
         Check if each parameter sample matches its simData file name
         """
-        # get simulation data from yadeDataDir
-        self.getYadeDataFiles()
         # check if parameter combinations match with the simulation filename.
         for i, f in enumerate(self.yadeDataFiles):
             # get the file name fore the suffix
@@ -288,7 +288,8 @@ class smc:
             # get parameters from the remaining string
             paramsString = f.split('_')[-self.numParams:]
             # element wise comparison of the parameter vector
-            if not (np.equal(np.float64(paramsString), self.getSmcSamples()[-1][i]).all()):
+            if not (np.abs((np.float64(paramsString) - self.getSmcSamples()[-1][i])
+                           / self.getSmcSamples()[-1][i] < 1e-10).all()):
                 raise RuntimeError(
                     "Parameters " + ", ".join(
                         ["%s" % v for v in self.getSmcSamples()[-1][i]]) + " do not match with the data file name " + f)
@@ -323,11 +324,18 @@ class smc:
         """
         Run Yade-batch with parameter samples in paramsFile[iterNO]
         """
+        self.yadeDataDir = self.yadeDataDir.split('/')[0] + '/iter%i' % iterNO
+        if not os.path.exists(self.yadeDataDir):
+            os.mkdir(self.yadeDataDir)
+        else:
+            input('simData directory already exists (%i files). Delete?' % len(glob.glob(self.yadeDataDir + '/*')))
+            os.system('rm ' + self.yadeDataDir + '/*')
         input("*** Please check if the yade script is correct... ***\n" + self.yadeScript
-                  + "\nAbout to run Yade in batch mode with " +
-                  ' '.join([self.yadeVersion, self.paramsFiles[iterNO], self.yadeScript]))
+              + "\nAbout to run Yade in batch mode using " +
+              ' '.join([self.yadeVersion, self.paramsFiles[iterNO], self.yadeScript]) + '\n')
         os.system(' '.join([self.yadeVersion, self.paramsFiles[iterNO], self.yadeScript]))
-        print('All simulations have finished. Now returning to GrainLearning')
+        input('All simulations have finished. Now returning to GrainLearning?')
+        os.system('mv ' + self.simName + '*.txt '+self.yadeDataDir)
 
     def runESSLoop(self, factor=0.9):
         """
@@ -367,6 +375,15 @@ class smc:
             yadeDataFiles = glob.glob(os.getcwd() + '/' + self.yadeDataDir + '/*' + self.simName + '*')
             yadeDataFiles.sort()
         self.yadeDataFiles = yadeDataFiles
+
+    def getYadeDataFilesFromSamples(self):
+        self.yadeDataFiles = []
+        for i in range(self.numSamples):
+            fileName = self.yadeDataDir + '/' + self.simName + '*_%i_*.txt' % i
+            files = glob.glob(fileName)
+            if not files: raise RuntimeError("No files with name " + fileName + ' found')
+            elif len(files) > 1: raise RuntimeError("Found more than 1 file with name " + fileName)
+            self.yadeDataFiles.append(files[0])
 
     def getYadeData(self):
         """
@@ -588,17 +605,19 @@ class smc:
             numObs = len(keysAndData.keys())
             return keysAndData, obsCtrlData, numObs, numSteps
 
-    def resampleParams(self, caliStep, thread=4, iterNO=-1):
+    def resampleParams(self, caliStep, threads=0, iterNO=-1):
         """
         Resample parameters using a variational Gaussian mixture model
         """
         names = self.getNames()
         smcSamples = self.smcSamples[iterNO]
         numSamples = self.numSamples
+        numThreads = threads if threads else cpu_count()
         # posterior probability at caliStep is used as the proposal distribution
         proposal = self.posterior[:, caliStep]
         newSmcSamples, newparamsFile, gmm, maxNumComponents = \
-            resampledParamsTable(keys=names, smcSamples=smcSamples, proposal=proposal, num=numSamples, threads=thread,
+            resampledParamsTable(keys=names, smcSamples=smcSamples, proposal=proposal, num=numSamples,
+                                 threads=numThreads,
                                  maxNumComponents=self.__maxNumComponents, priorWeight=self.__priorWeight,
                                  covType=self.__covType)
         self.smcSamples.append(newSmcSamples)

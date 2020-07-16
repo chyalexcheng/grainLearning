@@ -13,7 +13,7 @@ readParamsFromTable(
     # timestepSafetyCoefficient
     safe=0.1,
     # no. of your simulation
-    key=0
+    key=0,
 )
 
 import numpy as np
@@ -33,7 +33,12 @@ def addSimData():
     if u > obsCtrlData[-1]:
         plot.addData(u=u, f=inter.phys.normalForce.norm())
         obsCtrlData.pop()
-    if not obsCtrlData: O.pause()
+    if not obsCtrlData:
+        # File name: <simName>_<key>_<param0>_<param1>_..._<paramN>.txt
+        # TODO How to pass argument (simName) from GrainLearning to yade-batch
+        dataName = '2particle_%i_%.10e_%.10e' % (table.key, table.E, table.nu) + '.txt'
+        plot.saveDataTxt(dataName)
+        O.pause()
 
 
 # get data for simulation control

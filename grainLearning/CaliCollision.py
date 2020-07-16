@@ -18,6 +18,8 @@ ess = 0.3
 obsWeights = [1.0]
 # maximum number of iterations
 maxNumOfIters = 10
+# number of threads
+threads = 1
 
 # get observation data file (synthetic data from DEM)
 ObsData = np.loadtxt('collision.dat')
@@ -50,15 +52,23 @@ for i in range(len(ObsData[1])):
 obsDataFile.close()
 
 # initialize the problem
-smcTest = smc(sigma, ess, obsWeights, obsCtrl=obsCtrl, simDataKeys=simDataKeys, obsFileName='collisionObs.dat',
-              loadSamples=False, runYadeInGL=True, standAlone=False)
+# interactive mode with Yade running inside GrainLearning
+# smcTest = smc(sigma, ess, obsWeights, obsCtrl=obsCtrl, simDataKeys=simDataKeys, obsFileName='collisionObs.dat',
+#               loadSamples=False, runYadeInGL=True, standAlone=False)
+
+# interactive mode with Yade running outside GrainLearning
+smcTest = smc(sigma, ess, obsWeights,
+              yadeVersion='yadedaily-batch', yadeScript='Collision.py', yadeDataDir='Collision',
+              obsCtrl=obsCtrl, simDataKeys=simDataKeys, simName='2particle', obsFileName='collisionObs.dat',
+              loadSamples=False, runYadeInGL=False, standAlone=False)
 
 # run sequential Monte Carlo; return means and coefficients of variance of PDF over the parameters
 iterNO = 0
 # iterate the problem
 while smcTest.sigma > 1.0e-2 and iterNO < maxNumOfIters:
     # reinitialize the weights
-    smcTest.initialize(paramNames, paramRanges, numSamples, maxNumComponents, priorWeight, covType=covType)
+    smcTest.initialize(paramNames, paramRanges, numSamples,
+                       maxNumComponents, priorWeight, covType=covType, threads=threads)
 
     # rerun sequential Monte Carlo
     ips, covs = smcTest.run(iterNO=iterNO, reverse=iterNO % 2)
@@ -71,7 +81,7 @@ while smcTest.sigma > 1.0e-2 and iterNO < maxNumOfIters:
 
     # resample parameters
     caliStep = -1
-    gmm, maxNumComponents = smcTest.resampleParams(caliStep=caliStep, iterNO=iterNO)
+    gmm, maxNumComponents = smcTest.resampleParams(caliStep=caliStep, iterNO=iterNO, threads=threads)
 
     # plot initial and resampled parameters
     plotAllSamples(smcTest.getSmcSamples(), smcTest.getNames())
@@ -90,7 +100,7 @@ while smcTest.sigma > 1.0e-2 and iterNO < maxNumOfIters:
     weights /= sum(weights)
     for i in (-weights[:, caliStep]).argsort()[:3]:
         plt.plot(smcTest.getObsData()[:, 0], smcTest.yadeData[:, i, 0], label='sim%i' % i)
-    plt.xlabel = 'Overlap'; plt.ylabel = 'Force'
+    plt.xlabel('Overlap'); plt.ylabel('Force')
     plt.legend(); plt.show()
     # increment iteration NO.
     iterNO += 1

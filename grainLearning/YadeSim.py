@@ -94,22 +94,24 @@ def runDEM(kwargs):
     obsCtrlData = list(kwargs[2])
     obsCtrlData.reverse()
 
+    print('\nModel evaluation NO. %i' % params['key'])
     # read in things need to be randomized
-    if 'rho' not in params.keys(): print("use default density...")
+    if 'rho' not in params.keys():
+        print("use default density...")
     if 'E' not in params.keys():
-        raise RuntimeError("Density E not defined...")
+        print("use default Young's modulus...")
     else:
         table.E = abs(params['E'] * sigScale)
     if 'nu' not in params.keys():
-        raise RuntimeError("Poisson's ratio nu not defined...")
+        print("use default Poisson's ratio...")
     else:
         table.nu = abs(params['nu'])
     if 'mu' not in params.keys():
-        raise RuntimeError("Friction coefficient mu not defined...")
+        print("use default friction coefficient...")
     else:
         table.mu = abs(params['mu'])
     if 'safe' not in params.keys():
-        raise RuntimeError("Timestepping safety coefficient not defined...")
+        print("use default Time-stepping safety coefficient...")
     else:
         table.safe = abs(params['safe'])
     print('E: %s; nu: %s; mu: %s; safe: %s' % (table.E, table.nu, table.mu, table.safe))

@@ -13,8 +13,7 @@ import pickle
 # name of the driver script for triaxial compression
 yadeFile = 'mcTriax_e.py'
 # use pre-run simulation data for calibration
-iterNO = int(input("Skip DEM simulations for demonstration. \
-    Which iteration to look at?\niterNO (e.g., 0, 1, 2, 3): "))
+iterNO = int(input("Skip DEM simulations for demonstration. Which iteration to look at?\niterNO (e.g., 0, 1, 2, 3): "))
 yadeDataDir = 'iterPF%i' % iterNO
 
 sciPlot = True
@@ -64,9 +63,6 @@ smcTest.initialize(paramNames, paramRanges, numSamples, maxNumComponents, priorW
 
 # run sequential Monte Carlo and return ensemble means and coefficients of variance
 ips, covs = smcTest.run(reverse=reverse)
-# get the effective sample size
-ess = smcTest.getEffectiveSampleSize()[-1]
-print('Effective sample size: %f' % ess)
 
 # TODO move the plotting stuff into plotResults.py
 if sciPlot:

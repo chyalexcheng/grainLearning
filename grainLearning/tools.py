@@ -4,7 +4,7 @@
 """
 
 from math import *
-# import ghalton
+import ghalton
 import numpy as np
 from resample import *
 from sklearn import mixture
@@ -74,8 +74,8 @@ def getKeysAndData(fileName):
     return keysAndData
 
 
-def resampledParamsTable(keys, smcSamples, proposal, num=100, threads=4, maxNumComponents=10, priorWeight=1e3,
-                         tableName='smcTableNew.txt'):
+def resampledParamsTable(keys, smcSamples, proposal, num=100, threads=4, maxNumComponents=10, priorWeight=0,
+                         covType='full', tableName='smcTableNew.txt'):
     """
     Resample parameters using a variational Gaussian mixture model
     and write the samples into a text file
@@ -98,6 +98,19 @@ def resampledParamsTable(keys, smcSamples, proposal, num=100, threads=4, maxNumC
 
     :param priorWeight: float, default=1./maxNumComponents
         weight_concentration_prior of the BayesianGaussianMixture class
+        The dirichlet concentration of each component on the weight distribution (Dirichlet).
+        This is commonly called gamma in the literature.
+        The higher concentration puts more mass in the center and will lead to more components being active,
+        while a lower concentration parameter will lead to more mass at the edge of the mixture weights simplex.
+        (https://scikit-learn.org/stable/modules/generated/sklearn.mixture.BayesianGaussianMixture.html)
+
+    :param covType: string, default='full'
+        covariance_type of the BayesianGaussianMixture class
+        String describing the type of covariance parameters to use. Must be one of:
+        'full' (each component has its own general covariance matrix),
+        'tied' (all components share the same general covariance matrix),
+        'diag' (each component has its own diagonal covariance matrix),
+        'spherical' (each component has its own single variance).
         (https://scikit-learn.org/stable/modules/generated/sklearn.mixture.BayesianGaussianMixture.html)
 
     :param tableName: string, default='smcTableNew.txt'
@@ -132,7 +145,7 @@ def resampledParamsTable(keys, smcSamples, proposal, num=100, threads=4, maxNumC
     # regenerate new SMC samples from Bayesian gaussian mixture model
     # details on http://scikit-learn.org/stable/modules/generated/sklearn.mixture.BayesianGaussianMixture.html
     gmm = mixture.BayesianGaussianMixture(n_components=maxNumComponents, weight_concentration_prior=priorWeight,
-                                          covariance_type='full', tol=1e-5, max_iter=int(1e5), n_init=100)
+                                          covariance_type=covType, tol=1e-5, max_iter=int(1e5), n_init=100)
     gmm.fit(smcNewSamples)
     smcNewSamples, _ = gmm.sample(num)
 
@@ -144,14 +157,14 @@ def resampledParamsTable(keys, smcSamples, proposal, num=100, threads=4, maxNumC
     return smcNewSamples, tableName, gmm, maxNumComponents
 
 
-def getGMMFromPosterior(smcSamples, posterior, n_components, priorWeight):
+def getGMMFromPosterior(smcSamples, posterior, n_components, priorWeight, covType='full'):
     """
     Train a Gaussian mixture model from the posterior distribution
     """
     ResampleIndices = residual_resample(posterior)
     smcNewSamples = smcSamples[ResampleIndices]
     gmm = mixture.BayesianGaussianMixture(n_components=n_components, weight_concentration_prior=priorWeight,
-                                          covariance_type='full', tol=1e-5, max_iter=int(1e5), n_init=100)
+                                          covariance_type=covType, tol=1e-5, max_iter=int(1e5), n_init=100)
     gmm.fit(smcNewSamples)
     return gmm
 

@@ -21,31 +21,33 @@ def getWeight(wName):
 	wFile = open(wName, "r")
 	wLines = wFile.read().splitlines()
 	wFile.close(); 	wData =[]
-	# extract weights at specified step 
+	# extract weights at specified step
 	for i in range(len(wLines)): wData.append(np.float64(wLines[i].split()))
 	return wData
-	
+
 def plotIPs(names,ips,covs,nStep,weight,params):
 	# plot weighted average for each parameter
+	num = len(names)
+	nCols = np.ceil(num/2)
 	plt.figure('Posterior means over parameters')
-	for i in range(4):
-		plt.subplot(2,2,i+1)
+	for i in range(num):
+		plt.subplot(2,nCols,i+1)
 		plt.plot(ips[:,i])
 		plt.xlabel('loading step')
 		plt.ylabel(r'$|'+names[i]+r'|$')
 		plt.grid(True)
 	plt.tight_layout()
-	
+
 	# plot coefficient of variance for each parameter
 	plt.figure('Posterior coefficients of variance over parameters')
-	for i in range(4):
-		plt.subplot(2,2,i+1)
+	for i in range(num):
+		plt.subplot(2,nCols,i+1)
 		plt.plot(covs[:,i])
 		plt.xlabel('loading step')
 		plt.ylabel(r'$COV('+names[i]+')$')
 		plt.grid(True)
 	plt.tight_layout()
-	
+
 	# plot probability density function of identified parameters
 	for i,name in enumerate(names):
 		plt.figure('PDF of '+name)
@@ -58,42 +60,24 @@ def plotIPs(names,ips,covs,nStep,weight,params):
 			plt.grid(True)
 		plt.tight_layout()
 
-	# get ensemble average
-	enAvg0 = params[:,0].dot(weight)
-	enAvg1 = params[:,1].dot(weight)
-	enAvg2 = params[:,2].dot(weight)
-	enAvg3 = params[:,3].dot(weight)
-	numOfObs = enAvg0.shape
-	# get diagonal variance
-	enVar0 = np.zeros(numOfObs)
-	enVar1 = np.zeros(numOfObs)
-	enVar2 = np.zeros(numOfObs)
-	enVar3 = np.zeros(numOfObs)
-	for n in range(numOfObs[0]):
-		enVar0[n] = ((params[:,0]-enAvg0[n])**2).dot(weight[:,n])
-		enVar1[n] = ((params[:,1]-enAvg1[n])**2).dot(weight[:,n])
-		enVar2[n] = ((params[:,2]-enAvg2[n])**2).dot(weight[:,n])
-		enVar3[n] = ((params[:,3]-enAvg3[n])**2).dot(weight[:,n])
-	# get standard deviation
-	enStd0 = np.sqrt(enVar0)
-	enStd1 = np.sqrt(enVar1)
-	enStd2 = np.sqrt(enVar2)
-	enStd3 = np.sqrt(enVar3)
-
 	plt.show()
-	
-	return enAvg0, enStd0, enAvg1, enStd1, enAvg2, enStd2, enAvg3, enStd3
 
-def plotAllSamples(smcSamples,names):
+
+def plotAllSamples(smcSamples, names):
+	num = len(names)
+	nPanels = np.ceil(num / 2)
 	numOfIters = len(smcSamples)
 	plt.figure('Resampled parameter space')
-	plt.subplot(121);
-	for i in range(numOfIters): plt.plot(smcSamples[i][:,0],smcSamples[i][:,1],'o',label='iterNO. %.2i'%i)
-	plt.xlabel(r'$'+names[0]+'$'); plt.ylabel(r'$'+names[1]+'$'); plt.legend()
-	plt.subplot(122);
-	for i in range(numOfIters): plt.plot(smcSamples[i][:,2],smcSamples[i][:,3],'o',label='iterNO. %.2i'%i)
-	plt.xlabel(r'$'+names[2]+'$'); plt.ylabel(r'$'+names[3]+'$'); plt.legend()
-	plt.tight_layout(); plt.show()
+	for n in range(int(nPanels)):
+		plt.subplot(1, nPanels, n + 1)
+		for i in range(numOfIters):
+			plt.plot(smcSamples[i][:, 2 * n], smcSamples[i][:, 2 * n + 1], 'o', label='iterNO. %.2i' % i)
+			plt.xlabel(r'$' + names[2 * n] + '$')
+			plt.ylabel(r'$' + names[2 * n + 1] + '$')
+			plt.legend()
+		plt.legend()
+		plt.tight_layout()
+	plt.show()
 
 def numAndExpData(numFiles, p0, q0, n0, e_a0, e_r0):
 
@@ -101,7 +85,7 @@ def numAndExpData(numFiles, p0, q0, n0, e_a0, e_r0):
 	e_a1,e_r11,e_r21,n1,q1,p1 = np.genfromtxt(numFiles[0]).transpose(); e_v1=e_a1+e_r11+e_r21
 	e_a2,e_r12,e_r22,n2,q2,p2 = np.genfromtxt(numFiles[1]).transpose(); e_v2=e_a2+e_r12+e_r22
 	e_a3,e_r13,e_r23,n3,q3,p3 = np.genfromtxt(numFiles[2]).transpose(); e_v3=e_a3+e_r13+e_r23
-	
+
 	plt.figure(1)
 	plt.plot(e_a0, 'bo', e_a1, '-', e_a2, '--', e_a3, '-.')
 	plt.xlabel('Simulation step', fontsize=18)
@@ -110,8 +94,8 @@ def numAndExpData(numFiles, p0, q0, n0, e_a0, e_r0):
 	plt.yticks(fontsize = 16)
 	plt.grid(True)
 	plt.savefig('e_a.png')
-	
-	plt.figure(2)	
+
+	plt.figure(2)
 	plt.plot(e_v0, 'bo', e_v1, '-', e_v2, '--', e_v3, '-.')
 	plt.xlabel('Simulation step', fontsize=18)
 	plt.ylabel('Volumetric strain', fontsize=18)
@@ -119,7 +103,7 @@ def numAndExpData(numFiles, p0, q0, n0, e_a0, e_r0):
 	plt.yticks(fontsize = 16)
 	plt.grid(True)
 	plt.savefig('e_v.png')
-	
+
 	plt.figure(3)
 	plt.plot(n0, 'bo', n1, '-', n2, '--', n3, '-.')
 	plt.xlabel('Simulation step', fontsize=18)
@@ -145,7 +129,7 @@ def numAndExpData(numFiles, p0, q0, n0, e_a0, e_r0):
 	plt.xticks(fontsize = 16)
 	plt.yticks(fontsize = 16)
 	plt.grid(True)
-	plt.savefig('q.png')	
+	plt.savefig('q.png')
 
 
 def plotExpAndNum(name, names, iterNO, weight, mcFiles, numFiles, label1, label2, label3, label4, p, q, n, e_a, e_r):
@@ -154,11 +138,11 @@ def plotExpAndNum(name, names, iterNO, weight, mcFiles, numFiles, label1, label2
 	matplotlib.rcParams.update(params)
 	titles = ['(a)','(b)']
 	if name[-2:] == 'I2': e_a = (np.array(e_a)+2*np.array(e_r))/3.
-	
+
 	# get weight and turning points in the graphs
 	nSample, numOfObs = weight.shape
 	turns = [1,30,56,80,numOfObs]
-	
+
 	# prepare ensembles
 	enP = np.zeros([nSample, numOfObs])
 	enQ = np.zeros([nSample, numOfObs])
@@ -188,7 +172,7 @@ def plotExpAndNum(name, names, iterNO, weight, mcFiles, numFiles, label1, label2
 	enStdQPRatio = np.sqrt(enStdQPRatio)
 	enStdN = np.sqrt(enStdN)
 	enStdC = np.sqrt(enStdC)
-	
+
 	fig = plt.figure(figsize=(20/2.54,5/2.54))
 	ax = fig.add_subplot(1, 2, 1)
 	lines = []; ls = ['-', '-.', ':','-']
@@ -208,7 +192,7 @@ def plotExpAndNum(name, names, iterNO, weight, mcFiles, numFiles, label1, label2
 	ax.set_ylabel(r'$q/p$')
 	ax.set_xlim(xmin=0)
 	ax.grid(True)
-	
+
 	ax = fig.add_subplot(1, 2, 2)
 	for i in range(len(numFiles)):
 		C,CN,K0,e_r11,e_r21,e_a1,n1,overlap,p1,q1 = np.genfromtxt(numFiles[i]).transpose();
@@ -231,7 +215,7 @@ def plotExpAndNum(name, names, iterNO, weight, mcFiles, numFiles, label1, label2
 	fig.subplots_adjust(left=0.06, bottom=0.20, right=0.74, top=0.98, hspace=0, wspace=0.35)
 	plt.savefig('expAndDEM'+iterNO+'.pdf')
 	plt.show()
-	
+
 	return enAvgP, enStdP, enAvgQPRatio, enStdQPRatio, enAvgN, enStdN, enAvgC, enStdC
 
 def plotExpSequence(name, names, varsDir, numFiles, label1, label2, label3, label4, p, q, n, e_a, e_r):
@@ -249,16 +233,16 @@ def plotExpSequence(name, names, varsDir, numFiles, label1, label2, label3, labe
 		ax.set_xlabel(r'$\varepsilon_a$ (\%)')
 		ax.set_ylabel(r'$q/p$')
 		ax.set_xlim(xmin=0)
-		ax.grid(True)			
+		ax.grid(True)
 		ax = fig.add_subplot(1, 2, 2)
 		l1, = ax.plot(p[:56], n[:56], '-',color='gray',label='Experimental data',ms=4)
 		ax.plot(p[i], n[i], '^',color='k')
 		anchored_text = AnchoredText(titles[1], loc=2, frameon=False, pad=-0.3)
-		ax.add_artist(anchored_text)	
+		ax.add_artist(anchored_text)
 		ax.set_xlabel(r'$p$ (MPa)')
 		ax.set_ylabel(r'$n$')
 		ax.set_xlim(xmin=0)
-		ax.grid(True)	
+		ax.grid(True)
 		fig.subplots_adjust(left=0.09, bottom=0.18, right=0.98, top=0.98, hspace=0, wspace=0.35)
 		#~ plt.savefig('%02d.png'%i,dpi=300)
 		plt.show()
@@ -285,7 +269,7 @@ def plotExpAndNumHalfPage(name, names, varsDir, numFiles, label1, label2, label3
 		ax.set_ylabel(r'$q/p$')
 		ax.set_xlim(xmin=0)
 		ax.grid(True)
-		
+
 	ax = fig.add_subplot(2, 1, 2)
 	l1, = ax.plot(p, n, 'o',color='darkred',label='Experimental data')
 	for i in range(len(numFiles)):
@@ -294,15 +278,15 @@ def plotExpAndNumHalfPage(name, names, varsDir, numFiles, label1, label2, label3
 		l2, = ax.plot(p1[1:], n1[1:],label=r'$E_c$'+'=%.1f, '%(label1[i]/1e9)+r'$\mu$'+'=%.3f, '%label2[i]+r'$k_m$'+'=%.3f, '%(label3[i]/1e3)+r'$\eta_m$'+'=%.3f'%label4[i],ls = ls[i],color = 'k')
 
 	anchored_text = AnchoredText(titles[1], loc=2, frameon=False, pad=-0.3)
-	ax.add_artist(anchored_text)	
+	ax.add_artist(anchored_text)
 	ax.set_xlabel(r'$p$ (MPa)')
 	ax.set_ylabel(r'$n$')
 	ax.set_xlim(xmin=0)
 	ax.grid(True)
-	
-	fig.legend(tuple(lines),tuple(['Experimental\ndata']+[r'$E_c$'+'=%.1f\n'%(label1[i]/1e9)+r'$\mu$'+'=%.3f\n'%label2[i]+r'$k_m$'+'=%.3f\n'%(label3[i]/1e3)+r'$\eta_m$'+'=%.3f'%label4[i] for i in range(len(numFiles))]),loc = 'right',ncol=1,handlelength=1.45,labelspacing=1.5,frameon=False)
+
+	fig.legend(tuple(lines),tuple(['Experimental\ndata']+[r'$E_c$'+'=%.1f\n'%(label1[i]/1e9)+r'$\mu$'+'=%.3f\n'%label2[i]+r'$k_m$'+'=%.3f\n'%(label3[i]/1e3)+r'$\eta_m$'+'=%.3f'%label4[i] for i in range(len(numFiles))]),loc = 'right',nCols=1,handlelength=1.45,labelspacing=1.5,frameon=False)
 	fig.subplots_adjust(left=0.13, bottom=0.105, right=0.66, top=0.98, hspace=0.4, wspace=0.35)
-	#~ plt.savefig('expAndDEM'+varsDir[-2]+'.png',dpi=600); plt.savefig('expAndDEM'+varsDir[-2]+'.tif',dpi=600); plt.savefig('expAndDEM'+varsDir[-2]+'.pdf',dpi=600); 
+	#~ plt.savefig('expAndDEM'+varsDir[-2]+'.png',dpi=600); plt.savefig('expAndDEM'+varsDir[-2]+'.tif',dpi=600); plt.savefig('expAndDEM'+varsDir[-2]+'.pdf',dpi=600);
 	plt.show()
 
 def microMacroPDF(name, step, pData, varsDir, weight, mcFiles, loadWeights=False):
@@ -359,11 +343,11 @@ def microMacroPDF(name, step, pData, varsDir, weight, mcFiles, loadWeights=False
 			plt.contour(X, Y, w0, cmap=cmap,levels=np.linspace(minScore-abs(minScore)*0.1,maxScore,10),linewidths=0.7); plt.grid()
 			ax.locator_params(axis='both',nbins=2)
 			ax.tick_params(axis='both', which='both', bottom='off', top='off', labelbottom='off', right='off', left='off', labelleft='off')
-			if i == enQOIs.shape[0]-1: 
+			if i == enQOIs.shape[0]-1:
 				ax.set_xlabel(Xlabels[j],size = params['font.size'],labelpad=10); ax.tick_params(axis='both', which='both', bottom='on', top='off', labelbottom='on', right='off', left='off', labelleft='off', labelsize = params['xtick.labelsize'])
-			if j == 0: 
+			if j == 0:
 				ax.set_ylabel(Ylabels[i],size = params['font.size'],labelpad=10); ax.tick_params(axis='both', which='both', bottom='off', top='off', labelbottom='off', right='off', left='on', labelleft='on', labelsize = params['xtick.labelsize'])
-			if i==enQOIs.shape[0]-1 and j==0: 
+			if i==enQOIs.shape[0]-1 and j==0:
 				ax.tick_params(axis='both', which='both', bottom='on', top='off', labelbottom='on', right='off', left='on', labelleft='on', labelsize = params['xtick.labelsize'])
 			if i!=enQOIs.shape[0]-1 and j!=0:
 				ax.tick_params(axis='both', which='both', bottom='off', top='off', labelbottom='off', right='off', left='off', labelleft='off')
@@ -378,7 +362,7 @@ def microMacroPDF(name, step, pData, varsDir, weight, mcFiles, loadWeights=False
 	plt.savefig('microMacroUQ_iterPF'+varsDir[-1]+'_%i.pdf'%step,dpi=600);
 	#~ plt.show()
 	return wPerPair
-	
+
 # kde estimation
 def getPDF(pDataResampled,pMin,pMax):
 	kde = stats.gaussian_kde(pDataResampled)
@@ -425,7 +409,7 @@ def macroMacroPDF(name, step, pData, varsDir, weight, mcFiles):
 				p0, w0 = getPDF(enQOIs[i,:],min(enQOIs[i,:]),max(enQOIs[i,:]))
 				ax2 = ax.twinx()
 				ax2.fill_between(p0,w0,alpha=0.63,facecolor='black')
-				ax2.tick_params(axis='y', right='off', labelright='off')			
+				ax2.tick_params(axis='y', right='off', labelright='off')
 				ax.set_ylim(min(p0),max(p0));
 			elif j<i:
 				cmap = sns.dark_palette("black", as_cmap=True)
@@ -438,18 +422,18 @@ def macroMacroPDF(name, step, pData, varsDir, weight, mcFiles):
 				ax.scatter(enQOIs[j,sortedIndex],enQOIs[i,sortedIndex],s=25,c=weight[sortedIndex,step],cmap='Greys'); ax.grid()
 				ax.locator_params(axis='both',tight=True,nbins=2)
 				ax.set_xlim(min(enQOIs[j,:]),max(enQOIs[j,:])); ax.set_ylim(min(enQOIs[i,:]),max(enQOIs[i,:]))
-			if i == 3: 
+			if i == 3:
 				ax.set_xlabel(labels[j],size = params['font.size'],labelpad=10); ax.tick_params(axis='both', which='both', bottom='on', top='off', labelbottom='on', right='off', left='off', labelleft='off', labelsize = params['xtick.labelsize'])
-			if j == 0: 
+			if j == 0:
 				ax.set_ylabel(labels[i],size = params['font.size'],labelpad=10); ax.tick_params(axis='both', which='both', bottom='off', top='off', labelbottom='off', right='off', left='on', labelleft='on', labelsize = params['xtick.labelsize'])
-			if i==3 and j==0: 
+			if i==3 and j==0:
 				ax.tick_params(axis='both', which='both', bottom='on', top='off', labelbottom='on', right='off', left='on', labelleft='on', labelsize = params['xtick.labelsize'])
 			if i!=3 and j!=0:
 				ax.tick_params(axis='both', which='both', bottom='off', top='off', labelbottom='off', right='off', left='off', labelleft='off')
 
 	plt.tight_layout()
 	fig.subplots_adjust(left=0.165, bottom=0.12, right=0.98, top=0.99, hspace=0.1, wspace=0.1)
-	plt.savefig('macroMacroUQ_'+varsDir[-8:-1]+'_%i.pdf'%step,dpi=600); 
+	plt.savefig('macroMacroUQ_'+varsDir[-8:-1]+'_%i.pdf'%step,dpi=600);
 	plt.show()
 
 def plot3DScatter(xName,yName, zName, x,y,z):
@@ -467,7 +451,7 @@ def polySmooth(y):
 	x = np.arange(len(y))
 	yhat = savitzky_golay(y, 51, 10) # window size 51, polynomial order 3
 	return yhat
-	
+
 def savitzky_golay(y, window_size, order, deriv=0, rate=1):
     r"""Smooth (and optionally differentiate) data with a Savitzky-Golay filter.
     The Savitzky-Golay filter removes high frequency noise from data.
@@ -518,7 +502,7 @@ def savitzky_golay(y, window_size, order, deriv=0, rate=1):
     """
     import numpy as np
     from math import factorial
-    
+
     try:
         window_size = np.abs(np.int(window_size))
         order = np.abs(np.int(order))

@@ -26,7 +26,7 @@ readParamsFromTable(
 )
 
 # glass bead parameters (units: ug->1e-9kg; mm->1e-3m; ms->1e-3s)
-lenScale = 1e3  # lenth in mm <- 1e-3 m
+lenScale = 1e3  # length in mm <- 1e-3 m
 sigScale = 1  # Stress in ug/(mm*ms^2) <- Pa
 rhoScale = 1  # Density in ug/mm^3 <- kg/m^3
 

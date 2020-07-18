@@ -11,6 +11,7 @@ from itertools import repeat
 if os.path.exists('YadeSim.py'):
     from YadeSim import createScene, runDEM, addSimData
 from multiprocessing import cpu_count
+from copy import deepcopy
 
 class smc:
     """
@@ -23,7 +24,7 @@ class smc:
                  scaleCovWithMax=True, loadSamples=True, runYadeInGL=False, standAlone=True):
         """
         :param sigma: float, default=1.0
-            Normalized (co)variance coefficient
+            Initial guess of the upper limit of normalized (co)variance coefficient
 
         :param ess: float, default=0.3
             Effective sample size
@@ -68,7 +69,9 @@ class smc:
         """
 
         # SMC parameters
-        self.sigma = sigma
+        self.sigma = 1.0e6
+        self.sigmaMin = 1.0e-4
+        self.sigmaMax = sigma
         self.ess = ess
         self.obsWeights = obsWeights
         self.numParams = 0
@@ -186,7 +189,7 @@ class smc:
         self.covs = np.zeros([self.numParams, self.numSteps])
         self.posterior = np.zeros([self.numSamples, self.numSteps])
         self.likelihood = np.zeros([self.numSamples, self.numSteps])
-        if proposalFile:
+        if proposalFile and os.path.exists(proposalFile):
             # load proposal density from file
             self.__proposalFile = proposalFile
             self.proposal = self.loadProposalFromFile(proposalFile, -1)
@@ -202,7 +205,7 @@ class smc:
                                                   tol=1e-5, max_iter=int(1e5), n_init=100)
             gmm.fit(self.getSmcSamples()[iterNO])
             proposal = np.exp(gmm.score_samples(self.getSmcSamples()[iterNO]))
-        return proposal / sum(proposal)
+            return proposal / sum(proposal)
 
     def loadProposalFromFile(self, proposalFile, iterNO):
         if not self.getSmcSamples():
@@ -211,8 +214,43 @@ class smc:
             # note the encoding 'latin1' is to convert Python bytestring data to Python 3 strings
             # see https://stackoverflow.com/questions/28218466/unpickling-a-python-2-object-with-python-3
             proposalModel = pickle.load(open(proposalFile, 'rb'), encoding='latin1')
-            proposal = np.exp(proposalModel.score_samples(self.getSmcSamples()[iterNO]))
-        return proposal / sum(proposal)
+            # get normalized samples if one of the means of the Gaussian mixture is smaller than one
+            # FIXME the if-statement is there only because I have trained gaussian mixtures not non-dimensionalized
+            if np.max(proposalModel.means_) < 1.0:
+                samples = self.getNormalizedSamples(iterNO)
+            else:
+                samples = self.smcSamples[iterNO]
+            proposal = np.exp(proposalModel.score_samples(samples))
+            proposal *= self.voronoiVols(samples)
+            # assign the maximum vol to open regions (use uniform proposal probabilities if Voronoi fails)
+            if (proposal < 0.0).all():
+                return np.ones(proposal.shape) / self.numSamples
+            else:
+                proposal[np.where(proposal < 0.0)] = min(proposal[np.where(proposal > 0.0)])
+                return proposal / sum(proposal)
+
+    def getNormalizedSamples(self, iterNO):
+        """
+        normalize parameter samples with respect to the maximums per dimension
+        """
+        sampleMaxs = np.zeros(self.numParams)
+        samples = deepcopy(self.smcSamples[iterNO])
+        for i in range(self.numParams):
+            sampleMaxs[i] = max(samples[:, i])
+            samples[:, i] /= sampleMaxs[i]
+        return samples
+
+    def voronoiVols(self, samples):
+        from scipy.spatial import Voronoi, ConvexHull
+        v = Voronoi(samples)
+        vol = np.zeros(v.npoints)
+        for i, reg_num in enumerate(v.point_region):
+            indices = v.regions[reg_num]
+            if -1 in indices:  # some regions can be opened
+                vol[i] = -1.0
+            else:
+                vol[i] = ConvexHull(v.vertices[indices]).volume
+        return vol
 
     def run(self, iterNO=-1, reverse=False):
         """
@@ -337,33 +375,42 @@ class smc:
         input('All simulations have finished. Now returning to GrainLearning?')
         os.system('mv ' + self.simName + '*.txt '+self.yadeDataDir)
 
-    def runESSLoop(self, factor=0.9):
+    def subRun(self, sigma):
+        self.sigma = sigma
+        for i in range(self.numSteps):
+            self.likelihood[:, i], self.posterior[:, i], self.ips[:, i], self.covs[:, i] = self.recursiveBayesian(i)
+        return self.ess - self.getEffectiveSampleSize()[-1]
+
+    def runESSLoop(self, essTol=1.0e-2):
+        from scipy import optimize
         """
         Iterate Bayesian filtering until the effective sample size is sufficient
         """
-        # reinitialize normalized covariance coefficient if the effective sample size is too small
-        while True and not self.__proposalFile:
-            for i in range(self.numSteps):
-                self.likelihood[:, i], self.posterior[:, i], \
-                self.ips[:, i], self.covs[:, i] = self.recursiveBayesian(i)
-            ess = self.getEffectiveSampleSize()[-1]
-            if ess < self.ess:
-                self.sigma = float(input("\nReinitialize normalized covariance coefficient "
-                                         "such that the effective sample size is large enough"
-                                         "\nCurrent sigma is %f and effective sample size is %f"
-                                         "\nSigma = "
-                                         % (self.sigma, ess)))
-            else: break
-
-        # iterate if effective sample size is too big
-        ess = 1.0
-        while ess > self.ess:
-            for i in range(self.numSteps):
-                self.likelihood[:, i], self.posterior[:, i], \
-                self.ips[:, i], self.covs[:, i] = self.recursiveBayesian(i)
-            ess = self.getEffectiveSampleSize()[-1]
-            self.sigma *= factor
-        self.sigma /= factor
+        if not self.__proposalFile:
+            # reinitialize normalized covariance coefficient if the effective sample size is too small
+            while True:
+                ess0 = self.subRun(self.sigmaMax)
+                if ess0 > 0:
+                    self.sigmaMax = float(input("\nReinitialize The maximum normalized covariance coefficient "
+                                                "such that the effective sample size is large enough"
+                                                "\nCurrent sigma is %f and effective sample size is %f"
+                                                "\nSigma = "
+                                                % (self.sigma, -ess0+self.ess)))
+                else: break
+            # solve sigma for the effective sample size equals self.ess
+            sigma = optimize.brentq(self.subRun, self.sigmaMin, self.sigmaMax, xtol=essTol)
+            self.subRun(sigma)
+        else:
+            # find the normalized covariance coefficient that maximizes the effective sample size
+            soln = optimize.minimize(self.subRun, x0=0.5 * (self.sigmaMin + self.sigmaMax), tol=essTol)
+            sigma = soln.x
+            ess0 = self.subRun(sigma)
+            # if the effective sample size is larger than self.ess solve sigma again
+            if ess0 < 0:
+                sigma = optimize.brentq(self.subRun, self.sigmaMin, self.sigma, xtol=essTol)
+                self.subRun(sigma)
+        # update the upper limit of normalized (co)variance coefficient
+        self.sigmaMax = sigma
 
     def getYadeDataFiles(self):
         print('Cannot find your paramsFile. Will try to get them from the names of simData files...')

@@ -20,7 +20,7 @@ sciPlot = True
 writePlots = False
 
 # user-defined parameter
-# 1. normalized covariance sigma
+# 1. initial guess of the upper-limit of normalized covariance coefficient
 # 2. weights on three vectors of observation data
 inputParams = {'iterPF0': [0.44000, [1, 1, 0.01]],
                'iterPF1': [0.07480, [1, 1, 0.01]],

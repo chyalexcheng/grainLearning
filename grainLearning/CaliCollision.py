@@ -11,8 +11,8 @@ from plotResults import *
 import pickle
 import matplotlib.pylab as plt
 
-# user-defined parameter: normalized covariance
-sigma = float(input("Initialize the normalized covariance as : "))
+# user-defined parameter: upper limit of the normalized covariance coefficient
+sigma = float(input("Give an initial guess of the upper limit of normalized covariance: "))
 # target effective sample size
 ess = 0.3
 obsWeights = [1.0]
@@ -53,22 +53,26 @@ obsDataFile.close()
 
 # initialize the problem
 # interactive mode with Yade running inside GrainLearning
-# smcTest = smc(sigma, ess, obsWeights, obsCtrl=obsCtrl, simDataKeys=simDataKeys, obsFileName='collisionObs.dat',
-#               loadSamples=False, runYadeInGL=True, standAlone=False)
-
-# interactive mode with Yade running outside GrainLearning
 smcTest = smc(sigma, ess, obsWeights,
-              yadeVersion='yadedaily-batch', yadeScript='Collision.py', yadeDataDir='Collision',
-              obsCtrl=obsCtrl, simDataKeys=simDataKeys, simName='2particle', obsFileName='collisionObs.dat',
-              loadSamples=False, runYadeInGL=False, standAlone=False)
+              obsCtrl=obsCtrl, simDataKeys=simDataKeys, obsFileName='collisionObs.dat',
+              loadSamples=False, runYadeInGL=True, standAlone=False)
+
+# # interactive mode with Yade running outside GrainLearning
+# smcTest = smc(sigma, ess, obsWeights,
+#               yadeVersion='yadedaily-batch', yadeScript='Collision.py', yadeDataDir='Collision',
+#               obsCtrl=obsCtrl, simDataKeys=simDataKeys, simName='2particle', obsFileName='collisionObs.dat',
+#               loadSamples=False, runYadeInGL=False, standAlone=False)
 
 # run sequential Monte Carlo; return means and coefficients of variance of PDF over the parameters
 iterNO = 0
 # iterate the problem
 while smcTest.sigma > 1.0e-2 and iterNO < maxNumOfIters:
     # reinitialize the weights
+    # include "proposalFile='gmmForCollision_%i.pkl' % iterNO" as a function parameter
+    # to take into account proposal probabilities, avoiding bias in resampling
     smcTest.initialize(paramNames, paramRanges, numSamples,
-                       maxNumComponents, priorWeight, covType=covType, threads=threads)
+                       maxNumComponents, priorWeight,
+                       covType=covType, threads=threads)
 
     # rerun sequential Monte Carlo
     ips, covs = smcTest.run(iterNO=iterNO, reverse=iterNO % 2)

@@ -10,7 +10,7 @@ from resample import *
 from sklearn import mixture
 
 
-def initParamsTable(keys, maxs, mins, num=100, threads=4, tableName='smcTable.txt'):
+def initParamsTable(keys, maxs, mins, num=100, threads=4, tableName='smcTable0.txt'):
     """
     Generate initial parameter samples using a halton sequence
     and write the samples into a text file

@@ -8,10 +8,12 @@ import pickle
 from tools import *
 from sklearn import mixture
 from itertools import repeat
+
 if os.path.exists('YadeSim.py'):
     from YadeSim import createScene, runDEM, addSimData
 from multiprocessing import cpu_count
 from copy import deepcopy
+
 
 class smc:
     """
@@ -370,10 +372,11 @@ class smc:
             os.system('rm ' + self.yadeDataDir + '/*')
         input("*** Please check if the yade script is correct... ***\n" + self.yadeScript
               + "\nAbout to run Yade in batch mode using " +
-              ' '.join([self.yadeVersion, self.paramsFiles[iterNO], self.yadeScript]) + '\n')
+              ' '.join([self.yadeVersion, self.paramsFiles[iterNO], self.yadeScript]) +
+              '\n(Hit enter if the above is correct)\n')
         os.system(' '.join([self.yadeVersion, self.paramsFiles[iterNO], self.yadeScript]))
         input('All simulations have finished. Now returning to GrainLearning?')
-        os.system('mv ' + self.simName + '*.txt '+self.yadeDataDir)
+        os.system('mv ' + self.simName + '*.txt ' + self.yadeDataDir)
 
     def subRun(self, sigma):
         self.sigma = sigma
@@ -395,8 +398,9 @@ class smc:
                                                 "such that the effective sample size is large enough"
                                                 "\nCurrent sigma is %f and effective sample size is %f"
                                                 "\nSigma = "
-                                                % (self.sigma, -ess0+self.ess)))
-                else: break
+                                                % (self.sigma, -ess0 + self.ess)))
+                else:
+                    break
             # solve sigma for the effective sample size equals self.ess
             sigma = optimize.brentq(self.subRun, self.sigmaMin, self.sigmaMax, xtol=essTol)
             self.subRun(sigma)
@@ -428,8 +432,10 @@ class smc:
         for i in range(self.numSamples):
             fileName = self.yadeDataDir + '/' + self.simName + '*_%i_*.txt' % i
             files = glob.glob(fileName)
-            if not files: raise RuntimeError("No files with name " + fileName + ' found')
-            elif len(files) > 1: raise RuntimeError("Found more than 1 file with name " + fileName)
+            if not files:
+                raise RuntimeError("No files with name " + fileName + ' found')
+            elif len(files) > 1:
+                raise RuntimeError("Found more than 1 file with name " + fileName)
             self.yadeDataFiles.append(files[0])
 
     def getYadeData(self):
@@ -666,7 +672,8 @@ class smc:
             resampledParamsTable(keys=names, smcSamples=smcSamples, proposal=proposal, num=numSamples,
                                  threads=numThreads,
                                  maxNumComponents=self.__maxNumComponents, priorWeight=self.__priorWeight,
-                                 covType=self.__covType)
+                                 covType=self.__covType,
+                                 tableName='smcTable%i.txt' % (iterNO + 1))
         self.smcSamples.append(newSmcSamples)
         self.paramsFiles.append(newparamsFile)
         return gmm, maxNumComponents

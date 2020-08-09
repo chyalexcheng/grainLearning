@@ -51,17 +51,25 @@ for i in range(len(ObsData[1])):
     obsDataFile.write('%s\t\t%s\n' % (ObsData[0][i], noise[i] + ObsData[1][i]))
 obsDataFile.close()
 
-# initialize the problem
-# interactive mode with Yade running inside GrainLearning
-smcTest = smc(sigma, ess, obsWeights,
-              obsCtrl=obsCtrl, simDataKeys=simDataKeys, obsFileName='collisionObs.dat',
-              loadSamples=False, runYadeInGL=True, standAlone=False)
+# instantiate the problem
 
-# # interactive mode with Yade running outside GrainLearning
+# # interactive mode with Yade running inside GrainLearning
 # smcTest = smc(sigma, ess, obsWeights,
-#               yadeVersion='yadedaily-batch', yadeScript='Collision.py', yadeDataDir='Collision',
+#               yadeDataDir='Collision', threads=threads,
 #               obsCtrl=obsCtrl, simDataKeys=simDataKeys, simName='2particle', obsFileName='collisionObs.dat',
-#               loadSamples=False, runYadeInGL=False, standAlone=False)
+#               loadSamples=False, runYadeInGL=True, standAlone=False)
+
+# interactive mode with Yade running outside GrainLearning
+smcTest = smc(sigma, ess, obsWeights,
+              yadeVersion='yadedaily-batch', yadeScript='Collision.py', yadeDataDir='Collision', threads=threads,
+              obsCtrl=obsCtrl, simDataKeys=simDataKeys, simName='2particle', obsFileName='collisionObs.dat',
+              loadSamples=False, runYadeInGL=False, standAlone=False)
+
+# generate the initial parameter samples from a low-discrepancy sequence
+smcTest.initParams(paramNames, paramRanges, numSamples)
+
+# # load the initial parameter samples externally
+# smcTest.initParams(paramNames, paramRanges, numSamples, paramsFile='smcTableUser.txt', subDir='iter0')
 
 # run sequential Monte Carlo; return means and coefficients of variance of PDF over the parameters
 iterNO = 0
@@ -70,9 +78,7 @@ while smcTest.sigma > 1.0e-2 and iterNO < maxNumOfIters:
     # reinitialize the weights
     # include "proposalFile='gmmForCollision_%i.pkl' % iterNO" as a function parameter
     # to take into account proposal probabilities, avoiding bias in resampling
-    smcTest.initialize(paramNames, paramRanges, numSamples,
-                       maxNumComponents, priorWeight,
-                       covType=covType, threads=threads)
+    smcTest.initialize(maxNumComponents, priorWeight, covType=covType)
 
     # rerun sequential Monte Carlo
     ips, covs = smcTest.run(iterNO=iterNO, reverse=iterNO % 2)
@@ -85,7 +91,7 @@ while smcTest.sigma > 1.0e-2 and iterNO < maxNumOfIters:
 
     # resample parameters
     caliStep = -1
-    gmm, maxNumComponents = smcTest.resampleParams(caliStep=caliStep, iterNO=iterNO, threads=threads)
+    gmm, maxNumComponents = smcTest.resampleParams(caliStep=caliStep, iterNO=iterNO)
 
     # plot initial and resampled parameters
     plotAllSamples(smcTest.getSmcSamples(), smcTest.getNames())

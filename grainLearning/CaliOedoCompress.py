@@ -14,7 +14,8 @@ import pickle
 yadeFile = 'mcTriax_e.py'
 # use pre-run simulation data for calibration
 iterNO = int(input("Skip DEM simulations for demonstration. Which iteration to look at?\niterNO (e.g., 0, 1, 2, 3): "))
-yadeDataDir = 'iterPF%i' % iterNO
+yadeDataDir = 'Oedometric'
+yadeDataSubDir = 'iter%i' % iterNO
 
 sciPlot = True
 writePlots = False
@@ -22,11 +23,11 @@ writePlots = False
 # user-defined parameter
 # 1. initial guess of the upper-limit of normalized covariance coefficient
 # 2. weights on three vectors of observation data
-inputParams = {'iterPF0': [0.44000, [1, 1, 0.01]],
-               'iterPF1': [0.07480, [1, 1, 0.01]],
-               'iterPF2': [0.02206, [1, 1, 0.01]],
-               'iterPF3': [0.00174, [1, 1, 0.02]]}
-sigma, obsWeights = inputParams[yadeDataDir]
+inputParams = {'iter0': [0.44000, [1, 1, 0.01]],
+               'iter1': [0.07480, [1, 1, 0.01]],
+               'iter2': [0.02206, [1, 1, 0.01]],
+               'iter3': [0.00174, [1, 1, 0.02]]}
+sigma, obsWeights = inputParams[yadeDataSubDir]
 
 # give ranges of parameter values (E, \mu, kr, \mu_r)
 paramNames = ['E', 'mu', 'k_r', 'mu_r']
@@ -47,22 +48,27 @@ maxNumComponents = int(numSamples / 10)
 priorWeight = 1.0e-2
 
 # name of the parameter table that corresponds to simData in yadeDataDir
-paramsFile = 'smcTablePF%i.txt' % iterNO
+paramsFile = 'Oedo_smcTable%i.txt' % iterNO
 # pre-trained proposal density in the pickle format
-proposalFile = 'gmm_' + yadeDataDir[:-1] + '%i.pkl' % (iterNO - 1) if iterNO != 0 else ''
+proposalFile = 'gmmForOedo_%i.pkl' % (iterNO - 1) if iterNO != 0 else ''
 # if iteration number is an odd number, reverse the data sequences to ensure data continuity
 reverse = True if iterNO % 2 == 1 else False
 
-# initialize the Sequential Monte Carlo problem
+# instantiate the Sequential Monte Carlo problem
 smcTest = smc(sigma, ess, obsWeights,
               yadeScript=yadeFile, yadeDataDir=yadeDataDir,
-              obsFileName=obsDataFile, obsCtrl=obsCtrl, simName='VAE',
+              obsCtrl=obsCtrl, simName='VAE', obsFileName=obsDataFile,
               scaleCovWithMax=False, loadSamples=True, runYadeInGL=False, standAlone=True)
-smcTest.initialize(paramNames, paramRanges, numSamples, maxNumComponents, priorWeight, paramsFile=paramsFile,
-                   proposalFile=proposalFile)
+
+# load or generate the initial parameter samples
+smcTest.initParams(paramNames, paramRanges, numSamples, paramsFile=paramsFile, subDir=yadeDataSubDir)
+
+# initialize the data for sequential Monte Carlo filtering
+smcTest.initialize(maxNumComponents, priorWeight, proposalFile=proposalFile)
 
 # run sequential Monte Carlo and return ensemble means and coefficients of variance
 ips, covs = smcTest.run(reverse=reverse)
+yadeDataDir += '/' + yadeDataSubDir
 
 # TODO move the plotting stuff into plotResults.py
 if sciPlot:
@@ -93,7 +99,7 @@ gmm, maxNumComponents = smcTest.resampleParams(caliStep=caliStep)
 plotAllSamples(smcTest.getSmcSamples(), smcTest.getNames())
 
 # save trained Gaussian mixture model
-pickle.dump(gmm, open(yadeDataDir + '/gmm_' + yadeDataDir + '.pkl', 'wb'))
+pickle.dump(gmm, open(yadeDataDir + '/gmm_' + yadeDataSubDir + '.pkl', 'wb'))
 
 # get top three realizations with high probabilities
 m = smcTest.getNumSteps()

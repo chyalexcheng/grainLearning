@@ -405,6 +405,18 @@ class smc:
         """
         Iterate Bayesian filtering until the effective sample size is sufficient
         """
+        # get test solutions at sigmaMin and sigmaMax
+        evalSigmaMin = self.subRun(self.sigmaMin)
+        evalSigmaMax = self.subRun(self.sigmaMax)
+        # increase sigmaMin if it is too small
+        while isnan(evalSigmaMin):
+            self.sigmaMin *= 1.1
+            evalSigmaMin = self.subRun(self.sigmaMin)
+        # if evaluations with sigmaMin and sigmaMax have the same sign, use sigmaMin anyway
+        if evalSigmaMin * evalSigmaMax > 0:
+            self.subRun(self.sigmaMin)
+        
+        # if a proposal distribution is considered when resampling    
         if not self.__proposalFile:
             # reinitialize normalized covariance coefficient if the effective sample size is too small
             while True:

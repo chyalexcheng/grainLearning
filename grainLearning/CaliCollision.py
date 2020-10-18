@@ -24,7 +24,7 @@ threads = 1
 # get observation data file (synthetic data from DEM)
 ObsData = np.loadtxt('collision.dat')
 # add Gaussian noise
-noise = np.random.normal(0, 0.1 * max(ObsData[1]), len(ObsData[1]))
+noise = np.random.normal(0, 0.3 * max(ObsData[1]), len(ObsData[1]))
 
 # give ranges of parameter values (E, \nu)
 paramNames = ['E', 'nu']

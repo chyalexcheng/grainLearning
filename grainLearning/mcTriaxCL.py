@@ -5,7 +5,7 @@ readParamsFromTable(
    kr = 0.564,
    eta = 0.194,
    mu = 30.203,
-   num = 1000,
+   num = 10000,
    conf = 0.2e6,
    key = 1,
    mode = 'drained',

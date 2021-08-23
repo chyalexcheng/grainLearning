@@ -8,6 +8,7 @@ readParamsFromTable(
    num = 1000,
    conf = 0.2e6,
    key = 1,
+   mode = 'drained',
    unknownOk=True
 )
 
@@ -46,12 +47,11 @@ def getMechFabric(inter,a_c):
 	fab_t_i /= (1.+Ddot)
 	return fab_n_i, fab_t_i
 
+# functions for micromechanical analysis
 def getFabricVariables(s_dev):
-	
 	# compute fabric tensor fab and fabric anisotropy tensor a_c
 	fab = Matrix3.Zero
 	count = 0
-
 	## Sum up information from interactions
 	for inter in O.interactions:
 		# overall fabric (exclude inters of wirePhys)
@@ -61,14 +61,12 @@ def getFabricVariables(s_dev):
 
 	# Average over number of interactions
 	fab /= count
-
 	# fabric anisotropy tensor
 	a_c = 15./2.*(fab - Matrix3.Identity*fab.trace()/3.)
 	
 	## Compute mechanical fabric tensor a_n and a_t
 	# normal force
 	fab_n = Matrix3.Zero
-	
 	# tangential force
 	fab_t = Matrix3.Zero
 	
@@ -83,17 +81,14 @@ def getFabricVariables(s_dev):
 	## Average over number of interactions
 	# normal force
 	fab_n /= count
-	
 	# tangential force
 	fab_t /= count
 	
 	## Mechanical anisotropy fabric tensors of each type
 	# average contact normal force
 	f0 = fab_n.trace()
-	
 	# normal force
 	a_n = 15./2.*(fab_n - Matrix3.Identity*f0/3)/f0 
-
 	# tangential force
 	a_t = 15./3.*(fab_t - Matrix3.Identity*fab_t.trace()/3.)/f0 
 	
@@ -120,7 +115,7 @@ def getFabricVariables(s_dev):
 	return f0, AnIso_C, AnIso_N, AnIso_T, K, A
 
 # Simulation control
-debug = True
+debug = False
 random = False            		# use ramdom particle packing or not
 num = table.num          		# number of soil particles
 dScaling = 1e0         		    # density scaling  (treat it as a parameter too?)
@@ -138,7 +133,10 @@ nLoadSteps = 200				# number of loading steps
 dstrain = strainGoal/nLoadSteps	# strain increment
 
 # load strain/stress data for quasi-static loading
-loadData = [Vector3(-conf,-conf,-dstrain*i) for i in range(nLoadSteps)]
+if table.mode == 'drained':
+	loadData = [Vector3(-conf,-conf,-dstrain*i) for i in range(nLoadSteps)]
+elif table.mode == 'undrained':
+	loadData = [Vector3(0.5*dstrain*i,0.5*dstrain*i,-dstrain*i) for i in range(nLoadSteps)]
 loadData.reverse()
 
 # corners to define specimen size
@@ -155,7 +153,7 @@ rho = 2650*dScaling       # soil density
 
 # create materials
 spMat = O.materials.append(
-   CohFrictMat(young=E,poisson=v,frictionAngle=radians(ctrMu),density=rho,isCohesive=False,
+   CohFrictMat(young=E,poisson=v,frictionAngle=radians(mu),density=rho,isCohesive=False,
       alphaKr=kr,alphaKtw=kr,momentRotationLaw=True,etaRoll=eta,etaTwist=eta))
 
 # create a cloud of ramdomly positioned spheres
@@ -169,7 +167,7 @@ if random:
       distributeMass=True,porosity=e/(1+e),seed=1,num=num)
    O.cell.hSize = Matrix3(mx[0],0,0, 0,mx[1],0, 0,0,mx[2])
    print("cellSize= ",O.cell.hSize)
-   sp.save('Packs/PeriSp_'+str(num)+'_0.68.txt')
+   sp.save('RandomPacks/PeriSp_'+str(num)+'_0.68.txt')
 else:
    if num==1000: O.cell.hSize=Matrix3(0.04622,0,0, 0,0.04612,0, 0,0,0.09212)
    if num==2000: O.cell.hSize=Matrix3(0.05013,0,0, 0,0.05015,0, 0,0,0.09945)
@@ -230,24 +228,21 @@ if random:
          if n/(1.-n) > e:
             ctrMu *= 0.99
             print(ctrMu, n/(1.-n))
-            for inter in O.interactions:
-               inter.phys.tangensOfFrictionAngle = tan(radians(ctrMu))
-            O.materials[spMat].frictionAngle=radians(ctrMu)
+            setContactFriction(ctrMu)
             triaxDone = False
          else:
             # now start isotropic compression
             triax.goal = (-conf,-conf,-conf)
-            triax.doneHook = "compaction finished()"
+            triax.doneHook = "compactionFinished()"
             # set inter-particle friction to correct level
-            for inter in O.interactions:
-               inter.phys.tangensOfFrictionAngle = tan(radians(mu))
-            O.materials[spMat].frictionAngle=radians(mu)
+            setContactFriction(mu)
             break
 else:
    triax.goal=(-conf,-conf,-conf)
    triax.maxStrainRate=(10.*rate,10.*rate,10.*rate)
    triax.doneHook='compactionFinished()'
 
+# set the reference configuration to the current and save the initial state
 def compactionFinished():
    if unbalancedForce()<stabilityRatio:
       if debug: print('compaction finished')
@@ -255,22 +250,27 @@ def compactionFinished():
       O.cell.trsf = Matrix3.Identity
       O.cell.velGrad = Matrix3.Zero
       setRefSe3()
-      # set loading type: constant pressure in x,y, 8.5% compression in z
-      triax.stressMask=3; triax.globUpdate = 1;
-      # allow faster deformation along x,y to better maintain stresses
-      triax.maxStrainRate=(10*rate,10*rate,rate)
-      # next time, call triaxFinished instead of compactionFinished
+      # set loading moade: drained or undrained
+      triax.globUpdate = 1
+      if table.mode == 'drained':
+          triax.stressMask=3
+          # allow faster deformation along x,y to better maintain stresses
+          triax.maxStrainRate=(10*rate,10*rate,rate)
+      elif table.mode == 'undrained':
+          triax.stressMask=0
+          # allow faster deformation along x,y to better maintain stresses
+          triax.maxStrainRate=(0.5*rate,0.5*rate,rate)
+      # next time, call addPlotData instead of compactionFinished
       triax.doneHook="addPlotData()"
       # set damping to a normal value
       newton.damping = lowDamp
       print('start trixial shearing.')
       # save the initial state and start loading
-      O.save(yadeDataDir+'/SimState_%i_%i'%(table.key,0)+'.yade.gz')
+      O.save(yadeDataDir+'/simState_'+table.mode+'_%i_%i'%(table.key,0)+'.yade.gz')
       startLoading()
 
 # start to load the packing
 def startLoading():
-	global loadData
 	if debug: print('startLoading')
 	triax.goal = loadData.pop()
 	triax.maxUnbalanced = initStabilityRatio
@@ -287,17 +287,16 @@ def calmSystem():
 def saveSimState():
 	n = nLoadSteps-len(loadData)
 	if not n%10:
-		O.save(yadeDataDir+'/SimState_%i_%i'%(table.key,n)+'.yade.gz')
+		O.save(yadeDataDir+'/simState_'+table.mode+'_%i_%i'%(table.key,n)+'.yade.gz')
 	
 def addPlotData():
-	global loadData
 	if debug: print('addPlotData')  
 
 	s = -getStress()
-	s_dev = s - Matrix3.Identity*s.trace()/3.
-	s = s.diagonal()
-
-	s33_over_s11 = 2.*s[2]/(s[0]+s[1])
+	p = s.trace()/3.0
+	s_dev = s - Matrix3.Identity*p
+	DdotS_DEV = sum([s_dev[i,j]**2. for i in range(3) for j in range(3)])
+	q = sqrt(3./2.*DdotS_DEV)
 	e_x, e_y, e_z = -triax.strain
 	e_v = e_x+e_y+e_z
 	n = porosity()
@@ -309,7 +308,7 @@ def addPlotData():
 	f0, a_c, a_n, a_t, K, A = getFabricVariables(s_dev)
 	
 	print("Triax goal is: ",triax.goal, "dt=" ,O.dt ,"numIter=",O.iter,"real time=", O.realtime ) 
-	plot.addData(e=e, e_v=e_v, e_x=e_x, e_y=e_y, e_z=e_z, s33_over_s11=s33_over_s11,\
+	plot.addData(e=e, e_v=e_v, e_x=e_x, e_y=e_y, e_z=e_z, p=p, q=q,\
 		f0=f0, a_c=a_c, a_n=a_n, a_t=a_t, K=K, A=A, dt=O.dt, numIter=O.iter)
 	
 	# continue loading if loadData is not empty
@@ -318,7 +317,7 @@ def addPlotData():
 		# save simulation data and parameters
 		params = {}
 		for name in table.__all__: params[name] = eval('table.'+name)
-		np.save(yadeDataDir+'/SimData_%i'%(table.key)+'.npy',tuple([params,plot.data]))
+		np.save(yadeDataDir+'/SimData_'+table.mode+'_%i'%(table.key)+'.npy',tuple([params,plot.data]))
 		print('triaxial shearing finished after %.3f hours'%((O.realtime-t0)/3600))
 		O.pause()
 
@@ -326,4 +325,3 @@ def addPlotData():
 t0 = O.realtime
 O.run()
 waitIfBatch()
-plot.plots = {'e_z':['s33_over_s11','e_v']}

@@ -186,6 +186,7 @@ yadeDataDir = 'triax/CL'
 path = Path(yadeDataDir)
 path.mkdir(parents=True, exist_ok=True)
 print('yade data directory already exists (%i files)\n' % len(glob.glob(yadeDataDir + '/*')))
+if os.path.exists(yadeDataDir+'/SimData_'+table.mode+'_%i'%(table.key)+'.npy'): exit()
 
 # define engines
 O.engines=[
@@ -211,6 +212,7 @@ O.engines=[
       relStressTol=stressTolRatio,
    ),
    NewtonIntegrator(damping=damp,label='newton'),
+   PyRunner(command="checkUnjammed()",iterPeriod=10000,dead=False),
    ]
 
 # prepare dense particle packing (TODO)
@@ -269,6 +271,17 @@ def compactionFinished():
       O.save(yadeDataDir+'/simState_'+table.mode+'_%i_%i'%(table.key,0)+'.yade.gz')
       startLoading()
 
+# periodically check if the packing is unjammed under constant volume
+def checkUnjammed():
+	s = -getStress()
+	p = s.trace()/3.0
+	s_dev = s - Matrix3.Identity*p
+	DdotS_DEV = sum([s_dev[i,j]**2. for i in range(3) for j in range(3)])
+	q = sqrt(3./2.*DdotS_DEV)
+	if p < 10 and q < 10:
+		print('The system is unjammed! Simulation will be stopped now.')
+		addPlotData(); exit()
+
 # start to load the packing
 def startLoading():
 	if debug: print('startLoading')
@@ -319,7 +332,7 @@ def addPlotData():
 		for name in table.__all__: params[name] = eval('table.'+name)
 		np.save(yadeDataDir+'/SimData_'+table.mode+'_%i'%(table.key)+'.npy',tuple([params,plot.data]))
 		print('triaxial shearing finished after %.3f hours'%((O.realtime-t0)/3600))
-		O.pause()
+		O.pause(); exit()
 
 # run in batch mode
 t0 = O.realtime

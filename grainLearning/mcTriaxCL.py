@@ -280,7 +280,13 @@ def checkUnjammed():
 	q = sqrt(3./2.*DdotS_DEV)
 	if p < 10 and q < 10:
 		print('The system is unjammed! Simulation will be stopped now.')
-		addPlotData(); exit()
+		# save simulation data and parameters
+		addPlotData()
+		params = {}
+		for name in table.__all__: params[name] = eval('table.'+name)
+		np.save(yadeDataDir+'/SimData_'+table.mode+'_%i'%(table.key)+'.npy',tuple([params,plot.data]))
+		print('triaxial shearing finished after %.3f hours'%((O.realtime-t0)/3600))
+		O.pause(); exit()
 
 # start to load the packing
 def startLoading():

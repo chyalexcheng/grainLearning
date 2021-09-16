@@ -182,7 +182,7 @@ else:
 spIds=sp.toSimulation(material=spMat)
 
 # yade data directory
-yadeDataDir = 'triax/CL'
+yadeDataDir = 'triax/CL/%.1f/'%(conf/1e6) + mode +'/'
 path = Path(yadeDataDir)
 path.mkdir(parents=True, exist_ok=True)
 print('yade data directory already exists (%i files)\n' % len(glob.glob(yadeDataDir + '/*')))
@@ -301,7 +301,8 @@ def calmSystem():
 	if debug: print('calmSystem')
 	newton.damping = highDamp
 	triax.maxUnbalanced = stabilityRatio
-	triax.doneHook = 'saveSimState(); addPlotData()'
+	# ~ triax.doneHook = 'saveSimState(); addPlotData()'
+	triax.doneHook = 'addPlotData()'
 
 def saveSimState():
 	n = nLoadSteps-len(loadData)

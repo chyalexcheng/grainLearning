@@ -182,7 +182,7 @@ else:
 spIds=sp.toSimulation(material=spMat)
 
 # yade data directory
-yadeDataDir = 'triax/CL/%.1f/'%(conf/1e6) + mode +'/'
+yadeDataDir = 'triax/CL/%.1fe6/'%(conf/1e6) + mode +'/'
 path = Path(yadeDataDir)
 path.mkdir(parents=True, exist_ok=True)
 print('yade data directory already exists (%i files)\n' % len(glob.glob(yadeDataDir + '/*')))

@@ -1,10 +1,10 @@
 
 # Welcome to GrainLearning!
 
-|Author |Hongyang Cheng|
+|Authors |Hongyang Cheng, Philipp Hartmann, and Klaus Thoeni|
 |---|---|
 |Contacts |h.cheng@utwente.nl |
-|Version|0.2 |
+|Version|1.0 |
 
 # Description
 

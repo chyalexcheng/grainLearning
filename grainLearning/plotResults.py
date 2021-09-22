@@ -37,7 +37,7 @@ def plotIPs(names,ips,covs,nStep,weight,params):
 		plt.ylabel(r'$|'+names[i]+r'|$')
 		plt.grid(True)
 	plt.tight_layout()
-
+	plt.savefig('Means_over_parameters.pdf')
 	# plot coefficient of variance for each parameter
 	plt.figure('Posterior coefficients of variance over parameters')
 	for i in range(num):
@@ -47,7 +47,8 @@ def plotIPs(names,ips,covs,nStep,weight,params):
 		plt.ylabel(r'$COV('+names[i]+')$')
 		plt.grid(True)
 	plt.tight_layout()
-
+	plt.savefig('Coefficients_of_variance.pdf')
+    
 	# plot probability density function of identified parameters
 	for i,name in enumerate(names):
 		plt.figure('PDF of '+name)
@@ -59,25 +60,25 @@ def plotIPs(names,ips,covs,nStep,weight,params):
 			plt.ylabel('Posterior PDF')
 			plt.grid(True)
 		plt.tight_layout()
+		name = "Posterior_PDF_"+name+".pdf"       
+		plt.savefig(name)     
 
-	plt.show()
-
-
-def plotAllSamples(smcSamples, names):
-	num = len(names)
-	nPanels = np.ceil(num / 2)
-	numOfIters = len(smcSamples)
-	plt.figure('Resampled parameter space')
-	for n in range(int(nPanels)):
-		plt.subplot(1, nPanels, n + 1)
-		for i in range(numOfIters):
-			plt.plot(smcSamples[i][:, 2 * n], smcSamples[i][:, 2 * n + 1], 'o', label='iterNO. %.2i' % i)
-			plt.xlabel(r'$' + names[2 * n] + '$')
-			plt.ylabel(r'$' + names[2 * n + 1] + '$')
-			plt.legend()
-		plt.legend()
-		plt.tight_layout()
-	plt.show()
+def plotAllSamples(smcSamples,names):
+    num=len(names)
+    numM1 = num-1
+    nCols = np.ceil(num/2)
+    numOfIters = len(smcSamples)
+    plt.figure('Resampled parameter space')
+    for j in range(numM1):
+        plt.subplot(2,nCols,j+1)
+        for i in range(numOfIters):
+            plt.plot(smcSamples[i][:, j], smcSamples[i][:,j+1], 'o', label='iterNO. %.2i' % i)
+            plt.xlabel(r'$' + names[j] + '$')
+            plt.ylabel(r'$' + names[j + 1] + '$')
+            plt.legend()
+        plt.legend()
+        plt.tight_layout()
+    plt.savefig('ResampledParameterSpace.pdf')
 
 def numAndExpData(numFiles, p0, q0, n0, e_a0, e_r0):
 

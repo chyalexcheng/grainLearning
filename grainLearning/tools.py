@@ -5,12 +5,52 @@
 
 from math import *
 import ghalton
+import sys
+import os
 import numpy as np
 from resample import *
+from colorama import Fore
 from sklearn import mixture
+import subprocess
+
+def startSimulations(platform,software,tableName,fileName):   
+ #platform desktop, aws or rcg    # software so far only yade 
+ argument= tableName+" "+fileName
+ if platform=='desktop':
+     # Definition where shell script can be found
+     path_to_shell = os.getcwd()+'/platform_shells/desktop' 
+     if software=='yade':
+         command = 'sh '+path_to_shell+'/yadeDesktop.sh'+" "+argument  
+         subprocess.call(command, shell=True)  
+     else:
+         print(Fore.RED +"Chosen 'software' has not been implemented yet. Check 'startSimulations()' in 'tools.py'")
+         sys.exit
+         
+ elif platform=='aws':  
+     path_to_shell = os.getcwd()+'/platform_shells/aws' 
+     if software=='yade':
+         command = 'sh '+path_to_shell+'/yadeAWS.sh'+" "+argument  
+         subprocess.call(command, shell=True)  
+     else:
+         print(Fore.RED +"Chosen 'software' has not been implemented yet. Check 'startSimulations()' in 'tools.py'")
+         sys.exit
+  
+ elif platform=='rcg':  
+     path_to_shell = os.getcwd()+'/platform_shells/rcg' 
+     if software=='yade':
+         command = 'sh '+path_to_shell+'/yadeRCG.sh'+" "+argument  
+         subprocess.call(command, shell=True)  
+     else:
+         print(Fore.RED +"Chosen 'software' has not been implemented yet. Check 'startSimulations()' in 'tools.py'")
+         sys.exit         
+ else:
+  print('Exit code. Hardware for yade simulations not properly defined')
+  quit()
 
 
-def initParamsTable(keys, maxs, mins, num=100, threads=4, tableName='smcTable0.txt'):
+
+
+def initParamsTable(keys, maxs, mins, num=100, threads=4, tableName='smcTable0.txt', simNum=0):
     """
     Generate initial parameter samples using a halton sequence
     and write the samples into a text file
@@ -32,7 +72,7 @@ def initParamsTable(keys, maxs, mins, num=100, threads=4, tableName='smcTable0.t
 
         tableName: string, default='smcTable.txt'
     """
-
+    print(tableName)
     dim = len(keys)
     sequencer = ghalton.Halton(dim)
     table = sequencer.get(num)
@@ -42,19 +82,30 @@ def initParamsTable(keys, maxs, mins, num=100, threads=4, tableName='smcTable0.t
             std = .5 * (maxs[i] - mins[i])
             table[j][i] = mean + (table[j][i] - .5) * 2 * std
     # write parameters in the format for Yade batch mode
-    writeToTable(tableName, table, dim, num, threads, keys)
+    writeToTable(tableName, table, dim, num, threads, keys, simNum)
     return np.array(table), tableName
 
 
-def writeToTable(tableName, table, dim, num, threads, keys):
+def writeToTable(tableName, table, dim, num, threads, keys,simNum):
     """
     write parameter samples into a text file in order to run Yade in batch mode
     """
+    
+    # Computation of decimal number for unique key 
+    magn = floor(log(num, 10))+1
+    #iterNum = 0
+    
     fout = open(tableName, 'w')
-    fout.write(' '.join(['!OMP_NUM_THREADS', 'key'] + keys + ['\n']))
+    #fout.write(' '.join(['description'] + keys + ['\n']))
+    fout.write(' '.join(['description'] + keys + ['\n']))
+    #fout.write(' '.join(['!OMP_NUM_THREADS', 'key'] + keys + ['\n']))
     for j in range(num):
-        fout.write(' '.join(['%2i' % threads, '%9i' % j] + ['%20.10e' % table[j][i] for i in range(dim)] + ['\n']))
+        # fout.write(' '.join(['%2i' % threads, '%9i' % j] + ['%20.10e' % table[j][i] for i in range(dim)] + ['\n']))
+       key = 'Iter'+str(simNum)+'-Sample'+str(j).zfill(magn)
+       #key = str(j)
+       fout.write(' '.join([key] + ['%20.10e' % table[j][i] for i in range(dim)] + ['\n']))
     fout.close()
+       
 
 
 def getKeysAndData(fileName):
@@ -77,8 +128,8 @@ def getKeysAndData(fileName):
     return keysAndData
 
 
-def resampledParamsTable(keys, smcSamples, proposal, num=100, threads=4, maxNumComponents=10, priorWeight=0,
-                         covType='full', tableName='smcTableNew.txt'):
+def resampledParamsTable(keys, smcSamples, proposal, ranges, num=100, threads=4, maxNumComponents=10, priorWeight=0,
+                         covType='full', tableName='smcTableNew.txt',seed=0,simNum=0):
     """
     Resample parameters using a variational Gaussian mixture model
     and write the samples into a text file
@@ -120,7 +171,7 @@ def resampledParamsTable(keys, smcSamples, proposal, num=100, threads=4, maxNumC
         Name of the parameter table
 
     :return:
-        smcNewSamples: ndarray of shape (num, len(keys))
+        newSMcSamples: ndarray of shape (num, len(keys))
             parameter samples for the next iteration
 
         tableName: string, default='smcTableNew.txt'
@@ -137,38 +188,90 @@ def resampledParamsTable(keys, smcSamples, proposal, num=100, threads=4, maxNumC
     dim = len(keys)
     # resample parameters from a proposal probability distribution
     ResampleIndices = unWeighted_resample(proposal, 10 * num)
-    smcNewSamples = smcSamples[ResampleIndices]
+    newSMcSamples = smcSamples[ResampleIndices]
 
     # normalize parameter samples
     sampleMaxs = np.zeros(smcSamples.shape[1])
     for i in range(sampleMaxs.shape[0]):
-        sampleMaxs[i] = max(smcNewSamples[:, i])
-        smcNewSamples[:, i] /= sampleMaxs[i]
+        sampleMaxs[i] = max(newSMcSamples[:, i])
+        newSMcSamples[:, i] /= sampleMaxs[i]
 
     # regenerate new SMC samples from Bayesian gaussian mixture model
     # details on http://scikit-learn.org/stable/modules/generated/sklearn.mixture.BayesianGaussianMixture.html
     gmm = mixture.BayesianGaussianMixture(n_components=maxNumComponents, weight_concentration_prior=priorWeight,
-                                          covariance_type=covType, tol=1e-5, max_iter=int(1e5), n_init=100)
-    gmm.fit(smcNewSamples)
-    smcNewSamples, _ = gmm.sample(num)
-
+                                          covariance_type=covType, tol=1e-5, max_iter=int(1e5), n_init=100,random_state=seed)
+    print("Start fitting")
+    gmm.fit(newSMcSamples)
+    print('Fitting done')
+    
+    
+    delete=False
+    
+    #TODO something is wrong here...
+    if delete:
+        # increase the sample size until it is larger than the previous size
+        sampleSize = smcSamples.shape[0]
+#        print(sampleSize)
+#        print(num)
+        while num <= sampleSize:
+            newSMcSamples, _ = gmm.sample(num)
+            delParamIDs = []
+            for i, param in enumerate(newSMcSamples):
+                for j, name in enumerate(keys):
+                    if not (ranges[name][0] < param[j]*sampleMaxs[j] < ranges[name][1]):
+                        delParamIDs.append(i)
+                        break
+            if not delParamIDs:
+                print("Is empty")
+                break
+            newSMcSamples = np.delete(newSMcSamples, delParamIDs, 0)
+            currentSampleSize = newSMcSamples.shape[0]
+            num *= sampleSize/currentSampleSize
+    	# get the correct size of the resampled parameters
+        num = newSMcSamples.shape[0]
+    # replace out of bounds values by 
+    else:
+        newSMcSamples, _ = gmm.sample(num)
+        # check if parameters in predifined ranges. If not replace it randomly
+        for i in range(num):
+             for jj in range(len(keys)):
+                 name = keys[jj]
+                 val =  newSMcSamples[i, jj] #param[j]
+                 while not (ranges[name][0] <= val*sampleMaxs[jj] <= ranges[name][1]):
+                     print('Parameter ',keys[jj] ,'in sample ',i, 'outside critical range')
+                     
+##                     # Check if lower or upper range  
+#                     if(ranges[name][0] < val*sampleMaxs[jj]):
+#                         print('Set parameter',keys[jj] ,'in sample ',i, 'to upper boundary value')
+#                         val = (ranges[name][1]/sampleMaxs[jj])*0.99999999
+#                         
+#                     else:
+#                         print('Set parameter',keys[jj] ,'in sample ',i, ' to lower boundary value')
+#                         val = (ranges[name][0]/sampleMaxs[jj])*1.000001
+#                         
+#                     newSMcSamples[i, jj]  = val  
+                     
+                     k= np.random.randint(0,num)
+                     newSMcSamples[i, jj] = newSMcSamples[k, jj]
+                     val = newSMcSamples[i, jj]
+           
     # scale resampled parameters back to their right units
-    for i in range(sampleMaxs.shape[0]): smcNewSamples[:, i] *= sampleMaxs[i]
-
+    for i in range(sampleMaxs.shape[0]): newSMcSamples[:, i] *= sampleMaxs[i]  
     # write parameters in the format for Yade batch mode
-    writeToTable(tableName, smcNewSamples, dim, num, threads, keys)
-    return smcNewSamples, tableName, gmm, maxNumComponents
+    # TODO diff between IterNO and simNum?
+    writeToTable(tableName, newSMcSamples, dim, num, threads, keys,simNum)
+    return newSMcSamples, tableName, gmm, maxNumComponents
 
 
-def getGMMFromPosterior(smcSamples, posterior, n_components, priorWeight, covType='full'):
+def getGMMFromPosterior(smcSamples, posterior, n_components, priorWeight, covType='full',seed=0):
     """
     Train a Gaussian mixture model from the posterior distribution
     """
     ResampleIndices = residual_resample(posterior)
-    smcNewSamples = smcSamples[ResampleIndices]
+    newSMcSamples = smcSamples[ResampleIndices]
     gmm = mixture.BayesianGaussianMixture(n_components=n_components, weight_concentration_prior=priorWeight,
-                                          covariance_type=covType, tol=1e-5, max_iter=int(1e5), n_init=100)
-    gmm.fit(smcNewSamples)
+                                          covariance_type=covType, tol=1e-5, max_iter=int(1e5), n_init=100,random_state=seed)
+    gmm.fit(newSMcSamples)
     return gmm
 
 

@@ -5,7 +5,7 @@ readParamsFromTable(
     # Density
     rho=2450,
     # Young's modulus
-    E=70e+9,
+    E=8,
     # Poisson's ratio
     nu=0.2,
     # final friction coefficient
@@ -14,11 +14,16 @@ readParamsFromTable(
     safe=0.1,
     # no. of your simulation
     key=0,
+    unknownOk=True
 )
 
 import numpy as np
 from yade.params import table
 from yade import plot
+
+isBatch = runningInBatch()	# check if run in batch mode
+if isBatch:
+	print('Running: '+O.tags['description'])
 
 # glass bead parameters (units: ug->1e-9kg; mm->1e-3m; ms->1e-3s)
 lenScale = 1e3  # length in mm <- 1e-3 m
@@ -34,21 +39,26 @@ def addSimData():
         plot.addData(u=u, f=inter.phys.normalForce.norm())
         obsCtrlData.pop()
     if not obsCtrlData:
-        # File name: <simName>_<key>_<param0>_<param1>_..._<paramN>.txt
-        # TODO How to pass argument (simName) from GrainLearning to yade-batch
-        dataName = '2particle_%i_%.10e_%.10e' % (table.key, table.E, table.nu) + '.txt'
-        plot.saveDataTxt(dataName)
+        if isBatch:
+			# store simulation data and parameter set as a dictory in the .npy file
+            dataName = '2particle_'+ O.tags['description'] + '.npy'
+            for name in table.__all__: plot.data[name] = eval('table.'+name)
+            np.save(dataName,plot.data)
+        else:
+			# File name: <simName>_<key>_<param0>_<param1>_..._<paramN>.txt
+            dataName = '2particle_%i_%.10e_%.10e' % (table.key, table.E, table.nu) + '.txt'
+            plot.saveDataTxt(dataName)
         O.pause()
 
-
+obsFile ="collisionOrg.dat"
 # get data for simulation control
-obsCtrlData = list(np.loadtxt('collision.dat')[0, :])
+obsCtrlData = np.loadtxt(obsFile)[:,0].tolist()
 obsCtrlData.reverse()
 
 print('\nModel evaluation NO. %i' % table.key)
 
 # create materials
-O.materials.append(FrictMat(young=table.E, poisson=table.nu, frictionAngle=atan(table.mu), density=table.rho))
+O.materials.append(FrictMat(young=pow(10,table.E), poisson=table.nu, frictionAngle=atan(table.mu), density=table.rho))
 
 # create two particles
 O.bodies.append(sphere(Vector3(0, 0, 0), 1, material=0, fixed=True))
@@ -65,7 +75,7 @@ O.engines = [
     ),
     NewtonIntegrator(damping=0.0, label='newton'),
     # needs to add module collision before function name
-    PyRunner(command='addSimData()', iterPeriod=100)
+    PyRunner(command='addSimData()', iterPeriod=1)
 ]
 
 # set initial timestep

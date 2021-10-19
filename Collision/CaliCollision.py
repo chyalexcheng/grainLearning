@@ -9,6 +9,7 @@ import sys
 # load GrainLearning modules
 sys.path.append('../')
 from smc import *
+from YadeSim import *
 from plotResults import *
 import pickle
 import matplotlib.pylab as plt

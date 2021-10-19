@@ -10,9 +10,6 @@ from sklearn import mixture
 from itertools import repeat
 from math import *
 import subprocess
-
-if os.path.exists('YadeSim.py'):
-    from YadeSim import createScene, runDEM, addSimData
 from multiprocessing import cpu_count
 from copy import deepcopy
 
@@ -75,13 +72,12 @@ class smc:
             Whether to use GrainLearning as a stand-alone tool to postprocess DEM data
         """
         # SMC parameters
-        self.sigma = 1.0e6
+        self.sigmaMax = 1.0e6
         self.sigmaMin = 1.0e-4
         self.gle = 0 # grain learning absolute percentage error 
 
         
-        print("SigmaMin = ",self.sigmaMin)
-        self.sigmaMax = sigma
+        self.sigma = sigma
         self.ess = ess
         self.normalizedSigma = normalizedSigma
         self.numParams = 0
@@ -157,6 +153,7 @@ class smc:
         """
 
         self.paramNames = paramNames
+        self.paramRanges = paramRanges
         self.numParams = len(self.getNames())
         self.yadeDataSubDirs.append(subDir)
 
@@ -344,32 +341,30 @@ class smc:
 
     def checkParamsError(self,iterNO):
         """
-        Check if each parameter sample matches its simData file name
+        Check if parameter samples read from the table matches those stored in the simData file
         """
-        simNum=iterNO
-        magn = floor(log(self.numSamples, 10))+1
         # check if parameter combinations match with the simulation filename.
         for i, f in enumerate(self.yadeDataFiles):
-            # get the file name fore the suffix
-            f = f.split('.' + f.split('.')[-1])[0]
-            # get parameters from the remaining string
-            paramsString = f.split('_')[-self.numParams:]
-            key = 'Iter'+str(simNum)+'-Sample'+str(i).zfill(magn)
-            if(paramsString[-1] != key):
-                print(paramsString)
-                print(paramsString[-1])
-                print(key)
-                print(paramsString[1]==key)
-                raise RuntimeError("Keys/Description in sample table is not in line with key given in yade file", f)
-            #print(self.getSmcSamples()[-1][i])
+            # get the file type (e.g., txt)
+            suffix = '.' + f.split('.')[-1]
+            if suffix == '.txt':
+                # get the string before the file type
+                f = f.split(suffix)[0]
+                # get parameters from the remaining string
+                paramsString = f.split('_')[-self.numParams:]
+                params = np.float64(paramsString)
+            elif suffix == '.npy':
+                # get parameter sample values from the data file
+                yadeData = np.load(f, allow_pickle=True).item()
+                params = [yadeData[name] for name in self.paramNames] 
             # element wise comparison of the parameter vector
-            #print("Param: ",paramsString)
-            #print("Compare:", self.getSmcSamples()[-1][i])
-#            if not (np.abs((np.float64(paramsString) - self.getSmcSamples()[-1][i])
-#                           / self.getSmcSamples()[-1][i] < 1e-10).all()):
-#                raise RuntimeError(
-#                    "Parameters " + ", ".join(
-#                        ["%s" % v for v in self.getSmcSamples()[-1][i]]) + " do not match with the data file name " + f)
+            #print("Params from data file: ",params)
+            #print("Params from table:", self.getSmcSamples()[-1][i])
+            if not (np.abs((params - self.getSmcSamples()[-1][i])
+                           / self.getSmcSamples()[-1][i] < 1e-10).all()):
+                raise RuntimeError(
+                    "Parameters " + ", ".join(
+                        ["%s" % v for v in self.getSmcSamples()[-1][i]]) + " are not matching between the data file and the table " + f)
 
     def runYadePython(self, iterNO=-1):
         """
@@ -385,10 +380,10 @@ class smc:
             paramsList.append(paramsForEach)
         # pass parameter list to simulation instances FIXME: runDEM is the user-defined Yade script
         self.__pool = get_pool(mpi=False, threads=cpu_count())
-        self.__scenes = self.__pool.map(createScene, range(self.numSamples))
-        simData = self.__pool.map(runDEM, zip(self.__scenes, paramsList, repeat(self.obsCtrlData)))
+        self.__scenes = self.__pool.map(self.createScene, range(self.numSamples))
+        simData = self.__pool.map(self.runDEM, zip(self.__scenes, paramsList, repeat(self.obsCtrlData)))
         self.__pool.close()
-        # ~ data = runDEM([self.smc__scenes,paramsList[0]])
+        # ~ data = self.runDEM([self.smc__scenes,paramsList[0]])
         # get observation and simulation data ready for Bayesian filtering
         self.obsData = np.array([self.obsData[name] for name in self.simDataKeys]).transpose()
         for i, data in enumerate(simData):
@@ -414,7 +409,8 @@ class smc:
               "'\n(Hit enter if the above is correct)\n")
         os.system(' '.join([self.yadeVersion, self.paramsFiles[iterNO], self.yadeScript]))
         input('All simulations have finished. Now return to GrainLearning?\n')
-        os.system('mv ' + self.simName + '*.txt ' + yadeDataDir)
+        os.system('mv ' + self.simName + '*.npy ' + yadeDataDir)
+        os.system('cp ' + self.paramsFiles[iterNO] + ' ' + yadeDataDir)
 
     def subRun(self, sigma):
         self.sigma = sigma
@@ -480,13 +476,12 @@ class smc:
         # if self.simName is incorrect and thus cannot get the simulation data files
         while not yadeDataFiles:
             print("No simulation files can be found. Do you have them stored in ./" + self.yadeDataDir +
-                  "? \nPlease give the correct 'simName' so that I can search...\n")
-            self.simName = input("simName: ")
+                  "? \nPlease give the correct data directory so that I can search...\n")
+            self.simName = input("Name of the data directory: ")
             yadeDataFiles = glob.glob(os.getcwd() + '/' +
                                       self.yadeDataDir + '/' + self.yadeDataSubDirs[iterNO] +
                                       '/*' + self.simName + '*')   
         # sort yadeDataFiles in ascending order with respect to the key (first string separated by _ after simName)
-        #ids = np.argsort([int((f.split(yadeDataDir)[1].split('_'))[1]) for f in yadeDataFiles])
         ids = np.argsort([(f.split(yadeDataDir)[1].split('_'))[1] for f in yadeDataFiles], kind='mergesort')
         self.yadeDataFiles = [yadeDataFiles[i] for i in ids]
         num = len(self.yadeDataFiles)
@@ -495,8 +490,10 @@ class smc:
 
     def getYadeDataFilesFromSamples(self):
         self.yadeDataFiles = []
+        magn = floor(log(self.numSamples, 10)) + 1
         for i in range(self.numSamples):
-            fileName = self.yadeDataDir + '/' + self.yadeDataSubDirs[-1] + '/' + self.simName + '*_%i_*.txt' % i
+            fileName = self.yadeDataDir + '/' + self.yadeDataSubDirs[-1] + \
+                '/' + self.simName + '*' + str(i).zfill(magn) + '*.npy'
             files = glob.glob(fileName)
             if not files:
                 raise RuntimeError("No files with name " + fileName + ' found')
@@ -517,10 +514,14 @@ class smc:
                 for j in range(self.numObs):
                     self.yadeData[:, i, j] = yadeData
             else:
-                yadeData = np.load(f, allow_pickle=True).item()
-                #getKeysAndData(f)   Yade output changed to npy files 
-                for j, key in enumerate(self.obsData.keys()):
-                    self.yadeData[:, i, j] = yadeData[key]
+                if f.split('.')[-1] == 'npy':
+                    yadeData = np.load(f, allow_pickle=True).item()
+                    for j, key in enumerate(self.obsData.keys()):
+                        self.yadeData[:, i, j] = yadeData[key]
+                elif f.split('.')[-1] == 'txt':
+                    yadeData = getKeysAndData(f)
+                    for j, key in enumerate(self.obsData.keys()):
+                        self.yadeData[:, i, j] = yadeData[key]
         # Remove the keys from obsData
         if self.obsCtrl != '':
             obsData = np.zeros([self.numSteps, self.numObs])
@@ -653,7 +654,6 @@ class smc:
         if not paramRanges:
             raise RuntimeError(
                 "Parameter range not given. Define the dictionary-type paramRanges or set loadSamples True")
-        self.paramRanges = paramRanges
 
         # get parameter names and upper and lower bounds
         names = self.getNames()
@@ -695,28 +695,34 @@ class smc:
         elif not os.path.exists(paramsFile) and self.yadeDataFiles is not None:
             # initialize the current smcSamples
             print('Cannot find your parameter table ' + paramsFile +
-                  '. Will try to get them from the names of simData files...\n')
+                  '. Will try to get them from the DEM data files...\n')
             numSamples = len(self.yadeDataFiles)
             smcSamples = np.zeros([numSamples, self.numParams])
             for i, f in enumerate(self.yadeDataFiles):
                 # get the file type (e.g., txt)
                 suffix = '.' + f.split('.')[-1]
-                # get the string before the file type
-                f = f.split(suffix)[0]
-                # get parameters from the remaining string
-                # FIXME The following assumes the last self.numParams values is the parameter sample. How to generalize?
-                paramsString = f.split('_')[-self.numParams:]
-                # if the number of strings after <simName> and <key> is different from self.numParams, throw an error
-                if len(f.split('_')[2:]) != self.numParams:
-                    RuntimeError(
-                        'Number of parameters extracted from the file name is different from self.numParams\n\
-                         Check if your simulation data file is named as <simName>_<key>_<param0>_<param1>_..._<paramN>.txt')
-                # convert strings to float numbers
-                smcSamples[i, :] = np.float64(paramsString)
+                if suffix == '.txt':
+                    # get the string before the file type
+                    f = f.split(suffix)[0]
+                    # get parameters from the remaining string
+                    # FIXME The following assumes the last self.numParams values is the parameter sample. How to generalize?
+                    paramsString = f.split('_')[-self.numParams:]
+                    # if the number of strings after <simName> and <key> is different from self.numParams, throw an error
+                    if len(f.split('_')[2:]) != self.numParams:
+                        RuntimeError(
+                            'Number of parameters extracted from the file name is different from self.numParams\n\
+                             Check if your simulation data file is named as <simName>_<key>_<param0>_<param1>_..._<paramN>.txt')
+                    # convert strings to float numbers
+                    smcSamples[i, :] = np.float64(paramsString)
+                elif suffix == '.npy':
+                    # get parameter sample values from the data file
+                    yadeData = np.load(f, allow_pickle=True).item()
+                    params = [yadeData[name] for name in self.paramNames] 
+                    smcSamples[i, :] = params
             # write extract parameter values into a text file
-            writeToTable(paramsFile, smcSamples, self.numParams, numSamples, self.threads, self.paramNames,simNum)
+            writeToTable(paramsFile, smcSamples, self.numParams, numSamples, self.threads, self.paramNames, simNum)
         else:
-            raise RuntimeError("Nether the parameter table " + paramsFile +
+            raise RuntimeError("Neither the parameter table " + paramsFile +
                                ' nor simData files exist in ' + self.yadeDataDir)
 
         # append parameter samples to self.smcSamples
@@ -724,7 +730,7 @@ class smc:
         self.smcSamples.append(smcSamples)
         return numSamples
 
-    def getObsDataFromFile(self, obsFileName, obsCtrl,simDataKeys):
+    def getObsDataFromFile(self, obsFileName, obsCtrl, simDataKeys):
         # if do not know the data that control the simulations
         if not self.obsCtrl:
             keysAndData = np.genfromtxt(obsFileName)
@@ -738,26 +744,21 @@ class smc:
             obsCtrlData = keysAndData.pop(obsCtrl)
             numSteps = len(obsCtrlData)
             # remove keys and data not being used as observation data  
-            allKeys = keysAndData.keys()
-            delKeys = []
-            for key in allKeys:
-             if not key in simDataKeys:
-              delKeys.append(key)
-              
-            for i in range(len(delKeys)):
-                keysAndData.pop(delKeys[i])
-                
-            numObs = len(keysAndData.keys())
+            numObs = len(simDataKeys)
+            for key in keysAndData.keys():
+                if key not in simDataKeys: keysAndData.pop(key)
             return keysAndData, obsCtrlData, numObs, numSteps
 
-    def resampleParams(self, caliStep, paramRanges, iterNO=-1, tableName='',simNum=0):
+    def resampleParams(self, caliStep, paramRanges={}, iterNO=-1, tableName='',simNum=0):
         """
         Resample parameters using a variational Gaussian mixture model
         """
         names = self.getNames()
-        smcSamples = self.smcSamples[iterNO]
+        if len(self.smcSamples) > 1: smcSamples = self.smcSamples[iterNO]
+        else: smcSamples = self.smcSamples[-1]
         numSamples = self.numSamples
         numThreads = self.threads if self.threads else cpu_count()
+        if not paramRanges: paramRanges = self.paramRanges
         # posterior probability at caliStep is used as the proposal distribution
         proposal = self.posterior[:, caliStep] 
         newSmcSamples, newparamsFile, gmm, maxNumComponents = \
@@ -765,7 +766,7 @@ class smc:
                                  threads=numThreads,
                                  maxNumComponents=self.__maxNumComponents, priorWeight=self.__priorWeight,
                                  covType=self.__covType,
-                                 tableName=tableName,seed=self.seed,simNum=simNum)            
+                                 tableName='smcTable%i.txt'%(iterNO+1),seed=self.seed,simNum=(iterNO+1))            
         self.smcSamples.append(newSmcSamples)
         self.paramsFiles.append(newparamsFile)
         return gmm, maxNumComponents
@@ -832,6 +833,12 @@ class smc:
         np.savetxt(self.yadeDataDir + '/samples.txt', self.getSmcSamples()[0])
         np.savetxt(self.yadeDataDir + '/ips.txt', self.ips[:, ::(-1) ** reverse].T)
         np.savetxt(self.yadeDataDir + '/weights.txt', self.getPosterior()[:, ::(-1) ** reverse])
+
+    def createScene(self,ID=-1):
+        return 0
+
+    def runDEM(self,kwargs):
+        return 0
 
     def getMostProbableParams(self, num, caliStep):
         # get a number of most probable parameter values

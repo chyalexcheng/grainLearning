@@ -5,6 +5,9 @@
 """
 
 # load GrainLearning modules
+import sys
+sys.path.append('../')
+
 from smc import *
 from plotResults import *
 from sciPlots import *
@@ -14,7 +17,7 @@ import pickle
 yadeFile = 'mcTriax_e.py'
 # use pre-run simulation data for calibration
 iterNO = int(input("Skip DEM simulations for demonstration. Which iteration to look at?\niterNO (e.g., 0, 1, 2, 3): "))
-yadeDataDir = 'Oedometric'
+yadeDataDir = './'
 yadeDataSubDir = 'iter%i' % iterNO
 
 sciPlot = True
@@ -36,8 +39,10 @@ paramRanges = {'E': [100e9, 200e9], 'mu': [0.3, 0.5], 'k_r': [0, 1e4], 'mu_r': [
 
 # name of the observation data file
 obsDataFile = 'obsdata.dat'
-# name of the data sequence that controls simulation
+# name of the data sequence that controls the simulation
 obsCtrl = 'e_a'
+# key for output data
+simDataKeys = ['p','q','n']
 
 # choose an appropriate effective sample size, e.g., 0.2
 ess = 0.2
@@ -48,7 +53,8 @@ maxNumComponents = int(numSamples / 10)
 priorWeight = 1.0e-2
 
 # name of the parameter table that corresponds to simData in yadeDataDir
-paramsFile = 'Oedo_smcTable%i.txt' % iterNO
+paramsFile = 'smcTable%i.txt' % iterNO
+os.system('rm smcTable*txt')
 # pre-trained proposal density in the pickle format
 proposalFile = 'gmmForOedo_%i.pkl' % (iterNO - 1) if iterNO != 0 else ''
 # if iteration number is an odd number, reverse the data sequences to ensure data continuity
@@ -56,8 +62,8 @@ reverse = True if iterNO % 2 == 1 else False
 
 # instantiate the Sequential Monte Carlo problem
 smcTest = smc(sigma, ess, obsWeights,
-              yadeScript=yadeFile, yadeDataDir=yadeDataDir,
-              obsCtrl=obsCtrl, simName='VAE', obsFileName=obsDataFile,
+              yadeScript=yadeFile, yadeDataDir=yadeDataDir, threads = 8,
+              obsCtrl=obsCtrl, simDataKeys=simDataKeys, simName='VAE', obsFileName=obsDataFile,
               scaleCovWithMax=False, loadSamples=True, runYadeInGL=False, standAlone=True)
 
 # load or generate the initial parameter samples
@@ -67,7 +73,7 @@ smcTest.initParams(paramNames, paramRanges, numSamples, paramsFile=paramsFile, s
 smcTest.initialize(maxNumComponents, priorWeight, proposalFile=proposalFile)
 
 # run sequential Monte Carlo and return ensemble means and coefficients of variance
-ips, covs = smcTest.run(reverse=reverse)
+ips, covs = smcTest.run(reverse=reverse, iterNO=iterNO)
 yadeDataDir += '/' + yadeDataSubDir
 
 # TODO move the plotting stuff into plotResults.py
@@ -93,7 +99,7 @@ if sciPlot:
 
 # use posterior distribution at the last calibration step for resampling
 caliStep = -1
-gmm, maxNumComponents = smcTest.resampleParams(caliStep=caliStep)
+gmm, maxNumComponents = smcTest.resampleParams(caliStep=caliStep, iterNO=iterNO)
 
 # plot the initial and resampled parameters
 plotAllSamples(smcTest.getSmcSamples(), smcTest.getNames())
@@ -115,7 +121,7 @@ for i in (-weights[:, caliStep]).argsort()[:3]:
     krValues.append(smcTest.smcSamples[0][i, 2]); mu_rValues.append(smcTest.smcSamples[0][i, 3])
 
 # plot ensemble prediction and realizations that have high probabilities
-keysAndData, obsCtrlData, _, _ = smcTest.getObsDataFromFile(obsDataFile, obsCtrl)
+keysAndData, obsCtrlData, _, _ = smcTest.getObsDataFromFile(obsDataFile, obsCtrl, simDataKeys)
 macroParamUQ = plotExpAndNum('VAE3', paramNames, '%i' % iterNO, smcTest.getPosterior()[:, ::(-1) ** reverse], mcFiles,
                              goodFiles,
                              EValues, muValues, krValues, mu_rValues,

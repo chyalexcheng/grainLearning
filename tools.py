@@ -96,16 +96,11 @@ def writeToTable(tableName, table, dim, num, threads, keys,simNum):
     #iterNum = 0
     
     fout = open(tableName, 'w')
-    #fout.write(' '.join(['description'] + keys + ['\n']))
-    fout.write(' '.join(['description'] + keys + ['\n']))
-    #fout.write(' '.join(['!OMP_NUM_THREADS', 'key'] + keys + ['\n']))
+    fout.write(' '.join(['!OMP_NUM_THREADS', 'description', 'key'] + keys + ['\n']))
     for j in range(num):
-        # fout.write(' '.join(['%2i' % threads, '%9i' % j] + ['%20.10e' % table[j][i] for i in range(dim)] + ['\n']))
-       key = 'Iter'+str(simNum)+'-Sample'+str(j).zfill(magn)
-       #key = str(j)
-       fout.write(' '.join([key] + ['%20.10e' % table[j][i] for i in range(dim)] + ['\n']))
+       description = 'Iter'+str(simNum)+'-Sample'+str(j).zfill(magn)
+       fout.write(' '.join(['%2i' % threads] + [description] + ['%9i' % j] + ['%20.10e' % table[j][i] for i in range(dim)] + ['\n']))
     fout.close()
-       
 
 
 def getKeysAndData(fileName):
@@ -200,65 +195,37 @@ def resampledParamsTable(keys, smcSamples, proposal, ranges, num=100, threads=4,
     # details on http://scikit-learn.org/stable/modules/generated/sklearn.mixture.BayesianGaussianMixture.html
     gmm = mixture.BayesianGaussianMixture(n_components=maxNumComponents, weight_concentration_prior=priorWeight,
                                           covariance_type=covType, tol=1e-5, max_iter=int(1e5), n_init=100,random_state=seed)
-    print("Start fitting")
     gmm.fit(newSMcSamples)
-    print('Fitting done')
-    
-    
-    delete=False
-    
-    #TODO something is wrong here...
-    if delete:
-        # increase the sample size until it is larger than the previous size
-        sampleSize = smcSamples.shape[0]
-#        print(sampleSize)
-#        print(num)
-        while num <= sampleSize:
-            newSMcSamples, _ = gmm.sample(num)
-            delParamIDs = []
-            for i, param in enumerate(newSMcSamples):
-                for j, name in enumerate(keys):
-                    if not (ranges[name][0] < param[j]*sampleMaxs[j] < ranges[name][1]):
-                        delParamIDs.append(i)
-                        break
-            if not delParamIDs:
-                print("Is empty")
-                break
-            newSMcSamples = np.delete(newSMcSamples, delParamIDs, 0)
-            currentSampleSize = newSMcSamples.shape[0]
-            num *= sampleSize/currentSampleSize
-    	# get the correct size of the resampled parameters
-        num = newSMcSamples.shape[0]
-    # replace out of bounds values by 
-    else:
-        newSMcSamples, _ = gmm.sample(num)
-        # check if parameters in predifined ranges. If not replace it randomly
-        for i in range(num):
-             for jj in range(len(keys)):
-                 name = keys[jj]
-                 val =  newSMcSamples[i, jj] #param[j]
-                 while not (ranges[name][0] <= val*sampleMaxs[jj] <= ranges[name][1]):
-                     print('Parameter ',keys[jj] ,'in sample ',i, 'outside critical range')
-                     
-##                     # Check if lower or upper range  
-#                     if(ranges[name][0] < val*sampleMaxs[jj]):
-#                         print('Set parameter',keys[jj] ,'in sample ',i, 'to upper boundary value')
-#                         val = (ranges[name][1]/sampleMaxs[jj])*0.99999999
-#                         
-#                     else:
-#                         print('Set parameter',keys[jj] ,'in sample ',i, ' to lower boundary value')
-#                         val = (ranges[name][0]/sampleMaxs[jj])*1.000001
-#                         
-#                     newSMcSamples[i, jj]  = val  
-                     
-                     k= np.random.randint(0,num)
-                     newSMcSamples[i, jj] = newSMcSamples[k, jj]
-                     val = newSMcSamples[i, jj]
+    newSMcSamples, _ = gmm.sample(num)
+
+    # ~ while num <= smcSamples.shape[0]:
+        # ~ newSMcSamples, _ = gmm.sample(num)
+        # ~ delParamIDs = []
+        # ~ for i, param in enumerate(newSMcSamples):
+            # ~ for j, name in enumerate(keys):
+                # ~ if not (ranges[name][0] < param[j]*sampleMaxs[j] < ranges[name][1]):
+                    # ~ delParamIDs.append(i)
+                    # ~ break
+        # ~ if not delParamIDs:
+            # ~ print("Is empty")
+            # ~ break
+        # ~ newSMcSamples = np.delete(newSMcSamples, delParamIDs, 0)
+        # ~ currentSampleSize = newSMcSamples.shape[0]
+        # ~ num *= int(sampleSize/currentSampleSize)
+    # check if parameters in predifined ranges. If not replace it randomly
+    for i in range(num):
+         for jj in range(len(keys)):
+             name = keys[jj]
+             val =  newSMcSamples[i, jj] #param[j]
+             while not (ranges[name][0] <= val*sampleMaxs[jj] <= ranges[name][1]):
+                 print('Parameter ',keys[jj] ,'in sample ',i, 'outside critical range')
+                 k= np.random.randint(0,num)
+                 newSMcSamples[i, jj] = newSMcSamples[k, jj]
+                 val = newSMcSamples[i, jj]
            
     # scale resampled parameters back to their right units
     for i in range(sampleMaxs.shape[0]): newSMcSamples[:, i] *= sampleMaxs[i]  
     # write parameters in the format for Yade batch mode
-    # TODO diff between IterNO and simNum?
     writeToTable(tableName, newSMcSamples, dim, num, threads, keys,simNum)
     return newSMcSamples, tableName, gmm, maxNumComponents
 

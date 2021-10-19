@@ -94,7 +94,7 @@ while smcTest.sigma > 1.0e-2 and iterNO < maxNumOfIters:
 
     # resample parameters
     caliStep = -1
-    gmm, maxNumComponents = smcTest.resampleParams(caliStep=caliStep, paramRanges=paramRanges, iterNO=iterNO)
+    gmm, maxNumComponents = smcTest.resampleParams(caliStep=caliStep, paramRanges=paramRanges)
 
     # plot initial and resampled parameters
     plotAllSamples(smcTest.getSmcSamples(), smcTest.getNames())

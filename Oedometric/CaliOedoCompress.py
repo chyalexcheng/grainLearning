@@ -73,7 +73,7 @@ smcTest.initParams(paramNames, paramRanges, numSamples, paramsFile=paramsFile, s
 smcTest.initialize(maxNumComponents, priorWeight, proposalFile=proposalFile)
 
 # run sequential Monte Carlo and return ensemble means and coefficients of variance
-ips, covs = smcTest.run(reverse=reverse, iterNO=iterNO)
+ips, covs = smcTest.run(iterNO=iterNO, reverse=reverse)
 yadeDataDir += '/' + yadeDataSubDir
 
 # TODO move the plotting stuff into plotResults.py
@@ -99,7 +99,7 @@ if sciPlot:
 
 # use posterior distribution at the last calibration step for resampling
 caliStep = -1
-gmm, maxNumComponents = smcTest.resampleParams(caliStep=caliStep, iterNO=iterNO)
+gmm, maxNumComponents = smcTest.resampleParams(caliStep=caliStep)
 
 # plot the initial and resampled parameters
 plotAllSamples(smcTest.getSmcSamples(), smcTest.getNames())

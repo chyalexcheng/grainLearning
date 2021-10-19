@@ -273,7 +273,7 @@ class smc:
                 vol[i] = ConvexHull(v.vertices[indices]).volume
         return vol
 
-    def run(self, iterNO=-1, reverse=False):
+    def run(self, iterNO, reverse=False):
         """
         Run sequential Monte Carlo in
         1. Stand-alone mode
@@ -303,26 +303,27 @@ class smc:
         """
 
         # if iterate Bayesian filtering, reload the observation data
-        if iterNO > 0:
-            print('*** At the iteration NO. %i, with sigma=%f ***\n' % (iterNO, self.sigma))
+        self.__iterNO = iterNO
+        if self.__iterNO > 0:
+            print('*** At the iteration NO. %i, with sigma=%f ***\n' % (self.__iterNO, self.sigma))
             self.obsData, self.obsCtrlData, self.numObs, self.numSteps = \
                 self.getObsDataFromFile(self.obsFileName, self.obsCtrl,self.simDataKeys)
 
         # if use GrainLearning as a stand-alone tool (simData already exist beforehand)
         if self.standAlone:
             print('*** Read in pre-existing DEM simulation data now ***\n')
-            print("Iteration number is ",iterNO)
-            self.checkParamsError(iterNO)
+            print("Iteration number is ",self.__iterNO)
+            self.checkParamsError(self.__iterNO)
             self.getYadeData()
         # if run DEM simulations with GrainLearning before the Bayesian filtering steps
         else:
             if self.runYadeInGL:
                 print('*** Run Yade-DEM simulations now within GrainLearning ***\n')
-                self.runYadePython(iterNO)
+                self.runYadePython(self.__iterNO)
             else:
-                self.runYadeBatch(iterNO)
+                self.runYadeBatch(self.__iterNO)
                 self.getYadeDataFilesFromSamples()
-                self.checkParamsError(iterNO)
+                self.checkParamsError(self.__iterNO)
                 self.getYadeData()
 
         # iterate Bayesian filtering until the effective sample size is sufficient
@@ -403,14 +404,17 @@ class smc:
         else:
             input('simData directory already exists (%i files). Delete?\n' % len(glob.glob(yadeDataDir + '/*')))
             os.system('rm ' + yadeDataDir + '/*')
-        input("*** Please check if the yade script is correct... ***\n"
-              + "\nAbout to run Yade in batch mode using '" +
-              " ".join([self.yadeVersion, self.paramsFiles[iterNO], self.yadeScript]) +
-              "'\n(Hit enter if the above is correct)\n")
-        os.system(' '.join([self.yadeVersion, self.paramsFiles[iterNO], self.yadeScript]))
+        self.runCommandLine()
         input('All simulations have finished. Now return to GrainLearning?\n')
         os.system('mv ' + self.simName + '*.npy ' + yadeDataDir)
         os.system('cp ' + self.paramsFiles[iterNO] + ' ' + yadeDataDir)
+
+    def runCommandLine(self):
+        input("*** Please check if the yade script is correct... ***\n"
+             + "\nAbout to run Yade in batch mode using '" +
+              " ".join([self.yadeVersion, self.paramsFiles[self.__iterNO], self.yadeScript]) +
+              "'\n(Hit enter if the above is correct)\n")
+        os.system(' '.join([self.yadeVersion, self.paramsFiles[self.__iterNO], self.yadeScript]))
 
     def subRun(self, sigma):
         self.sigma = sigma
@@ -754,8 +758,8 @@ class smc:
         Resample parameters using a variational Gaussian mixture model
         """
         names = self.getNames()
-        if len(self.smcSamples) > 1: smcSamples = self.smcSamples[iterNO]
-        else: smcSamples = self.smcSamples[-1]
+        if iterNO == -1: smcSamples = self.smcSamples[self.__iterNO]
+        else: smcSamples = self.smcSamples[iterNO]
         numSamples = self.numSamples
         numThreads = self.threads if self.threads else cpu_count()
         if not paramRanges: paramRanges = self.paramRanges
@@ -766,7 +770,7 @@ class smc:
                                  threads=numThreads,
                                  maxNumComponents=self.__maxNumComponents, priorWeight=self.__priorWeight,
                                  covType=self.__covType,
-                                 tableName='smcTable%i.txt'%(iterNO+1),seed=self.seed,simNum=(iterNO+1))            
+                                 tableName='smcTable%i.txt'%(self.__iterNO+1),seed=self.seed,simNum=(self.__iterNO+1))            
         self.smcSamples.append(newSmcSamples)
         self.paramsFiles.append(newparamsFile)
         return gmm, maxNumComponents
@@ -800,7 +804,8 @@ class smc:
         :return: gmmList, list of Gaussian mixture models
         """
         gmmList = []
-        smcSamples = self.smcSamples[iterNO]
+        if iterNO == -1: smcSamples = self.smcSamples[self.__iterNO]
+        else: smcSamples = self.smcSamples[iterNO]
         for i in range(self.numSteps):
             print('Train DP mixture at time %i' % i)
             posterior = self.posterior[:, i]

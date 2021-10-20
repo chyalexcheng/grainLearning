@@ -28,11 +28,11 @@ ObsData = np.loadtxt('collisionOrg.dat')
 # add Gaussian noise
 noise = np.random.normal(0, 0.3 * max(ObsData[:,1]), ObsData.shape[0])
 
-# give ranges of parameter values (E, \nu)
-paramNames = ['E', 'nu']
+# give ranges of parameter values (E_m, \nu)
+paramNames = ['E_m', 'nu']
 numParams = len(paramNames)
 # use uniform sampling for the first iteration
-paramRanges = {'E': [6, 10], 'nu': [0.0, 0.5]}
+paramRanges = {'E_m': [7, 11], 'nu': [0.0, 0.5]}
 # key for simulation control
 obsCtrl = 'u'
 # key for output data
@@ -57,9 +57,9 @@ obsDataFile.close()
 iterNO = int(input('\nWhich iteration of Bayesian calibration is this?\n'))
 # stand-alone mode: use GrainLearning as a post-process tool using pre-run DEM data
 smcTest = smc(sigma, ess, obsWeights,
-              yadeDataDir='SimData', threads=threads,
+              yadeDataDir='cali_results', threads=threads,
               obsCtrl=obsCtrl, simDataKeys=simDataKeys, simName='2particle', obsFileName='collisionObs.dat',
-              loadSamples=True, runYadeInGL=False, standAlone=True)
+              seed=None, loadSamples=True, runYadeInGL=False, standAlone=True)
 
 # load or generate the initial parameter samples
 smcTest.initParams(paramNames, paramRanges, numSamples, paramsFile='smcTable%i.txt' % iterNO, subDir='iter%i' % iterNO)
@@ -70,7 +70,7 @@ smcTest.initParams(paramNames, paramRanges, numSamples, paramsFile='smcTable%i.t
 smcTest.initialize(maxNumComponents, priorWeight, covType=covType)
 
 # sequential Monte Carlo
-ips, covs = smcTest.run()
+ips, covs = smcTest.run(iterNO=iterNO)
 
 # get the parameter samples (ensemble) and posterior probability
 posterior = smcTest.getPosterior()

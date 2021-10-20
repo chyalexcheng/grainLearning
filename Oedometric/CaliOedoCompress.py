@@ -64,7 +64,7 @@ reverse = True if iterNO % 2 == 1 else False
 smcTest = smc(sigma, ess, obsWeights,
               yadeScript=yadeFile, yadeDataDir=yadeDataDir, threads = 8,
               obsCtrl=obsCtrl, simDataKeys=simDataKeys, simName='VAE', obsFileName=obsDataFile,
-              scaleCovWithMax=False, loadSamples=True, runYadeInGL=False, standAlone=True)
+              seed=None, scaleCovWithMax=False, loadSamples=True, runYadeInGL=False, standAlone=True)
 
 # load or generate the initial parameter samples
 smcTest.initParams(paramNames, paramRanges, numSamples, paramsFile=paramsFile, subDir=yadeDataSubDir)

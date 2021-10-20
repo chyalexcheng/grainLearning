@@ -5,7 +5,7 @@ readParamsFromTable(
     # Density
     rho=2450,
     # Young's modulus
-    E=8,
+    E_m=8,
     # Poisson's ratio
     nu=0.2,
     # final friction coefficient
@@ -13,8 +13,7 @@ readParamsFromTable(
     # timestepSafetyCoefficient
     safe=0.1,
     # no. of your simulation
-    key=0,
-    unknownOk=True
+    key=0
 )
 
 import numpy as np
@@ -58,7 +57,7 @@ obsCtrlData.reverse()
 print('\nModel evaluation NO. %i' % table.key)
 
 # create materials
-O.materials.append(FrictMat(young=pow(10,table.E), poisson=table.nu, frictionAngle=atan(table.mu), density=table.rho))
+O.materials.append(FrictMat(young=pow(10,table.E_m), poisson=table.nu, frictionAngle=atan(table.mu), density=table.rho))
 
 # create two particles
 O.bodies.append(sphere(Vector3(0, 0, 0), 1, material=0, fixed=True))

@@ -117,7 +117,7 @@ class smc:
         self.simName = simName
         
         # Seed for probabilistic methods 
-        self.seed =seed
+        self.seed = seed
 
         # Load observation data
         self.obsData, self.obsCtrlData, self.numObs, self.numSteps = self.getObsDataFromFile(obsFileName, obsCtrl,simDataKeys)
@@ -365,7 +365,9 @@ class smc:
                            / self.getSmcSamples()[-1][i] < 1e-10).all()):
                 raise RuntimeError(
                     "Parameters " + ", ".join(
-                        ["%s" % v for v in self.getSmcSamples()[-1][i]]) + " are not matching between the data file and the table " + f)
+                        ["%s" % v for v in self.getSmcSamples()[-1][i]]) + \
+                        " are not matching between the data file and the parameter table in " + f + \
+                        "\n\033[1;34;40m\nYou might want to delete " + self.paramsFiles[-1] + ' in the current directory')
 
     def runYadePython(self, iterNO=-1):
         """
@@ -758,11 +760,14 @@ class smc:
         Resample parameters using a variational Gaussian mixture model
         """
         names = self.getNames()
-        if iterNO == -1: smcSamples = self.smcSamples[self.__iterNO]
-        else: smcSamples = self.smcSamples[iterNO]
+        # if iter no. not given use samples from the last available iteration 
+        smcSamples = self.smcSamples[self.__iterNO] if len(self.smcSamples)>1 else self.smcSamples[-1]
         numSamples = self.numSamples
         numThreads = self.threads if self.threads else cpu_count()
+        # if critical parameter range is not given use the bounds
         if not paramRanges: paramRanges = self.paramRanges
+        # if parameter name not given, use the default one 'smcTable<i>.txt' 
+        tableName = 'smcTable%i.txt'%(self.__iterNO+1) if not tableName else tableName
         # posterior probability at caliStep is used as the proposal distribution
         proposal = self.posterior[:, caliStep] 
         newSmcSamples, newparamsFile, gmm, maxNumComponents = \
@@ -770,7 +775,7 @@ class smc:
                                  threads=numThreads,
                                  maxNumComponents=self.__maxNumComponents, priorWeight=self.__priorWeight,
                                  covType=self.__covType,
-                                 tableName='smcTable%i.txt'%(self.__iterNO+1),seed=self.seed,simNum=(self.__iterNO+1))            
+                                 tableName=tableName,seed=self.seed,simNum=(self.__iterNO+1))            
         self.smcSamples.append(newSmcSamples)
         self.paramsFiles.append(newparamsFile)
         return gmm, maxNumComponents

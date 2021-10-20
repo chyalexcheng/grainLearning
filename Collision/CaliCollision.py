@@ -30,10 +30,10 @@ ObsData = np.loadtxt('collisionOrg.dat')
 noise = np.random.normal(0, 0.3 * max(ObsData[:,1]), ObsData.shape[0])
 
 # give ranges of parameter values (E, \nu)
-paramNames = ['E', 'nu']
+paramNames = ['E_m', 'nu']
 numParams = len(paramNames)
 # use uniform sampling for the first iteration
-paramRanges = {'E': [6, 10], 'nu': [0.0, 0.5]}
+paramRanges = {'E_m': [7, 11], 'nu': [0.0, 0.5]}
 # key for simulation control
 obsCtrl = 'u'
 # key for output data
@@ -66,7 +66,7 @@ obsDataFile.close()
 smcTest = smc(sigma, ess, obsWeights,
               yadeVersion='yadedaily-batch', yadeScript='Collision.py', yadeDataDir='SimData', threads=threads,
               obsCtrl=obsCtrl, simDataKeys=simDataKeys, simName='2particle', obsFileName='collisionObs.dat',
-              loadSamples=False, runYadeInGL=False, standAlone=False)
+              seed=None, loadSamples=False, runYadeInGL=False, standAlone=False)
 
 # generate the initial parameter samples from a low-discrepancy sequence
 smcTest.initParams(paramNames, paramRanges, numSamples)

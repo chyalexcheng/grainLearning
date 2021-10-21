@@ -79,7 +79,8 @@ class smc:
         
         self.sigma = sigma
         self.ess = ess
-        self.normalizedSigma = normalizedSigma
+        normSigma = np.diagflat(normalizedSigma)
+        self.normalizedSigma = normSigma*np.linalg.det(normSigma)**(-1.0/normSigma.shape[0])
         self.numParams = 0
         self.numSamples = 0
         self.smcSamples = []
@@ -591,7 +592,7 @@ class smc:
 
         # row-wise subtraction obsVec[numObs]-stateVec[numSamples,numObs]
         vecDiff = obsVec - stateVec
-        Sigma = self.getCovMatrix(caliStep, self.normalizedSigma)
+        Sigma = self.getCovMatrix(caliStep)
         invSigma = np.linalg.inv(Sigma)
         likelihood = np.zeros(self.numSamples)
 
@@ -617,15 +618,12 @@ class smc:
         posterior /= np.sum(posterior)
         return posterior
 
-    def getCovMatrix(self, caliStep, normSigma):
+    def getCovMatrix(self, caliStep):
         """
         Compute the covariance matrix either varying in time or proportional to maximum observation data
 
         :param caliStep: int
             Calibration or data assimilation step
-
-        :param normSigma: ndarray of shape (numObs,)
-            Relative contribution of the state/observation variables to the covariance matrix e.g., np.ones(numObs)
 
         :return: Sigma: ndarray of shape (numObs, numObs)
             TODO The covariance matrix is assumed to be diagonal which is not necessarily true.
@@ -633,15 +631,13 @@ class smc:
         """
 
         Sigma = np.zeros([self.numObs, self.numObs])
-        normSigma = np.diagflat(normSigma)
-        normSigma *= np.linalg.det(normSigma)**(-1.0/self.numObs)
         # scale observation data with normalized variance parameter to get covariance matrix
         for i in range(self.numObs):
             # use smaller weights for higher precision
             if self.scaleCovWithMax:
-                Sigma[i, i] = self.sigma * normSigma[i,i] * max(self.obsData[:, i] ** 2)
+                Sigma[i, i] = self.sigma * self.normalizedSigma[i,i] * max(self.obsData[:, i] ** 2)
             else:
-                Sigma[i, i] = self.sigma * normSigma[i,i] * self.obsData[caliStep, i] ** 2      
+                Sigma[i, i] = self.sigma * self.normalizedSigma[i,i] * self.obsData[caliStep, i] ** 2      
         return Sigma
 
     def getParamsFromHalton(self, paramRanges, numSamples, threads, simNum):

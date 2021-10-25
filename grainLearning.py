@@ -181,8 +181,8 @@ else:
  
  
  # Compute error increments 
- delta_gle = gle_old-gle
- delta_cse = cse_old-cse 
+ delta_gle = abs(gle_old-gle)
+ delta_cse = abs(cse_old-cse)
  
  # In case of iteration zero iterNo = 0. Thus glErrors[iterNO-1]= glErrors[-1]. 
  #The value correspond to glErrors[0] and consequently delta_gle=0. To avoid termination after iteration catch this exception

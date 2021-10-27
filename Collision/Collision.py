@@ -45,7 +45,7 @@ def addSimData():
             np.save(dataName,plot.data)
         else:
 			# File name: <simName>_<key>_<param0>_<param1>_..._<paramN>.txt
-            dataName = '2particle_%i_%.10e_%.10e' % (table.key, table.E, table.nu) + '.txt'
+            dataName = '2particle_%i_%.10e_%.10e' % (table.key, table.E_m, table.nu) + '.txt'
             plot.saveDataTxt(dataName)
         O.pause()
 

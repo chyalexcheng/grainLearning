@@ -11,10 +11,6 @@ from os import system, listdir, path
 from matplotlib.offsetbox import AnchoredText
 from scipy import stats
 
-params = {'lines.linewidth': 1,'backend': 'ps','axes.labelsize': 12,'font.size': 12, 'legend.fontsize': 9,'xtick.labelsize': 9,'ytick.labelsize': 9,'text.usetex': True,'font.family': 'serif','legend.edgecolor': 'k','legend.fancybox':False}
-matplotlib.rcParams['text.latex.preamble']=[r"\usepackage{amsmath}"]
-matplotlib.rcParams.update(params)
-
 # get weight from files
 def getWeight(wName):
 	# get weight
@@ -28,7 +24,7 @@ def getWeight(wName):
 def plotIPs(names,ips,covs,nStep,weight,params):
 	# plot weighted average for each parameter
 	num = len(names)
-	nCols = np.ceil(num/2)
+	nCols = int(np.ceil(num/2))
 	plt.figure('Posterior means over parameters')
 	for i in range(num):
 		plt.subplot(2,nCols,i+1)
@@ -66,7 +62,7 @@ def plotIPs(names,ips,covs,nStep,weight,params):
 def plotAllSamples(smcSamples,names):
     num=len(names)
     numM1 = num-1
-    nCols = np.ceil(num/2)
+    nCols = int(np.ceil(num/2))
     numOfIters = len(smcSamples)
     plt.figure('Resampled parameter space')
     for j in range(numM1):

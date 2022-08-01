@@ -49,7 +49,7 @@ def addSimData():
             plot.saveDataTxt(dataName)
         O.pause()
 
-obsFile ="collisionOrg.dat"
+obsFile ="Collision/collisionOrg.dat"
 # get data for simulation control
 obsCtrlData = np.loadtxt(obsFile)[:,0].tolist()
 obsCtrlData.reverse()

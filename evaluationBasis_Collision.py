@@ -96,4 +96,3 @@ plt.legend()
 
 
 #plt.savefig("test.pdf",transparent = True,bbox_inches='tight')
-plt.show()

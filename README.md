@@ -1,3 +1,7 @@
+# An important note
+The GrainLearning repository of [chyalexcheng](https://github.com/chyalexcheng/grainLearning) contains only the stable releases of the software.
+For the most recent development of the GrainLearning project, go to the GitHub page of [GrainLearning organization](https://github.com/GrainLearning/grainLearning/).
+
 # Welcome to GrainLearning!
 | fair-software.eu recommendations  | Badges |
 |:---  | :--| 

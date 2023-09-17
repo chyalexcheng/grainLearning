@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tutorials &mdash; GrainLearning  documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
+        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Examples" href="examples.html" />
+    <link rel="prev" title="RNN Module" href="rnn.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            GrainLearning
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dynamic_systems.html">Dynamic systems</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bayesian_filtering.html">Bayesian filtering</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rnn.html">RNN Module</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Tutorials</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#three-ways-of-using-grainlearning">Three ways of using GrainLearning</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#linear-regression-with-a-python-model">Linear regression with a Python model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#linear-regression-with-a-software-model">Linear regression with a “software” model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#grainlearning-as-a-postprocessing-tool">GrainLearning as a postprocessing tool</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#postprocess-simulation-data-using-iodynamicsystem">Postprocess simulation data using IODynamicSystem</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#postprocess-simulation-data-using-dynamicsystem">Postprocess simulation data using DynamicSystem</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#stochastic-or-deterministic-sampling">Stochastic or deterministic sampling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#visualize-the-sampling-of-parameter-distribution">Visualize the sampling of parameter distribution</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_contribute.html">Contributing guidelines</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">Python API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">GrainLearning</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Tutorials</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/tutorials.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="tutorials">
+<h1>Tutorials<a class="headerlink" href="#tutorials" title="Permalink to this heading"></a></h1>
+<p>In this section, we demonstrate the functionalities GrainLearning via a simple example of linear regression.</p>
+<section id="three-ways-of-using-grainlearning">
+<span id="sec-use-gl"></span><h2>Three ways of using GrainLearning<a class="headerlink" href="#three-ways-of-using-grainlearning" title="Permalink to this heading"></a></h2>
+<p>We show in the following three different ways of using GrainLearning,</p>
+<ol class="arabic simple">
+<li><p>with <a class="reference internal" href="#sec-python-model"><span class="std std-ref">a Python model</span></a>,</p></li>
+<li><p>with <a class="reference internal" href="#sec-external-model"><span class="std std-ref">a “software” model via the command line</span></a>,</p></li>
+<li><p>and as <a class="reference internal" href="#sec-standalone"><span class="std std-ref">a postprocessing tool</span></a> to generate new parameter samples.</p></li>
+</ol>
+<section id="linear-regression-with-a-python-model">
+<span id="sec-python-model"></span><h3>Linear regression with a Python model<a class="headerlink" href="#linear-regression-with-a-python-model" title="Permalink to this heading"></a></h3>
+<p>To work with GrainLearning in the Python environment,
+we need to write a callback function of the <a class="reference internal" href="api.html#grainlearning.dynamic_systems.DynamicSystem" title="grainlearning.dynamic_systems.DynamicSystem"><code class="xref py py-class docutils literal notranslate"><span class="pre">DynamicSystem</span></code></a> where the model <span class="math notranslate nohighlight">\(y = a\times{x}+b\)</span> is called.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># define a callback function to be passed to the system object</span>
+<span class="k">def</span> <span class="nf">run_sim</span><span class="p">(</span><span class="n">system</span><span class="p">):</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="c1"># loop over the parameter samples</span>
+    <span class="k">for</span> <span class="n">params</span> <span class="ow">in</span> <span class="n">system</span><span class="o">.</span><span class="n">param_data</span><span class="p">:</span>
+        <span class="c1"># run the model y = a*x + b</span>
+        <span class="n">y_sim</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">system</span><span class="o">.</span><span class="n">ctrl_data</span> <span class="o">+</span> <span class="n">params</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="c1"># append the data to the list</span>
+        <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">y_sim</span><span class="p">,</span> <span class="n">ndmin</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
+    <span class="c1"># pass the data to the system object</span>
+    <span class="n">system</span><span class="o">.</span><span class="n">set_sim_data</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Let us use <span class="math notranslate nohighlight">\(a=0.2\)</span> and <span class="math notranslate nohighlight">\(b=5.0\)</span> to generate some synthetic data and add Gaussian noise to it.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># define the true parameters</span>
+<span class="n">a</span> <span class="o">=</span> <span class="mf">0.2</span>
+<span class="n">b</span> <span class="o">=</span> <span class="mf">5.0</span>
+<span class="c1"># define the control data in the range [0, 100)</span>
+<span class="n">x_obs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+<span class="c1"># generate the synthetic data</span>
+<span class="n">y_obs</span> <span class="o">=</span> <span class="n">a</span> <span class="o">*</span> <span class="n">x_obs</span> <span class="o">+</span> <span class="n">b</span>
+
+<span class="c1"># add Gaussian noise (optional)</span>
+<span class="n">y_obs</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span> <span class="o">*</span> <span class="mf">2.5</span>
+</pre></div>
+</div>
+<p>A calibration tool can be initialized by defining all the necessary input in a dictionary
+and passing it to the constructor of <a class="reference internal" href="api.html#grainlearning.bayesian_calibration.BayesianCalibration" title="grainlearning.bayesian_calibration.BayesianCalibration"><code class="xref py py-class docutils literal notranslate"><span class="pre">BayesianCalibration</span></code></a>.
+Check out the documentation of <a class="reference internal" href="api.html#grainlearning.bayesian_calibration.BayesianCalibration" title="grainlearning.bayesian_calibration.BayesianCalibration"><code class="xref py py-class docutils literal notranslate"><span class="pre">BayesianCalibration</span></code></a> for more details.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">grainlearning</span> <span class="kn">import</span> <span class="n">BayesianCalibration</span>
+
+<span class="c1"># create a calibration tool</span>
+<span class="n">calibration</span> <span class="o">=</span> <span class="n">BayesianCalibration</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;num_iter&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
+        <span class="s2">&quot;system&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">&quot;param_min&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">],</span>
+            <span class="s2">&quot;param_max&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">10</span><span class="p">],</span>
+            <span class="s2">&quot;param_names&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">],</span>
+            <span class="s2">&quot;num_samples&quot;</span><span class="p">:</span> <span class="mi">20</span><span class="p">,</span>
+            <span class="s2">&quot;obs_data&quot;</span><span class="p">:</span> <span class="n">y_obs</span><span class="p">,</span>
+            <span class="s2">&quot;ctrl_data&quot;</span><span class="p">:</span> <span class="n">x_obs</span><span class="p">,</span>
+            <span class="s2">&quot;callback&quot;</span><span class="p">:</span> <span class="n">run_sim</span><span class="p">,</span>
+        <span class="p">},</span>
+      <span class="s2">&quot;calibration&quot;</span><span class="p">:</span> <span class="p">{</span>
+          <span class="s2">&quot;inference&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;ess_target&quot;</span><span class="p">:</span> <span class="mf">0.3</span><span class="p">},</span>
+          <span class="s2">&quot;sampling&quot;</span><span class="p">:</span> <span class="p">{</span>
+              <span class="s2">&quot;max_num_components&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+        <span class="s2">&quot;save_fig&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="p">}</span>
+<span class="p">)</span>
+
+<span class="c1"># run the calibration tool</span>
+<span class="n">calibration</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;The most probable parameter values are </span><span class="si">{</span><span class="n">calibration</span><span class="o">.</span><span class="n">get_most_prob_params</span><span class="p">()</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Note that it is important to keep the effective sample size large enough (e.g., <cite>ess_target = 0.3</cite>)
+such that the parameter distribution is not sampled only at the optima.
+Another key parameter for the sampling algorithm is <cite>max_num_components</cite>,
+which controls the upper bound for the number of components in the parameter distribution.</p>
+<p>Click <a class="reference download internal" download="" href="_downloads/9b664b4e0cc661aefa271b752f2449ea/python_linear_regression_solve.py"><code class="xref download docutils literal notranslate"><span class="pre">here</span></code></a> to download the full script.</p>
+<div class="admonition attention">
+<p class="admonition-title">Attention</p>
+<p>Play with <cite>ess_target</cite> and <cite>max_num_components</cite> to see how they affect the identified most probable parameter values
+and the number of iterations needed to reach the termination criterion.</p>
+</div>
+</section>
+<section id="linear-regression-with-a-software-model">
+<span id="sec-external-model"></span><h3>Linear regression with a “software” model<a class="headerlink" href="#linear-regression-with-a-software-model" title="Permalink to this heading"></a></h3>
+<p>Linking GrainLearning with external software is done with the <a class="reference internal" href="api.html#grainlearning.dynamic_systems.IODynamicSystem" title="grainlearning.dynamic_systems.IODynamicSystem"><code class="xref py py-class docutils literal notranslate"><span class="pre">IODynamicSystem</span></code></a>
+Now let us look at the same example, using the <a class="reference internal" href="api.html#grainlearning.dynamic_systems.IODynamicSystem" title="grainlearning.dynamic_systems.IODynamicSystem"><code class="xref py py-class docutils literal notranslate"><span class="pre">IODynamicSystem</span></code></a> and a linear function implemented in a separate file
+<a class="reference download internal" download="" href="_downloads/3fbc273228bd03cfe44b7219e6dd765b/linear_model.py"><code class="xref download docutils literal notranslate"><span class="pre">linear_model.py</span></code></a>.
+This Python “software” will be run from command line by the callback function of a <a class="reference internal" href="api.html#grainlearning.dynamic_systems.IODynamicSystem" title="grainlearning.dynamic_systems.IODynamicSystem"><code class="xref py py-class docutils literal notranslate"><span class="pre">IODynamicSystem</span></code></a> object
+and take the command-line arguments as model parameters.
+Download <a class="reference download internal" download="" href="_downloads/3fbc273228bd03cfe44b7219e6dd765b/linear_model.py"><code class="xref download docutils literal notranslate"><span class="pre">this</span> <span class="pre">script</span></code></a>
+and <a class="reference download internal" download="" href="_downloads/c2919b0d8d68e5d5dcd28b5ddac6ca6e/linear_obs.dat"><code class="xref download docutils literal notranslate"><span class="pre">the</span> <span class="pre">observation</span> <span class="pre">data</span></code></a>,
+open a Python console in the same directory, and copy and paste the following code to run the calibration.</p>
+<p>First import the necessary modules.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">math</span> <span class="kn">import</span> <span class="n">floor</span><span class="p">,</span> <span class="n">log</span>
+<span class="kn">from</span> <span class="nn">grainlearning</span> <span class="kn">import</span> <span class="n">BayesianCalibration</span>
+<span class="kn">from</span> <span class="nn">grainlearning.dynamic_systems</span> <span class="kn">import</span> <span class="n">IODynamicSystem</span>
+</pre></div>
+</div>
+<p>Then define the callback function to run the external software.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">executable</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;python ./linear_model.py&#39;</span>
+
+<span class="k">def</span> <span class="nf">run_sim</span><span class="p">(</span><span class="n">system</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Run the external executable and passes the parameter sample to generate the output file.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># keep the naming convention consistent between iterations</span>
+    <span class="n">mag</span> <span class="o">=</span> <span class="n">floor</span><span class="p">(</span><span class="n">log</span><span class="p">(</span><span class="n">system</span><span class="o">.</span><span class="n">num_samples</span><span class="p">,</span> <span class="mi">10</span><span class="p">))</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="n">curr_iter</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;curr_iter&#39;</span><span class="p">]</span>
+    <span class="c1"># check the software name and version</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;*** Running external software... ***</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="c1"># loop over and pass parameter samples to the executable</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">params</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">system</span><span class="o">.</span><span class="n">param_data</span><span class="p">):</span>
+        <span class="n">description</span> <span class="o">=</span> <span class="s1">&#39;Iter&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">curr_iter</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;_Sample&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="o">.</span><span class="n">zfill</span><span class="p">(</span><span class="n">mag</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">executable</span><span class="p">,</span> <span class="s2">&quot;</span><span class="si">%.8e</span><span class="s2"> </span><span class="si">%.8e</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">params</span><span class="p">),</span> <span class="n">system</span><span class="o">.</span><span class="n">sim_name</span><span class="p">,</span> <span class="n">description</span><span class="p">]))</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">system</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">executable</span><span class="p">,</span> <span class="s2">&quot;</span><span class="si">%.8e</span><span class="s2"> </span><span class="si">%.8e</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">params</span><span class="p">),</span> <span class="n">system</span><span class="o">.</span><span class="n">sim_name</span><span class="p">,</span> <span class="n">description</span><span class="p">]))</span>
+</pre></div>
+</div>
+<p>Now let us define the calibration tool. Note that the system type is changed <a class="reference internal" href="api.html#grainlearning.dynamic_systems.IODynamicSystem" title="grainlearning.dynamic_systems.IODynamicSystem"><code class="xref py py-class docutils literal notranslate"><span class="pre">IODynamicSystem</span></code></a>.</p>
+<div class="admonition important">
+<p class="admonition-title">Important</p>
+<p>Additionally, one has to make sure that <cite>obs_data_file</cite> exist and
+<cite>sim_name</cite>, <cite>obs_names</cite>, <cite>sim_data_dir</cite>, and <cite>ctrl_name</cite> are given
+such that GrainLearning can find the data in the simulation directories.
+Otherwise, an error will be raised.</p>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">calibration</span> <span class="o">=</span> <span class="n">BayesianCalibration</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;num_iter&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
+        <span class="s2">&quot;system&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">&quot;system_type&quot;</span><span class="p">:</span> <span class="n">IODynamicSystem</span><span class="p">,</span>
+            <span class="s2">&quot;param_min&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">],</span>
+            <span class="s2">&quot;param_max&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">10</span><span class="p">],</span>
+            <span class="s2">&quot;param_names&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">],</span>
+            <span class="s2">&quot;num_samples&quot;</span><span class="p">:</span> <span class="mi">20</span><span class="p">,</span>
+            <span class="s2">&quot;obs_data_file&quot;</span><span class="p">:</span> <span class="s1">&#39;./linear_obs.dat&#39;</span><span class="p">,</span>
+            <span class="s2">&quot;obs_names&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;f&#39;</span><span class="p">],</span>
+            <span class="s2">&quot;ctrl_name&quot;</span><span class="p">:</span> <span class="s1">&#39;u&#39;</span><span class="p">,</span>
+            <span class="s2">&quot;sim_name&quot;</span><span class="p">:</span> <span class="s1">&#39;linear&#39;</span><span class="p">,</span>
+            <span class="s2">&quot;sim_data_dir&quot;</span><span class="p">:</span> <span class="s1">&#39;./sim_data/&#39;</span><span class="p">,</span>
+            <span class="s2">&quot;sim_data_file_ext&quot;</span><span class="p">:</span> <span class="s1">&#39;.txt&#39;</span><span class="p">,</span>
+            <span class="s2">&quot;callback&quot;</span><span class="p">:</span> <span class="n">run_sim</span><span class="p">,</span>
+        <span class="p">},</span>
+        <span class="s2">&quot;calibration&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">&quot;inference&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;ess_target&quot;</span><span class="p">:</span> <span class="mf">0.3</span><span class="p">},</span>
+            <span class="s2">&quot;sampling&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;max_num_components&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                <span class="s2">&quot;random_state&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="p">}</span>
+        <span class="p">},</span>
+        <span class="s2">&quot;save_fig&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="p">}</span>
+<span class="p">)</span>
+
+<span class="n">calibration</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;The most probable parameter values are </span><span class="si">{</span><span class="n">calibration</span><span class="o">.</span><span class="n">get_most_prob_params</span><span class="p">()</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>For each iteration of <cite>calibration.run()</cite>,
+subdirectories with the name <cite>iter&lt;curr_iter&gt;</cite> will be created in <a class="reference internal" href="api.html#grainlearning.dynamic_systems.IODynamicSystem.sim_data_dir" title="grainlearning.dynamic_systems.IODynamicSystem.sim_data_dir"><code class="xref py py-attr docutils literal notranslate"><span class="pre">the</span> <span class="pre">simulation</span> <span class="pre">data</span> <span class="pre">directory</span></code></a>.
+In these subdirectories, you find</p>
+<ul class="simple">
+<li><p>simulation data file: <cite>&lt;sim_name&gt;_Iter&lt;curr_iter&gt;_Sample&lt;sample_ID&gt;_sim.&lt;ext&gt;&gt;</cite></p></li>
+<li><p>parameter data file: <cite>&lt;sim_name&gt;_Iter&lt;curr_iter&gt;_Sample&lt;sample_ID&gt;_param.&lt;ext&gt;&gt;</cite>,</p></li>
+</ul>
+<p>where &lt;sim_name&gt; is <a class="reference internal" href="api.html#grainlearning.dynamic_systems.IODynamicSystem.sim_name" title="grainlearning.dynamic_systems.IODynamicSystem.sim_name"><code class="xref py py-attr docutils literal notranslate"><span class="pre">IODynamicSystem.sim_name</span></code></a>, &lt;curr_iter&gt; is <a class="reference internal" href="api.html#grainlearning.bayesian_calibration.BayesianCalibration.curr_iter" title="grainlearning.bayesian_calibration.BayesianCalibration.curr_iter"><code class="xref py py-attr docutils literal notranslate"><span class="pre">BayesianCalibration.curr_iter</span></code></a>,
+&lt;sample_ID&gt; is the index of the <a class="reference internal" href="api.html#grainlearning.dynamic_systems.IODynamicSystem.param_data" title="grainlearning.dynamic_systems.IODynamicSystem.param_data"><code class="xref py py-attr docutils literal notranslate"><span class="pre">IODynamicSystem.param_data</span></code></a> sequence, and &lt;ext&gt; is <a class="reference internal" href="api.html#grainlearning.dynamic_systems.IODynamicSystem.sim_data_file_ext" title="grainlearning.dynamic_systems.IODynamicSystem.sim_data_file_ext"><code class="xref py py-attr docutils literal notranslate"><span class="pre">IODynamicSystem.sim_data_file_ext</span></code></a>.</p>
+<p>Click <a class="reference download internal" download="" href="_downloads/4627ca8ab071d1babf95c34a90acc856/linear_regression_solve.py"><code class="xref download docutils literal notranslate"><span class="pre">here</span></code></a> to download the full script.</p>
+</section>
+<section id="grainlearning-as-a-postprocessing-tool">
+<span id="sec-standalone"></span><h3>GrainLearning as a postprocessing tool<a class="headerlink" href="#grainlearning-as-a-postprocessing-tool" title="Permalink to this heading"></a></h3>
+<p>Want to work outside the GrainLearning calibration loop?
+You can simply use GrainLearning as a postprocessing tool to</p>
+<ol class="arabic simple">
+<li><p>quantify the posterior distribution from existing simulation data,</p></li>
+<li><p>and draw new samples for the next batch of simulations</p></li>
+</ol>
+<p>Continuing from <a class="reference internal" href="#sec-external-model"><span class="std std-ref">the previous tutorial</span></a>,
+there should be subdirectories in <cite>./sim_data</cite> where the simulation data are stored.</p>
+<section id="postprocess-simulation-data-using-iodynamicsystem">
+<h4>Postprocess simulation data using IODynamicSystem<a class="headerlink" href="#postprocess-simulation-data-using-iodynamicsystem" title="Permalink to this heading"></a></h4>
+<p>The following code snippet shows how to load the simulation data and run Bayesian calibration for one iteration.
+Open a Python console in the same directory where you executed the previous tutorial and copy and paste the following code.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Provide the correct <cite>curr_iter</cite>, <cite>sim_data_dir</cite>, and <cite>param_data_file</cite> to load the simulation data.
+The file extension of the simulation data sim_data_file_ext` must be given to find the data files.</p>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">grainlearning</span> <span class="kn">import</span> <span class="n">BayesianCalibration</span>
+<span class="kn">from</span> <span class="nn">grainlearning.dynamic_systems</span> <span class="kn">import</span> <span class="n">IODynamicSystem</span>
+
+<span class="c1"># user input</span>
+<span class="n">curr_iter</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">sim_data_dir</span> <span class="o">=</span> <span class="s1">&#39;./sim_data/&#39;</span>
+<span class="n">param_data_file</span> <span class="o">=</span> <span class="n">sim_data_dir</span> <span class="o">+</span> <span class="sa">f</span><span class="s1">&#39;/iter</span><span class="si">{</span><span class="n">curr_iter</span><span class="si">}</span><span class="s1">/linear_Iter&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">curr_iter</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;_Samples.txt&#39;</span>
+<span class="n">sim_data_file_ext</span> <span class="o">=</span> <span class="s1">&#39;.txt&#39;</span>
+
+<span class="c1"># create a calibration tool</span>
+<span class="n">calibration</span> <span class="o">=</span> <span class="n">BayesianCalibration</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;curr_iter&quot;</span><span class="p">:</span> <span class="n">curr_iter</span><span class="p">,</span>
+        <span class="s2">&quot;num_iter&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="s2">&quot;system&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">&quot;system_type&quot;</span><span class="p">:</span> <span class="n">IODynamicSystem</span><span class="p">,</span>
+            <span class="s2">&quot;param_min&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">],</span>
+            <span class="s2">&quot;param_max&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">10</span><span class="p">],</span>
+            <span class="s2">&quot;obs_data_file&quot;</span><span class="p">:</span> <span class="s1">&#39;./linear_obs.dat&#39;</span><span class="p">,</span>
+            <span class="s2">&quot;obs_names&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;f&#39;</span><span class="p">],</span>
+            <span class="s2">&quot;ctrl_name&quot;</span><span class="p">:</span> <span class="s1">&#39;u&#39;</span><span class="p">,</span>
+            <span class="s2">&quot;sim_name&quot;</span><span class="p">:</span> <span class="s1">&#39;linear&#39;</span><span class="p">,</span>
+            <span class="s2">&quot;param_data_file&quot;</span><span class="p">:</span> <span class="n">param_data_file</span><span class="p">,</span>
+            <span class="s2">&quot;sim_data_dir&quot;</span><span class="p">:</span> <span class="n">sim_data_dir</span><span class="p">,</span>
+            <span class="s2">&quot;sim_data_file_ext&quot;</span><span class="p">:</span> <span class="n">sim_data_file_ext</span><span class="p">,</span>
+            <span class="s2">&quot;param_names&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">],</span>
+        <span class="p">},</span>
+        <span class="s2">&quot;calibration&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">&quot;inference&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;ess_target&quot;</span><span class="p">:</span> <span class="mf">0.3</span><span class="p">},</span>
+            <span class="s2">&quot;sampling&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;max_num_components&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="p">},</span>
+        <span class="p">},</span>
+        <span class="s2">&quot;save_fig&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="p">}</span>
+<span class="p">)</span>
+
+<span class="c1"># run GrainLearning for one iteration and generate the resampled parameter values</span>
+<span class="n">calibration</span><span class="o">.</span><span class="n">load_and_run_one_iteration</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>This will create and store new parameter samples in a text file named ‘linear_Iter&lt;curr_iter+1&gt;_Samples.txt’.
+The user may want to continue running the software model using the parameter values stored in this file.</p>
+<div class="admonition attention">
+<p class="admonition-title">Attention</p>
+<p>Change <cite>curr_iter</cite> to 1, 2, …, 4 and run the above code snippet again to see how different iterations can be loaded.</p>
+</div>
+</section>
+<section id="postprocess-simulation-data-using-dynamicsystem">
+<h4>Postprocess simulation data using DynamicSystem<a class="headerlink" href="#postprocess-simulation-data-using-dynamicsystem" title="Permalink to this heading"></a></h4>
+<p>It is also possible to use <a class="reference internal" href="api.html#grainlearning.dynamic_systems.DynamicSystem" title="grainlearning.dynamic_systems.DynamicSystem"><code class="xref py py-class docutils literal notranslate"><span class="pre">DynamicSystem</span></code></a> instead. However, it is crucial to make sure that
+the elements in the simulation data array have one-to-one correspondence with the elements in parameter data array.
+Otherwise, the probability distribution will be incorrect and therefore the resampled parameter values will be wrong.</p>
+<p>Continuing from the previous tutorial, we create a few variables that stores the parameter, observation, and simulation data,
+and then create a new <cite>calibration</cite> object using <a class="reference internal" href="api.html#grainlearning.dynamic_systems.DynamicSystem" title="grainlearning.dynamic_systems.DynamicSystem"><code class="xref py py-class docutils literal notranslate"><span class="pre">DynamicSystem</span></code></a>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">grainlearning.dynamic_systems</span> <span class="kn">import</span> <span class="n">DynamicSystem</span>
+
+<span class="n">param_data</span> <span class="o">=</span> <span class="n">calibration</span><span class="o">.</span><span class="n">system</span><span class="o">.</span><span class="n">param_data</span>
+<span class="n">sim_data</span> <span class="o">=</span> <span class="n">calibration</span><span class="o">.</span><span class="n">system</span><span class="o">.</span><span class="n">sim_data</span>
+<span class="n">ctrl_data</span> <span class="o">=</span> <span class="n">calibration</span><span class="o">.</span><span class="n">system</span><span class="o">.</span><span class="n">ctrl_data</span>
+<span class="n">obs_data</span> <span class="o">=</span> <span class="n">calibration</span><span class="o">.</span><span class="n">system</span><span class="o">.</span><span class="n">obs_data</span>
+
+<span class="c1"># recreate a calibration tool</span>
+<span class="n">calibration</span> <span class="o">=</span> <span class="n">BayesianCalibration</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;num_iter&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="s2">&quot;system&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">&quot;system_type&quot;</span><span class="p">:</span> <span class="n">DynamicSystem</span><span class="p">,</span>
+            <span class="s2">&quot;param_min&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">],</span>
+            <span class="s2">&quot;param_max&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">10</span><span class="p">],</span>
+            <span class="s2">&quot;param_names&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">],</span>
+            <span class="s2">&quot;param_data&quot;</span><span class="p">:</span> <span class="n">param_data</span><span class="p">,</span>
+            <span class="s2">&quot;num_samples&quot;</span><span class="p">:</span> <span class="n">param_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+            <span class="s2">&quot;ctrl_data&quot;</span><span class="p">:</span> <span class="n">ctrl_data</span><span class="p">,</span>
+            <span class="s2">&quot;obs_data&quot;</span><span class="p">:</span> <span class="n">obs_data</span><span class="p">,</span>
+            <span class="s2">&quot;obs_names&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;f&#39;</span><span class="p">],</span>
+            <span class="s2">&quot;sim_name&quot;</span><span class="p">:</span> <span class="s1">&#39;linear&#39;</span><span class="p">,</span>
+            <span class="s2">&quot;sim_data&quot;</span><span class="p">:</span> <span class="n">sim_data</span><span class="p">,</span>
+            <span class="s2">&quot;callback&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="p">},</span>
+        <span class="s2">&quot;calibration&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">&quot;inference&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;ess_target&quot;</span><span class="p">:</span> <span class="mf">0.3</span><span class="p">},</span>
+            <span class="s2">&quot;sampling&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;max_num_components&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="p">},</span>
+        <span class="p">},</span>
+        <span class="s2">&quot;save_fig&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="p">}</span>
+<span class="p">)</span>
+
+<span class="c1"># run GrainLearning for one iteration and generate the resampled parameter values</span>
+<span class="n">calibration</span><span class="o">.</span><span class="n">load_and_run_one_iteration</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Click <a class="reference download internal" download="" href="_downloads/6531fbf68b94bc89b6de4ba275d7c0a5/linear_reg_one_iteration.py"><code class="xref download docutils literal notranslate"><span class="pre">here</span></code></a>
+to download the full script for the tutorials in this section.</p>
+</section>
+</section>
+</section>
+<section id="stochastic-or-deterministic-sampling">
+<span id="sec-seed"></span><h2>Stochastic or deterministic sampling<a class="headerlink" href="#stochastic-or-deterministic-sampling" title="Permalink to this heading"></a></h2>
+<p>The sampling algorithm in GrainLearning is stochastic.
+However, the random number generator can be seeded to generate reproducible results.
+This can be done by setting <a class="reference internal" href="api.html#grainlearning.sampling.GaussianMixtureModel.random_state" title="grainlearning.sampling.GaussianMixtureModel.random_state"><code class="xref py py-attr docutils literal notranslate"><span class="pre">GaussianMixtureModel.random_state</span></code></a> to a constant integer.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># create a calibration tool</span>
+<span class="s2">&quot;calibration&quot;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="s2">&quot;inference&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;ess_target&quot;</span><span class="p">:</span> <span class="mf">0.3</span><span class="p">},</span>
+    <span class="s2">&quot;sampling&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;max_num_components&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="s2">&quot;random_state&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="p">},</span>
+<span class="p">},</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Insert the above code snippet to the declaration of the calibration tool in the previous tutorials;
+observe how the resampled parameter values become deterministic. To visualized the old and new parameter samples,
+set <a class="reference internal" href="api.html#grainlearning.bayesian_calibration.BayesianCalibration.save_fig" title="grainlearning.bayesian_calibration.BayesianCalibration.save_fig"><code class="xref py py-attr docutils literal notranslate"><span class="pre">BayesianCalibration.save_fig</span></code></a> to a non-negative integer.</p>
+</div>
+</section>
+<section id="visualize-the-sampling-of-parameter-distribution">
+<span id="sec-plot"></span><h2>Visualize the sampling of parameter distribution<a class="headerlink" href="#visualize-the-sampling-of-parameter-distribution" title="Permalink to this heading"></a></h2>
+<p>Visualizing the sampling of parameter distribution can be done by setting <a class="reference internal" href="api.html#grainlearning.bayesian_calibration.BayesianCalibration.save_fig" title="grainlearning.bayesian_calibration.BayesianCalibration.save_fig"><code class="xref py py-attr docutils literal notranslate"><span class="pre">BayesianCalibration.save_fig</span></code></a> to a non-negative integer.</p>
+<ul class="simple">
+<li><p><cite>save_fig=0</cite> will only show the figures interactively but will not save them</p></li>
+<li><p><cite>save_fig&gt;0</cite> will save the figures in the directory ‘./&lt;sim_name&gt;’ but not show them interactively</p></li>
+</ul>
+<p>By default, no plots are shown unless the flag <a class="reference internal" href="api.html#grainlearning.bayesian_calibration.BayesianCalibration.save_fig" title="grainlearning.bayesian_calibration.BayesianCalibration.save_fig"><code class="xref py py-attr docutils literal notranslate"><span class="pre">BayesianCalibration.save_fig</span></code></a> is set.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="rnn.html" class="btn btn-neutral float-left" title="RNN Module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="examples.html" class="btn btn-neutral float-right" title="Examples" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Hongyang Cheng, Retief Lubbe, Luisa Orozco, Aron Jansen.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

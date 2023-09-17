@@ -1,0 +1,11 @@
+!OMP_NUM_THREADS description key E_m nu 
+ 8 collision_Iter0_Sample00         0     7.0000000000e+00     0.0000000000e+00 
+ 8 collision_Iter0_Sample01         1     9.0000000000e+00     1.6666666667e-01 
+ 8 collision_Iter0_Sample02         2     8.0000000000e+00     3.3333333333e-01 
+ 8 collision_Iter0_Sample03         3     1.0000000000e+01     5.5555555556e-02 
+ 8 collision_Iter0_Sample04         4     7.5000000000e+00     2.2222222222e-01 
+ 8 collision_Iter0_Sample05         5     9.5000000000e+00     3.8888888889e-01 
+ 8 collision_Iter0_Sample06         6     8.5000000000e+00     1.1111111111e-01 
+ 8 collision_Iter0_Sample07         7     1.0500000000e+01     2.7777777778e-01 
+ 8 collision_Iter0_Sample08         8     7.2500000000e+00     4.4444444444e-01 
+ 8 collision_Iter0_Sample09         9     9.2500000000e+00     1.8518518519e-02 

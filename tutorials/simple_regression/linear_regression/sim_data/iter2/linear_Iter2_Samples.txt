@@ -1,0 +1,21 @@
+!OMP_NUM_THREADS description key a b 
+ 8 linear_Iter2_Sample00         0     2.1412033279e-01     5.4885048494e+00 
+ 8 linear_Iter2_Sample01         1     3.0339684273e-01     2.4304226985e+00 
+ 8 linear_Iter2_Sample02         2     2.7157324305e-01     4.0169395154e+00 
+ 8 linear_Iter2_Sample03         3     1.5736511433e-01     5.4775508460e+00 
+ 8 linear_Iter2_Sample04         4     1.4876673007e-01     7.1644390356e+00 
+ 8 linear_Iter2_Sample05         5     2.0298938039e-01     4.9794179940e+00 
+ 8 linear_Iter2_Sample06         6     2.4002057885e-01     4.5309963816e+00 
+ 8 linear_Iter2_Sample07         7     2.2372002809e-01     4.0442964662e+00 
+ 8 linear_Iter2_Sample08         8     2.4394760006e-01     3.4860983512e+00 
+ 8 linear_Iter2_Sample09         9     2.1900078587e-01     4.5561584324e+00 
+ 8 linear_Iter2_Sample10        10     2.4415025539e-01     2.6403704672e+00 
+ 8 linear_Iter2_Sample11        11     2.4395057829e-01     4.4976265597e+00 
+ 8 linear_Iter2_Sample12        12     2.1795640765e-01     4.0265006822e+00 
+ 8 linear_Iter2_Sample13        13     1.9134661038e-01     6.2029229240e+00 
+ 8 linear_Iter2_Sample14        14     2.5304474177e-01     2.5136206951e+00 
+ 8 linear_Iter2_Sample15        15     2.8437997026e-01     1.9217519309e+00 
+ 8 linear_Iter2_Sample16        16     2.3097305521e-01     2.9704915474e+00 
+ 8 linear_Iter2_Sample17        17     2.5525232988e-01     2.2960571467e+00 
+ 8 linear_Iter2_Sample18        18     2.8012712356e-01     1.8546139822e+00 
+ 8 linear_Iter2_Sample19        19     2.6168143803e-01     2.0315940590e+00 

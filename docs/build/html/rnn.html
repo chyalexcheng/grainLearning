@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RNN Module &mdash; GrainLearning  documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Tutorials" href="tutorials.html" />
+    <link rel="prev" title="Bayesian filtering" href="bayesian_filtering.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            GrainLearning
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dynamic_systems.html">Dynamic systems</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bayesian_filtering.html">Bayesian filtering</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">RNN Module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#train-a-rnn-with-your-own-data">Train a RNN with your own data</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#get-your-data-to-our-format">Get your data to our format</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#structure-of-the-generated-hdf5-file">Structure of the generated hdf5 file</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#understand-how-data-is-prepared">Understand how data is prepared</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#option-1-train-using-wandb"><strong>Option 1:</strong> Train using wandb</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#experiment-tracking-single-run">Experiment tracking: Single run</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#hyperparameter-optimization-sweep">Hyperparameter optimization: Sweep</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#option-2-train-using-plain-tensorflow"><strong>Option 2:</strong> Train using plain tensorflow</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#make-a-prediction-with-a-pre-trained-model">Make a prediction with a pre-trained model</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#saved-model">Saved model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#a-wandb-sweep">A wandb sweep</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#use-a-trained-rnn-model-in-grainlearning-calibration-process">Use a trained RNN model in grainLearning calibration process</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#in-which-cases-can-we-use-rnn-for-the-calibration-process">In which cases can we use RNN for the calibration process?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#how-does-it-work">How does it work?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tips">Tips</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#the-rnn-model">The RNN model</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#sliding-windows">Sliding windows</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#loss-and-metrics">Loss and metrics</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_contribute.html">Contributing guidelines</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">Python API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">GrainLearning</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">RNN Module</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/rnn.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="rnn-module">
+<h1>RNN Module<a class="headerlink" href="#rnn-module" title="Permalink to this heading"></a></h1>
+<p>We implemented a <a class="reference external" href="https://stanford.edu/~shervine/teaching/cs-230/cheatsheet-recurrent-neural-networks">Recurrent Neural Network (RNN)</a> model
+in the tensorflow framework. For more information about the model go to section <a class="reference internal" href="#the-rnn-model">The RNN model</a>.</p>
+<p>There are four main usages of the RNN module:</p>
+<ol class="arabic simple">
+<li><p><a class="reference internal" href="#train-a-rnn-with-your-own-data">Train a RNN with your own data</a>.</p></li>
+<li><p><a class="reference internal" href="#make-a-prediction-with-a-pre-trained-model">Make a prediction with a pre-trained model</a>.</p></li>
+<li><p><a class="reference internal" href="#use-a-trained-rnn-model-in-grainlearning-calibration-process">Use a trained RNN model in grainLearning calibration process</a>.</p></li>
+</ol>
+<section id="train-a-rnn-with-your-own-data">
+<h2>Train a RNN with your own data<a class="headerlink" href="#train-a-rnn-with-your-own-data" title="Permalink to this heading"></a></h2>
+<section id="get-your-data-to-our-format">
+<h3>Get your data to our format<a class="headerlink" href="#get-your-data-to-our-format" title="Permalink to this heading"></a></h3>
+<p>The RNN model of this module considers a specific data format and organization. Our example of data consists of several DEM simulations of Triaxial Compressions of granular material specimens having different contact parameters. Such simulations were performed using <a class="reference external" href="http://yade-dem.org/">YADE</a> that outputs the simulation state to a .npy file every given amount of time steps. The files are stored under the folder structure pressure/experiment_type.</p>
+<ul>
+<li><p>Prepare your parsing script. We recommend to copy this script locally.</p></li>
+<li><p>Use <code class="docutils literal notranslate"><span class="pre">CONTACT_KEYS</span></code>, <code class="docutils literal notranslate"><span class="pre">INPUT_KEYS</span></code> and <code class="docutils literal notranslate"><span class="pre">OUTPUT_KEYS</span></code> consistent with your dataset. You can modify, add or remove elements of such dictionaries. These will also be stored as <a class="reference internal" href="#linkdatasetattributes"><span class="std std-ref">dataset attributes</span></a>.</p></li>
+<li><p>Go to function <code class="docutils literal notranslate"><span class="pre">main()</span></code> and adapt the parameters to your own case.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">sequence_length</span></code>: The model will only work with sequences of the same size. Shorter sequences in the dataset will not be considered and longer will be trimmed to <code class="docutils literal notranslate"><span class="pre">sequence_length</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">stored_in_subfolders</span> <span class="pre">=</span> <span class="pre">True</span></code>: YADE files (.npy)  stored in subfolders <em>pressure/experiment_type</em>.
+The elements in lists <code class="docutils literal notranslate"><span class="pre">pressure</span></code> and <code class="docutils literal notranslate"><span class="pre">experiment_types</span></code> should be the same of your folders.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">stored_in_subfolders</span> <span class="pre">=</span> <span class="pre">False</span></code>: All your data (YADE .npy files) is stored in a single folder.
+You can define the pressures manually as list, such as for the first option. Or you can gather all confining pressures in your dataset via <code class="docutils literal notranslate"><span class="pre">get_pressures()</span></code>.</p></li>
+</ul>
+<p>The <em>.hdf5</em> file is generated with groups of <em>pressure</em> and <em>experiment_type</em> combinations. For more information about the parameters take a look at the dataset attributes API documentation [TODO].</p>
+</li>
+<li><p>Use the script <cite>rnn/data_parsing/triaxial_YADE.py</cite> to read the .npy files in <code class="docutils literal notranslate"><span class="pre">data_dir</span></code> and create <code class="docutils literal notranslate"><span class="pre">target_file</span></code> with <em>hdf5</em> format.</p></li>
+<li><p>If your data comes from another software or is stored differently please write your own parser such that the format of <code class="docutils literal notranslate"><span class="pre">target_file</span></code> has the structure of the one given as example.</p></li>
+</ul>
+<section id="structure-of-the-generated-hdf5-file">
+<h4>Structure of the generated hdf5 file<a class="headerlink" href="#structure-of-the-generated-hdf5-file" title="Permalink to this heading"></a></h4>
+<ul>
+<li><p><strong>Database groups</strong></p>
+<p>The data is organized in <a class="reference external" href="https://docs.h5py.org/en/stable/high/group.html">HDF5 groups</a> with the following hierarchy:</p>
+</li>
+</ul>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="p">|</span>--<span class="w"> </span>triaxial_compression.hdf5<span class="w">  </span><span class="c1"># root</span>
+<span class="w">    </span><span class="p">|</span>--<span class="w"> </span>pressure<span class="w">               </span><span class="c1"># confinement pressure</span>
+<span class="w">        </span><span class="p">|</span>--<span class="w"> </span>experiment_type<span class="w">    </span><span class="c1"># drained/undrained</span>
+<span class="w">            </span><span class="p">|</span>--<span class="w"> </span>contact_params<span class="w"> </span><span class="c1"># dataset: no subgroup</span>
+<span class="w">            </span><span class="p">|</span>--<span class="w"> </span>inputs<span class="w">         </span><span class="c1"># dataset: no subgroup</span>
+<span class="w">            </span><span class="p">|</span>--<span class="w"> </span>outputs<span class="w">        </span><span class="c1"># dataset: no subgroup</span>
+</pre></div>
+</div>
+<p>You can access groups and datasets:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">h5py</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">your_hdf5_file_loaded_in_python</span> <span class="o">=</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="s1">&#39;triaxial_compression.hdf5&#39;</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">contact_params</span> <span class="o">=</span> <span class="n">your_hdf5_file_loaded_in_python</span><span class="p">[</span><span class="s1">&#39;0.2e6/drained/contact_params&#39;</span><span class="p">]</span> <span class="c1"># HDF5 dataset</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">contact_params</span> <span class="o">=</span> <span class="n">your_hdf5_file_loaded_in_python</span><span class="p">[</span><span class="s1">&#39;0.2e6&#39;</span><span class="p">][</span><span class="s1">&#39;drained&#39;</span><span class="p">][</span><span class="s1">&#39;contact_params&#39;</span><span class="p">]</span> <span class="c1"># HDF5 dataset, equivalent to the line above</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">list</span><span class="p">(</span><span class="n">contact_params</span><span class="p">)</span> <span class="c1"># convert it to a python list</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">contact_params</span><span class="p">[:]</span>    <span class="c1"># equivalent code to the line above</span>
+</pre></div>
+</div>
+<ul>
+<li><p><strong>Dataset attributes</strong></p>
+<p><a class="reference external" href="https://docs.h5py.org/en/stable/high/attr.html">Attributes</a> are self-explanatory strings of the meaning of each field in a dataset.</p>
+</li>
+</ul>
+<div class="highlight-python notranslate" id="linkdatasetattributes"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">h5py</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">your_hdf5_file_loaded_in_python</span> <span class="o">=</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="s1">&#39;triaxial_compression.hdf5&#39;</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">attributes</span> <span class="o">=</span> <span class="n">your_hdf5_file_loaded_in_python</span><span class="o">.</span><span class="n">attrs</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">attributes</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="o">&lt;</span><span class="n">KeysViewHDF5</span> <span class="p">[</span><span class="s1">&#39;contact_params&#39;</span><span class="p">,</span> <span class="s1">&#39;inputs&#39;</span><span class="p">,</span> <span class="s1">&#39;outputs&#39;</span><span class="p">,</span> <span class="s1">&#39;unused_keys_constant&#39;</span><span class="p">,</span> <span class="s1">&#39;unused_keys_sequence&#39;</span><span class="p">]</span><span class="o">&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">attributes</span><span class="p">[</span><span class="s1">&#39;contact_params&#39;</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">array</span><span class="p">([</span><span class="s1">&#39;E&#39;</span><span class="p">,</span> <span class="s1">&#39;v&#39;</span><span class="p">,</span> <span class="s1">&#39;kr&#39;</span><span class="p">,</span> <span class="s1">&#39;eta&#39;</span><span class="p">,</span> <span class="s1">&#39;mu&#39;</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">object</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="understand-how-data-is-prepared">
+<h3>Understand how data is prepared<a class="headerlink" href="#understand-how-data-is-prepared" title="Permalink to this heading"></a></h3>
+<p>Prior to training we do some manipulation of the numpy arrays stored in the hdf5 database to get them to tensorflow datasets. The main transformations involve: merging arrays from different hdf5 groups, standardizing the data, splitting de dataset in <cite>train</cite>, <cite>validation</cite> and <cite>test</cite> datasets, including or excluding information from the hdf5 group name to the parameters passed to the neural network.</p>
+<p>We have an abstract class <a class="reference internal" href="api.html#grainlearning.rnn.preprocessor.Preprocessor" title="grainlearning.rnn.preprocessor.Preprocessor"><code class="xref py py-class docutils literal notranslate"><span class="pre">Preprocessor</span></code></a> and a child class <a class="reference internal" href="api.html#grainlearning.rnn.preprocessor.PreprocessorTriaxialCompression" title="grainlearning.rnn.preprocessor.PreprocessorTriaxialCompression"><code class="xref py py-class docutils literal notranslate"><span class="pre">PreprocessorTriaxialCompression</span></code></a> with the implementation of the abstract methods tailored to the case of Triaxial Compression DEM simulations. At the moment, this one considers the <a class="reference internal" href="#sliding-windows">Sliding windows</a> technique for handling the data during training and prediction.</p>
+</section>
+<section id="option-1-train-using-wandb">
+<h3><strong>Option 1:</strong> Train using wandb<a class="headerlink" href="#option-1-train-using-wandb" title="Permalink to this heading"></a></h3>
+<p><a class="reference external" href="https://wandb.ai/site">Weights a Biases</a> is an external platform that can be used for tracking experiments and hyperparameter tuning. It allows the user to gather training metrics, model configuration and system performance for different runs (i.e. training of your RNN).</p>
+<p>To use it you have to create a free account. If you have installed grainLearning with rnn dependencies, <code class="docutils literal notranslate"><span class="pre">wandb</span></code> should be already in your system, otherwise, you can install it: <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">wandb</span></code>.</p>
+<p>For both single runs and sweeps, wandb will create a folder named <cite>wandb</cite> containing metadata and files generated during the run(s). In this same folder, per each run, you will find 3 files: <cite>config.yaml</cite>, <cite>train_stats_npy</cite> and <cite>model-best.h5</cite>. These files contain all the information required to load your model in the future.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>You can run your training on <a class="reference external" href="https://docs.wandb.ai/guides/technical-faq/setup#can-i-run-wandb-offline">offline model with wandb</a>, but in that case <cite>config.yaml</cite> will not be generated until you sync your files. If you don’t want to sync the files or create an account on wandb, consider using <a class="reference internal" href="#option-2-train-using-plain-tensorflow">Option 2: Train using plain tensorflow</a>.</p>
+</div>
+<section id="experiment-tracking-single-run">
+<h4>Experiment tracking: Single run<a class="headerlink" href="#experiment-tracking-single-run" title="Permalink to this heading"></a></h4>
+<p>Create <cite>my_train.py</cite> where you would like to run the training. Be aware to configure the data directory accordingly (See API docs for more information about the config keys). Avoid creating this file inside the grainlearning package nor rnn module.</p>
+<div class="literal-block-wrapper docutils container" id="id2">
+<div class="code-block-caption"><span class="caption-text">my_train.py</span><a class="headerlink" href="#id2" title="Permalink to this code"></a></div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">grainlearning.rnn.train</span> <span class="k">as</span> <span class="nn">train_rnn</span>
+<span class="kn">from</span> <span class="nn">grainlearning.rnn</span> <span class="kn">import</span> <span class="n">preprocessor</span>
+
+<span class="c1"># 1. Create my dictionary of configuration</span>
+<span class="n">my_config</span> <span class="o">=</span> <span class="p">{</span>
+     <span class="s1">&#39;raw_data&#39;</span><span class="p">:</span> <span class="s1">&#39;path_to_dataset.hdf5&#39;</span><span class="p">,</span>
+     <span class="s1">&#39;pressure&#39;</span><span class="p">:</span> <span class="s1">&#39;All&#39;</span><span class="p">,</span>
+     <span class="s1">&#39;experiment_type&#39;</span><span class="p">:</span> <span class="s1">&#39;drained&#39;</span><span class="p">,</span>
+     <span class="s1">&#39;add_pressure&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+     <span class="s1">&#39;add_e0&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+     <span class="s1">&#39;train_frac&#39;</span><span class="p">:</span> <span class="mf">0.7</span><span class="p">,</span>
+     <span class="s1">&#39;val_frac&#39;</span><span class="p">:</span> <span class="mf">0.15</span><span class="p">,</span>
+     <span class="s1">&#39;window_size&#39;</span><span class="p">:</span> <span class="mi">20</span><span class="p">,</span>
+     <span class="s1">&#39;window_step&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+     <span class="s1">&#39;patience&#39;</span><span class="p">:</span> <span class="mi">25</span><span class="p">,</span>
+     <span class="s1">&#39;epochs&#39;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
+     <span class="s1">&#39;learning_rate&#39;</span><span class="p">:</span> <span class="mf">1e-4</span><span class="p">,</span>
+     <span class="s1">&#39;lstm_units&#39;</span><span class="p">:</span> <span class="mi">250</span><span class="p">,</span>
+     <span class="s1">&#39;dense_units&#39;</span><span class="p">:</span> <span class="mi">250</span><span class="p">,</span>
+     <span class="s1">&#39;batch_size&#39;</span><span class="p">:</span> <span class="mi">256</span><span class="p">,</span>
+     <span class="s1">&#39;standardize_outputs&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+     <span class="s1">&#39;save_weights_only&#39;</span><span class="p">:</span> <span class="kc">True</span>
+ <span class="p">}</span>
+
+<span class="c1"># 2. Create an object Preprocessor to pre-process my data</span>
+<span class="n">preprocessor_TC</span> <span class="o">=</span> <span class="n">preprocessor</span><span class="o">.</span><span class="n">PreprocessorTriaxialCompression</span><span class="p">(</span><span class="o">**</span><span class="n">my_config</span><span class="p">)</span>
+
+<span class="c1"># 3. Run the training Tensorflow and reporting to wandb</span>
+<span class="n">train_rnn</span><span class="o">.</span><span class="n">train</span><span class="p">(</span><span class="n">preprocessor_TC</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="n">my_config</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>Open a terminal where you have your file, activate the environment where grainLearning and rnn dependencies has been installed and run: <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">my_train.py</span></code></p>
+<p>If is the first time running wandb it will ask you to login (copy paste your API key that you’ll find in your wandb profile).</p>
+<p>In this example we used a default configuration, but you can define your own config dictionary. For more info go to our Python API-RNN-train.</p>
+</section>
+<section id="hyperparameter-optimization-sweep">
+<h4>Hyperparameter optimization: Sweep<a class="headerlink" href="#hyperparameter-optimization-sweep" title="Permalink to this heading"></a></h4>
+<p><a class="reference external" href="https://wandb.ai/site/sweeps">Wandb Sweeps</a> allows the user to train the model with different <em>hyperparameters combinations</em> gathering metrics in the wandb interface to facilitate the analysis and choice of the best model.</p>
+<p>You can run your sweep:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#from-a-python-file">From a python file</a>.</p></li>
+<li><p><a class="reference internal" href="#from-the-command-line">From the command line</a>.</p></li>
+</ul>
+<section id="from-a-python-file">
+<h5>From a python file<a class="headerlink" href="#from-a-python-file" title="Permalink to this heading"></a></h5>
+<p>Create <cite>my_sweep.py</cite> where you would like to run the training. Configure the sweep parameters (See API docs for more information about the config keys). Avoid creating this file inside the grainlearning package nor rnn module. See <a class="reference external" href="https://docs.wandb.ai/guides/sweeps/define-sweep-configuration">this</a> for more information about sweep configuration, and <a class="reference external" href="https://docs.wandb.ai/guides/sweeps/quickstart">this wandb guide</a>.</p>
+<div class="literal-block-wrapper docutils container" id="id3">
+<div class="code-block-caption"><span class="caption-text">my_sweep.py</span><a class="headerlink" href="#id3" title="Permalink to this code"></a></div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">wandb</span>
+<span class="kn">import</span> <span class="nn">grainlearning.rnn.train</span> <span class="k">as</span> <span class="nn">train_rnn</span>
+<span class="kn">from</span> <span class="nn">grainlearning.rnn</span> <span class="kn">import</span> <span class="n">preprocessor</span>
+
+<span class="k">def</span> <span class="nf">my_training_function</span><span class="p">():</span>
+<span class="w">  </span><span class="sd">&quot;&quot;&quot; A function that wraps the training process&quot;&quot;&quot;</span>
+  <span class="n">preprocessor_TC</span> <span class="o">=</span> <span class="n">preprocessor</span><span class="o">.</span><span class="n">PreprocessorTriaxialCompression</span><span class="p">(</span><span class="o">**</span><span class="n">wandb</span><span class="o">.</span><span class="n">config</span><span class="p">)</span>
+  <span class="n">train_rnn</span><span class="o">.</span><span class="n">train</span><span class="p">(</span><span class="n">preprocessor_TC</span><span class="p">)</span>
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+   <span class="n">wandb</span><span class="o">.</span><span class="n">login</span><span class="p">()</span>
+   <span class="n">sweep_configuration</span> <span class="o">=</span> <span class="p">{</span>
+   <span class="s1">&#39;method&#39;</span><span class="p">:</span> <span class="s1">&#39;bayes&#39;</span><span class="p">,</span>
+   <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;sweep&#39;</span><span class="p">,</span>
+   <span class="s1">&#39;metric&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;goal&#39;</span><span class="p">:</span> <span class="s1">&#39;maximize&#39;</span><span class="p">,</span> <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;val_acc&#39;</span><span class="p">},</span>
+   <span class="s1">&#39;parameters&#39;</span><span class="p">:</span>
+      <span class="p">{</span>
+      <span class="s1">&#39;raw_data&#39;</span><span class="p">:</span> <span class="s1">&#39;my_path_to_dataset.hdf5&#39;</span><span class="p">,</span>
+      <span class="s1">&#39;pressure&#39;</span><span class="p">:</span> <span class="s1">&#39;All&#39;</span><span class="p">,</span>
+      <span class="s1">&#39;experiment_type&#39;</span><span class="p">:</span> <span class="s1">&#39;All&#39;</span><span class="p">,</span>
+      <span class="s1">&#39;add_e0&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+      <span class="s1">&#39;add_pressure&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+      <span class="s1">&#39;add_experiment_type&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+      <span class="s1">&#39;train_frac&#39;</span><span class="p">:</span> <span class="mf">0.7</span><span class="p">,</span>
+      <span class="s1">&#39;val_frac&#39;</span><span class="p">:</span> <span class="mf">0.15</span><span class="p">,</span>
+      <span class="s1">&#39;window_size&#39;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
+      <span class="s1">&#39;window_step&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+      <span class="s1">&#39;pad_length&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+      <span class="s1">&#39;lstm_units&#39;</span><span class="p">:</span> <span class="mi">200</span><span class="p">,</span>
+      <span class="s1">&#39;dense_units&#39;</span><span class="p">:</span> <span class="mi">200</span><span class="p">,</span>
+      <span class="s1">&#39;patience&#39;</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span>
+      <span class="s1">&#39;epochs&#39;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span>
+      <span class="s1">&#39;learning_rate&#39;</span><span class="p">:</span> <span class="mf">1e-3</span><span class="p">,</span>
+      <span class="s1">&#39;batch_size&#39;</span><span class="p">:</span> <span class="mi">256</span><span class="p">,</span>
+      <span class="s1">&#39;standardize_outputs&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+      <span class="s1">&#39;save_weights_only&#39;</span><span class="p">:</span> <span class="kc">False</span>
+      <span class="p">}</span>
+   <span class="p">}</span>
+
+   <span class="c1"># create a new sweep, here you can also configure your project and entity.</span>
+   <span class="n">sweep_id</span> <span class="o">=</span> <span class="n">wandb</span><span class="o">.</span><span class="n">sweep</span><span class="p">(</span><span class="n">sweep</span><span class="o">=</span><span class="n">sweep_configuration</span><span class="p">)</span>
+
+   <span class="c1"># run an agent</span>
+   <span class="n">wandb</span><span class="o">.</span><span class="n">agent</span><span class="p">(</span><span class="n">sweep_id</span><span class="p">,</span> <span class="n">function</span><span class="o">=</span><span class="n">my_training_function</span><span class="p">,</span> <span class="n">count</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>Open a terminal where you have your file, activate the environment where grainLearning and rnn dependencies has been installed and run: <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">my_sweep.py</span></code>.</p>
+<p>If you want to run another agent or re-start the sweep you can replace the creation of a new step sweep for assigning the id of your sweep to the variable <code class="docutils literal notranslate"><span class="pre">sweep_id</span></code>.</p>
+</section>
+<section id="from-the-command-line">
+<h5>From the command line<a class="headerlink" href="#from-the-command-line" title="Permalink to this heading"></a></h5>
+<ol class="arabic">
+<li><p>Configure your sweep:</p>
+<p>In folder <em>sweep</em> <cite>example_sweep.yaml</cite> contains the sweep configuration values and/or range of values per each hyperparameter. You can choose as many values and in which ranges wandb will search for the optimal combination.</p>
+<p>Don’t forget to put your own project and entity to get the results in your wandb dashboard. For more information about how to configure the .yaml file see <a class="reference external" href="https://docs.wandb.ai/guides/sweeps/define-sweep-configuration">this</a>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The combination of values of the parameter that wandb is going to draw for each run will override those of the <cite>default</cite> dictionary in <cite>train.py</cite>.</p>
+</div>
+</li>
+<li><p>Create a copy of <cite>example_sweep.yaml</cite> outside grainlearning package and rnn module, in the folder where you want to run your sweep.</p></li>
+<li><p><cite>wandb`</cite> folder containing the runs information an model data will be automatically created in this folder. Change <code class="docutils literal notranslate"><span class="pre">raw_data</span></code> value accordingly.</p></li>
+<li><p>Create python file <cite>my_sweep_CL.py</cite> and in <cite>example_sweep.yaml</cite> set <code class="docutils literal notranslate"><span class="pre">program:</span> <span class="pre">my_sweep_CL.py</span></code>.</p></li>
+</ol>
+<div class="literal-block-wrapper docutils container" id="id4">
+<span id="my-sweep-cl"></span><div class="code-block-caption"><span class="caption-text">my_sweep_CL.py</span><a class="headerlink" href="#id4" title="Permalink to this code"></a></div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">grainlearning.rnn.train</span> <span class="k">as</span> <span class="nn">train_rnn</span>
+<span class="kn">from</span> <span class="nn">grainlearning.rnn</span> <span class="kn">import</span> <span class="n">preprocessor</span>
+
+<span class="n">wandb</span><span class="o">.</span><span class="n">init</span><span class="p">()</span>
+<span class="n">preprocessor_TC</span> <span class="o">=</span> <span class="n">preprocessor</span><span class="o">.</span><span class="n">PreprocessorTriaxialCompression</span><span class="p">(</span><span class="o">**</span><span class="n">wandb</span><span class="o">.</span><span class="n">config</span><span class="p">)</span>
+<span class="n">train_rnn</span><span class="o">.</span><span class="n">train</span><span class="p">(</span><span class="n">preprocessor_TC</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<ol class="arabic" start="4">
+<li><p>Open a terminal and activate the environment where grainLearning and rnn dependencies are installed.</p></li>
+<li><p>If you are running the training in a supercomputer continue with the instructions in <a class="reference internal" href="#running-a-sweep-on-hpc">Running a Sweep on HPC</a>.</p></li>
+<li><p>Create a sweep: <code class="docutils literal notranslate"><span class="pre">wandb</span> <span class="pre">sweep</span> <span class="pre">example_sweep.yaml</span></code>.</p>
+<p>This will print out in the console the sweep ID as well as the instructions to start an agent.</p>
+</li>
+<li><p>Run an agent: <code class="docutils literal notranslate"><span class="pre">wandb</span> <span class="pre">agent</span> <span class="pre">&lt;entity&gt;/&lt;project&gt;/&lt;sweep_id&gt;</span></code>.</p>
+<p>Running this command will start a training run with hyperparameters chosen according to <cite>example_sweep.yaml</cite>, will keep starting new runs, and will update your wandb dashboard. Models are saved both locally and also uploaded to wandb.</p>
+</li>
+</ol>
+</section>
+<section id="running-a-sweep-on-hpc">
+<h5>Running a Sweep on HPC<a class="headerlink" href="#running-a-sweep-on-hpc" title="Permalink to this heading"></a></h5>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>This instructions assume that your HPC platform uses job scheduler slurm. <cite>run_sweep.sh</cite> configures the job and loads modules from <strong>Snellius</strong>, these can be different in other supercomputers.</p>
+</div>
+<ol class="arabic simple">
+<li><p>Install grainLearning and rnn dependencies.</p></li>
+<li><p>Create the folder containing your data, <cite>run_sweep.sh</cite>, file <a class="reference internal" href="#my-sweep-cl"><span class="std std-ref">my_sweep_CL.py</span></a> and <cite>example_sweep.yaml</cite>, make sure to modify the last one accordingly.</p></li>
+<li><p>Check that <cite>run_sweep.sh</cite> load the correct modules. In this file the outputs of the job will be directed to <cite>job_outputs</cite>. It can be that in your HPC such folder is not automatically created and thus, you have to do it before running your script.</p></li>
+<li><p>Run your job: <code class="docutils literal notranslate"><span class="pre">sbatch</span> <span class="pre">run_sweep.sh</span></code>
+This command will create the sweep, gather the sweep_id from the output that is printed on the terminal and then start an agent.</p></li>
+</ol>
+</section>
+</section>
+</section>
+<section id="option-2-train-using-plain-tensorflow">
+<h3><strong>Option 2:</strong> Train using plain tensorflow<a class="headerlink" href="#option-2-train-using-plain-tensorflow" title="Permalink to this heading"></a></h3>
+<p>Create <cite>my_train.py</cite> where you would like to run the training. Be aware to configure the data directory accordingly. Avoid creating this file inside the grainlearning package nor rnn module.</p>
+<div class="literal-block-wrapper docutils container" id="id5">
+<div class="code-block-caption"><span class="caption-text">my_train.py</span><a class="headerlink" href="#id5" title="Permalink to this code"></a></div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">grainlearning.rnn.train</span> <span class="k">as</span> <span class="nn">train_rnn</span>
+<span class="kn">from</span> <span class="nn">grainlearning.rnn</span> <span class="kn">import</span> <span class="n">preprocessor</span>
+
+<span class="c1"># 1. Create my dictionary of configuration</span>
+<span class="n">my_config</span> <span class="o">=</span> <span class="p">{</span>
+     <span class="s1">&#39;raw_data&#39;</span><span class="p">:</span> <span class="s1">&#39;path_to_dataset.hdf5&#39;</span><span class="p">,</span>
+     <span class="s1">&#39;pressure&#39;</span><span class="p">:</span> <span class="s1">&#39;All&#39;</span><span class="p">,</span>
+     <span class="s1">&#39;experiment_type&#39;</span><span class="p">:</span> <span class="s1">&#39;drained&#39;</span><span class="p">,</span>
+     <span class="s1">&#39;add_pressure&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+     <span class="s1">&#39;add_e0&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+     <span class="s1">&#39;train_frac&#39;</span><span class="p">:</span> <span class="mf">0.7</span><span class="p">,</span>
+     <span class="s1">&#39;val_frac&#39;</span><span class="p">:</span> <span class="mf">0.15</span><span class="p">,</span>
+     <span class="s1">&#39;window_size&#39;</span><span class="p">:</span> <span class="mi">20</span><span class="p">,</span>
+     <span class="s1">&#39;window_step&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+     <span class="s1">&#39;patience&#39;</span><span class="p">:</span> <span class="mi">25</span><span class="p">,</span>
+     <span class="s1">&#39;epochs&#39;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
+     <span class="s1">&#39;learning_rate&#39;</span><span class="p">:</span> <span class="mf">1e-4</span><span class="p">,</span>
+     <span class="s1">&#39;lstm_units&#39;</span><span class="p">:</span> <span class="mi">250</span><span class="p">,</span>
+     <span class="s1">&#39;dense_units&#39;</span><span class="p">:</span> <span class="mi">250</span><span class="p">,</span>
+     <span class="s1">&#39;batch_size&#39;</span><span class="p">:</span> <span class="mi">256</span><span class="p">,</span>
+     <span class="s1">&#39;standardize_outputs&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+     <span class="s1">&#39;save_weights_only&#39;</span><span class="p">:</span> <span class="kc">True</span>
+ <span class="p">}</span>
+
+<span class="c1"># 2. Create an object Preprocessor to pre-process my data</span>
+<span class="n">preprocessor_TC</span> <span class="o">=</span> <span class="n">preprocessor</span><span class="o">.</span><span class="n">PreprocessorTriaxialCompression</span><span class="p">(</span><span class="o">**</span><span class="n">my_config</span><span class="p">)</span>
+
+<span class="c1"># 3. Run the training using bare tensorflow</span>
+<span class="n">train_rnn</span><span class="o">.</span><span class="n">train_without_wandb</span><span class="p">(</span><span class="n">preprocessor_TC</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="n">my_config</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>Open a terminal where you have your file, activate the environment where grainLearning and rnn dependencies has been installed and run: <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">my_train.py</span></code></p>
+<p>The folder <cite>outputs</cite> is created containing <cite>config.npy</cite>, <cite>train_stats.npy</cite> and  either <cite>saved_model.pb</cite> or <cite>weights.h5</cite> depending if you choose to save the entire model or only its weights. The contents of this directory will be necessary to load the trained model in the future.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Every time you run a new experiment  the files in <cite>outputs</cite> will be override. If you want to save them, copy them to another location once the run is finished.</p>
+</div>
+</section>
+</section>
+<section id="make-a-prediction-with-a-pre-trained-model">
+<h2>Make a prediction with a pre-trained model<a class="headerlink" href="#make-a-prediction-with-a-pre-trained-model" title="Permalink to this heading"></a></h2>
+<p>You can load a pre-trained model from:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#saved-model">Saved model</a>.</p></li>
+<li><p><a class="reference internal" href="#a-wandb-sweep">A wandb sweep</a>.</p></li>
+</ul>
+<section id="saved-model">
+<h3>Saved model<a class="headerlink" href="#saved-model" title="Permalink to this heading"></a></h3>
+<p>You can find some pre-trained models in in <cite>rnn/train_models</cite> and you can also load a model that you have trained. The function <code class="docutils literal notranslate"><span class="pre">get_pretrained_model()</span></code> will take care of checking if your model was trained via wandb or outside of it, as well as if only the weights were saved or the entire model.</p>
+<p>In this example, we are going to load the same dataset that we used for training, but we are going to predict from the <cite>test</cite> sub-dataset. Here you’re free to pass any data having the same format (tf.data.Dataset) and respecting the input dimensions of the model:</p>
+<div class="literal-block-wrapper docutils container" id="id6">
+<div class="code-block-caption"><span class="caption-text">predict_from_pre-trained.py</span><a class="headerlink" href="#id6" title="Permalink to this code"></a></div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+
+<span class="kn">import</span> <span class="nn">grainlearning.rnn.predict</span> <span class="k">as</span> <span class="nn">predict_rnn</span>
+<span class="kn">from</span> <span class="nn">grainlearning.rnn</span> <span class="kn">import</span> <span class="n">preprocessor</span>
+
+<span class="c1"># 1. Define the location of the model to use</span>
+<span class="n">path_to_trained_model</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s1">&#39;C:/trained_models/My_model_1&#39;</span><span class="p">)</span>
+
+<span class="c1"># 2. Get the model information</span>
+<span class="n">model</span><span class="p">,</span> <span class="n">train_stats</span><span class="p">,</span> <span class="n">config</span> <span class="o">=</span> <span class="n">predict_rnn</span><span class="o">.</span><span class="n">get_pretrained_model</span><span class="p">(</span><span class="n">path_to_trained_model</span><span class="p">)</span>
+
+<span class="c1"># 3. Load input data to predict from</span>
+<span class="n">config</span><span class="p">[</span><span class="s1">&#39;raw_data&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;../train/data/my_database.hdf5&#39;</span>
+<span class="n">preprocessor_TC</span> <span class="o">=</span> <span class="n">preprocessor</span><span class="o">.</span><span class="n">PreprocessorTriaxialCompression</span><span class="p">(</span><span class="o">**</span><span class="n">config</span><span class="p">)</span>
+<span class="n">data</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">preprocessor_TC</span><span class="o">.</span><span class="n">prepare_datasets</span><span class="p">()</span>
+
+<span class="c1">#4. Make a prediction</span>
+<span class="n">predictions</span> <span class="o">=</span> <span class="n">predict_rnn</span><span class="o">.</span><span class="n">predict_macroscopics</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;test&#39;</span><span class="p">],</span> <span class="n">train_stats</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span><span class="n">batch_size</span><span class="o">=</span><span class="mi">256</span><span class="p">,</span> <span class="n">single_batch</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>If the model was trained with <code class="docutils literal notranslate"><span class="pre">standardize_outputs</span> <span class="pre">=</span> <span class="pre">True</span></code>, <code class="docutils literal notranslate"><span class="pre">predictions</span></code> are going to be unstandardized (i.e. no values between [0, 1] but with the original scale).
+In our example, <code class="docutils literal notranslate"><span class="pre">predictions</span></code> is a tensorflow tensor of size <code class="docutils literal notranslate"><span class="pre">(batch_size,</span> <span class="pre">length_sequences</span> <span class="pre">-</span> <span class="pre">window_size,</span> <span class="pre">num_labels)</span></code>.</p>
+</section>
+<section id="a-wandb-sweep">
+<h3>A wandb sweep<a class="headerlink" href="#a-wandb-sweep" title="Permalink to this heading"></a></h3>
+<p>You need to have access to the sweep and know its ID.
+Often this looks like <cite>&lt;entity&gt;/&lt;project&gt;/&lt;sweep_id&gt;</cite>.</p>
+<div class="literal-block-wrapper docutils container" id="id7">
+<div class="code-block-caption"><span class="caption-text">predict_from_sweep.py</span><a class="headerlink" href="#id7" title="Permalink to this code"></a></div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+
+<span class="kn">import</span> <span class="nn">grainlearning.rnn.predict</span> <span class="k">as</span> <span class="nn">predict_rnn</span>
+<span class="kn">from</span> <span class="nn">grainlearning.rnn</span> <span class="kn">import</span> <span class="n">preprocessor</span>
+
+<span class="c1"># 1. Define which sweep to look into</span>
+<span class="n">entity_project_sweep_id</span> <span class="o">=</span> <span class="s1">&#39;grainlearning-escience/grainLearning-grainlearning_rnn/6zrc0vjb&#39;</span>
+
+<span class="c1"># 2. Chose the best model from a sweep, and get the model information</span>
+<span class="n">model</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">train_stats</span><span class="p">,</span> <span class="n">config</span> <span class="o">=</span> <span class="n">predict_rnn</span><span class="o">.</span><span class="n">get_best_run_from_sweep</span><span class="p">(</span><span class="n">entity_project_sweep_id</span><span class="p">)</span>
+
+<span class="c1"># 3. Load input data to predict from</span>
+<span class="n">config</span><span class="p">[</span><span class="s1">&#39;raw_data&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;../train/data/sequences.hdf5&#39;</span>
+<span class="n">preprocessor_TC</span> <span class="o">=</span> <span class="n">preprocessor</span><span class="o">.</span><span class="n">PreprocessorTriaxialCompression</span><span class="p">(</span><span class="o">**</span><span class="n">config</span><span class="p">)</span>
+<span class="n">data</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">preprocessor_TC</span><span class="o">.</span><span class="n">prepare_datasets</span><span class="p">()</span>
+
+<span class="c1">#4. Make a prediction</span>
+<span class="n">predictions</span> <span class="o">=</span> <span class="n">predict_rnn</span><span class="o">.</span><span class="n">predict_macroscopics</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;test&#39;</span><span class="p">],</span> <span class="n">train_stats</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span><span class="n">batch_size</span><span class="o">=</span><span class="mi">256</span><span class="p">,</span> <span class="n">single_batch</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>This can fail if you have deleted some runs or if your wandb folder is not present in this folder. We advise to copy <cite>config.yaml</cite>, <cite>train_stats.py</cite> and <cite>model_best.h5</cite> from <cite>wandb/runXXX/files</cite> to another location and follow <a class="reference internal" href="#saved-model">Saved model</a> instructions. These files can also be downloaded from the wandb dashboard.</p>
+</section>
+</section>
+<section id="use-a-trained-rnn-model-in-grainlearning-calibration-process">
+<h2>Use a trained RNN model in grainLearning calibration process<a class="headerlink" href="#use-a-trained-rnn-model-in-grainlearning-calibration-process" title="Permalink to this heading"></a></h2>
+<p>A trained RNN can be used as a surrogate model and play the role of a <code class="docutils literal notranslate"><span class="pre">DynamicSystem</span></code> in the calibration workflow. In such case, instead of having to generate your data in advance or performing a complete DEM simulation per iteration and group of parameters, the simulation data is provided by the RNN.</p>
+<section id="in-which-cases-can-we-use-rnn-for-the-calibration-process">
+<h3>In which cases can we use RNN for the calibration process?<a class="headerlink" href="#in-which-cases-can-we-use-rnn-for-the-calibration-process" title="Permalink to this heading"></a></h3>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>We recommend you to be careful when using Neural Networks as surrogate models, always check and test your workflows, be mindful of the I) parameters that you pass to your Neural Network, and II) model capabilities.</p>
+</div>
+<ul class="simple">
+<li><p>You have <strong>several</strong> simulation and/or experimental data in which you clearly identify:
+-  <cite>Control parameters</cite> that may vary during the experiment (i.e. <code class="docutils literal notranslate"><span class="pre">system.ctrl_data</span></code>).
+-  <cite>Tunable parameters</cite> that remain constant during the experiment and can be inferred through the calibration process (i.e. <code class="docutils literal notranslate"><span class="pre">system.param_data</span></code>).
+- <cite>Observation parameters</cite> that evolve during the experiment and are not controlled (i.e. <code class="docutils literal notranslate"><span class="pre">system.sim_data</span></code>), for example the material response.</p></li>
+<li><p>You need <strong>several</strong> data because the performance (both accuracy and generalization) of the RNN depends on how much data was it trained on. No-one would like to rely their calibration process on an RNN that performs well only for a very-specific set of parameters.</p></li>
+<li><p>Your time sequences have always the same length. Both for GrainLearning and RNN models this dimension of the data must be fixed. Considering handling your data such that you trim the vectors to the same length.</p></li>
+<li><p><strong>Consistency is key:</strong> understand the dimensions of your data, if it need to be normalized, and if it is consistent with what the pre-trained model is expecting.</p></li>
+</ul>
+</section>
+<section id="how-does-it-work">
+<h3>How does it work?<a class="headerlink" href="#how-does-it-work" title="Permalink to this heading"></a></h3>
+<p>A simple example can be found in <a class="reference external" href="https://github.com/GrainLearning/grainLearning/tree/main/tutorials/rnn">tutorials</a>. Such tutorial has three main parts:</p>
+<ol class="arabic simple">
+<li><p><strong>Prepare the pre-trained model:</strong> Load a model using <code class="docutils literal notranslate"><span class="pre">grainlearning.rnn.predict.get_pretrained_model()</span></code>.</p></li>
+<li><p><strong>Create a callback function to link to `DynamicSystem`:</strong> Function in which the predictions are going to be drawn.</p></li>
+<li><p><strong>GrainLearning calibration loop.</strong></p></li>
+</ol>
+<p>In this case, <cite>synthetic data</cite> was considered: we took one example from our triaxial compression DEM simulations.
+This is useful to show the functionality since we know in advance the desired output. However, in a real-world case, one may have an RNN trained on DEM simulations and the observation is an experiment of an equivalent system. In that case, <code class="docutils literal notranslate"><span class="pre">most_prob_params</span></code> inferred by grainlearning correspond to the <code class="docutils literal notranslate"><span class="pre">contact_params</span></code> of the DEM simulation being equivalent to your real-world material.</p>
+</section>
+<section id="tips">
+<h3>Tips<a class="headerlink" href="#tips" title="Permalink to this heading"></a></h3>
+<ul>
+<li><p>The <cite>inputs</cite> to the RNN are:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">load_sequence</span></code>: <code class="docutils literal notranslate"><span class="pre">system.ctrl_data</span></code> and</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">contact_params</span></code>: <code class="docutils literal notranslate"><span class="pre">system.param_data</span></code>.</p></li>
+</ul>
+<p>And <code class="docutils literal notranslate"><span class="pre">system.set_sim_data()</span></code> should be called with the <cite>outputs</cite> (i.e prediction) of the RNN.</p>
+</li>
+<li><p>Set the ranges defined by <code class="docutils literal notranslate"><span class="pre">param_min</span></code> and <code class="docutils literal notranslate"><span class="pre">param_max</span></code> of the  as the <code class="docutils literal notranslate"><span class="pre">system</span></code> to the ranges in which you understand how your trained model performs.</p></li>
+</ul>
+</section>
+</section>
+<section id="the-rnn-model">
+<h2>The RNN model<a class="headerlink" href="#the-rnn-model" title="Permalink to this heading"></a></h2>
+<p>The RNN model is a Neural Network with RNN layer implemented in Tensorflow. We consider the case of a Triaxial compressions of granular materials simulated using DEM.</p>
+<ul class="simple">
+<li><p><strong>Inputs:</strong> Load time sequence of size <code class="docutils literal notranslate"><span class="pre">(sequence_length,</span> <span class="pre">num_load_features)</span></code> (e.g. strains in x, y, z) and <code class="docutils literal notranslate"><span class="pre">num_contact_params</span></code> contact parameters.</p></li>
+<li><p><strong>Outputs:</strong> Time sequences of <code class="docutils literal notranslate"><span class="pre">num_labels</span></code> macroscopic variables such as the stress and void ratio.</p></li>
+</ul>
+<a class="reference internal image-reference" href="_images/rnn_architecture.png"><img alt="RNN architecture" class="align-center" src="_images/rnn_architecture.png" style="width: 400px;" /></a>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">lstm_units,</span> <span class="pre">dense_units</span></code>: Hyperparameters requiring tuning when training a model.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sequence_length,</span> <span class="pre">num_load_features,</span> <span class="pre">num_contact_params,</span> <span class="pre">num_labels</span></code>: sizes determined by the data.</p></li>
+</ul>
+</div>
+<p>The contact parameters are first passed through 2 trainable dense layers whose outputs are <code class="docutils literal notranslate"><span class="pre">state_h</span></code> and <code class="docutils literal notranslate"><span class="pre">state_c</span></code>. Such outputs are the initial state of the LSTM layer.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><code class="docutils literal notranslate"><span class="pre">num_contact_params</span></code>, <code class="docutils literal notranslate"><span class="pre">num_load_features</span></code> and <code class="docutils literal notranslate"><span class="pre">num_labels</span></code> are determined during the preparation of your data and depending on the choice of Preprocessor, they may be different. CHeck the documentation of the Preprocessor that you use.</p>
+</div>
+<section id="sliding-windows">
+<h3>Sliding windows<a class="headerlink" href="#sliding-windows" title="Permalink to this heading"></a></h3>
+<p>The data is split along the temporal dimension in sliding windows of fixed length <code class="docutils literal notranslate"><span class="pre">window_size</span></code>. In essence, the input for the RNN model is a window of inputs (<code class="docutils literal notranslate"><span class="pre">window_i</span></code> in the figure below) and the prediction is the last element in the equivalent window in the sequence of outputs (<code class="docutils literal notranslate"><span class="pre">output_i</span></code> in the figure below).</p>
+<img alt="Windows used for sequence splitting and model prediction" src="_images/rnn_window.png" />
+<p>The module takes care of splitting the data into windows and stacking the predictions for each step of the sequence.
+With this configuration, the first <code class="docutils literal notranslate"><span class="pre">window_size</span></code> points are not predicted by the model. To predict those too, add <code class="docutils literal notranslate"><span class="pre">pad_length</span></code> equals to <code class="docutils literal notranslate"><span class="pre">window_size</span></code> to the config dictionary. The trick here will be to add <code class="docutils literal notranslate"><span class="pre">pad_length</span></code> copies of the first element of <cite>inputs</cite> to the sequence that will be afterwards windowized.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">window_size</span></code> is a hyperparameter requiring tuning when training a model.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sequence_length</span></code> is fixed by the user. All sequences in a dataset must have the same length.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">window_step</span></code> is the distance (in position) between the start (or end) of consecutive windows. In general <code class="docutils literal notranslate"><span class="pre">window_step</span> <span class="pre">=</span> <span class="pre">1</span></code>.</p></li>
+</ul>
+</div>
+</section>
+<section id="loss-and-metrics">
+<h3>Loss and metrics<a class="headerlink" href="#loss-and-metrics" title="Permalink to this heading"></a></h3>
+<ul class="simple">
+<li><p><strong>Loss</strong>: <a class="reference external" href="https://www.tensorflow.org/api_docs/python/tf/keras/losses/MeanSquaredError">tensorflow MSE</a> for train and validation datasets.</p></li>
+<li><p><strong>Metric</strong>: <a class="reference external" href="https://www.tensorflow.org/api_docs/python/tf/keras/metrics/mean_absolute_error">tensor flow MAE</a> is logged for train and validation datasets.</p></li>
+<li><p><strong>Optimizer</strong>: <a class="reference external" href="https://www.tensorflow.org/api_docs/python/tf/keras/optimizers/Adam">tensorflow Adam</a> requiring the <code class="docutils literal notranslate"><span class="pre">learning_rate</span></code>.   Other additional parameters for the optimizer can be defined <code class="docutils literal notranslate"><span class="pre">config</span></code> dictionary.</p></li>
+<li><p><strong>Callbacks</strong>:</p>
+<ul>
+<li><p><a class="reference external" href="https://www.tensorflow.org/api_docs/python/tf/keras/callbacks/EarlyStopping">tensorflow EarlyStopping</a>: Using <code class="docutils literal notranslate"><span class="pre">patience</span></code> defined in <code class="docutils literal notranslate"><span class="pre">config</span></code> dictionary and <code class="docutils literal notranslate"><span class="pre">val_loss</span></code> as monitoring metric.</p></li>
+<li><p><a class="reference external" href="https://www.tensorflow.org/api_docs/python/tf/keras/callbacks/ModelCheckpoint">tensorflow ModelCheckpoint</a>: Using <code class="docutils literal notranslate"><span class="pre">save_weights_only</span></code> defined in <code class="docutils literal notranslate"><span class="pre">config</span></code> dictionary and saving best only.</p></li>
+</ul>
+</li>
+</ul>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="bayesian_filtering.html" class="btn btn-neutral float-left" title="Bayesian filtering" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="tutorials.html" class="btn btn-neutral float-right" title="Tutorials" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Hongyang Cheng, Retief Lubbe, Luisa Orozco, Aron Jansen.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

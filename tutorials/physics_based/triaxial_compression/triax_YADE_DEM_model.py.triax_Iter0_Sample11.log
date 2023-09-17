@@ -1,0 +1,32 @@
+TCP python prompt on localhost:9000, auth cookie `asueks'
+Welcome to Yade 2022.01a 
+Using python version: 3.10.12 (main, Jun 11 2023, 05:26:28) [GCC 11.4.0]
+Warning: no X rendering available (see https://bbs.archlinux.org/viewtopic.php?id=13189)
+XMLRPC info provider on http://localhost:21000
+/usr/lib/python3/dist-packages/IPython/core/interactiveshell.py:949: UserWarning: Attempting to work in a virtualenv. If you encounter problems, please install IPython inside the virtualenv.
+  warn(
+Running script /home/hcheng/GrainLearning/grainLearning/tutorials/physics_based/triaxial_compression/triax_YADE_DEM_model.py
+Traceback (most recent call last):
+  File "/usr/bin/yade-double", line 343, in runScript
+    execfile(script,globals())
+  File "/usr/lib/python3/dist-packages/past/builtins/misc.py", line 87, in execfile
+    exec_(code, myglobals, mylocals)
+  File "/home/hcheng/GrainLearning/grainLearning/tutorials/physics_based/triaxial_compression/triax_YADE_DEM_model.py", line 53, in <module>
+    obs_data = get_keys_and_data(obs_file_name)
+  File "/home/hcheng/GrainLearning/grainLearning/grainlearning/tools.py", line 86, in get_keys_and_data
+    data = np.genfromtxt(file_name, ndmin=2)
+  File "/home/hcheng/.local/lib/python3.10/site-packages/numpy/lib/npyio.py", line 1977, in genfromtxt
+    fid = np.lib._datasource.open(fname, 'rt', encoding=encoding)
+  File "/home/hcheng/.local/lib/python3.10/site-packages/numpy/lib/_datasource.py", line 193, in open
+    return ds.open(path, mode, encoding=encoding, newline=newline)
+  File "/home/hcheng/.local/lib/python3.10/site-packages/numpy/lib/_datasource.py", line 533, in open
+    raise FileNotFoundError(f"{path} not found.")
+FileNotFoundError: triax_data_DEM.dat not found.
+
+=================== JOB SUMMARY ================
+id      : triax_Iter0_Sample11
+status  : 256 (FAILED)
+duration: 00:00:00
+command : YADE_BATCH=/home/hcheng/GrainLearning/grainLearning/triax_Iter0_Samples.txt:13 DISPLAY=  /usr/bin/yade-double --threads=8 --nice=10 -x /home/hcheng/GrainLearning/grainLearning/tutorials/physics_based/triaxial_compression/triax_YADE_DEM_model.py> /home/hcheng/GrainLearning/grainLearning/tutorials/physics_based/triaxial_compression/triax_YADE_DEM_model.py.triax_Iter0_Sample11.log 2>&1
+started : Sun Sep 10 07:50:34 2023
+finished: Sun Sep 10 07:50:35 2023

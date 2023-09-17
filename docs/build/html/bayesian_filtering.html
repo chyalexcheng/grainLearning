@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bayesian filtering &mdash; GrainLearning  documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
+        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="RNN Module" href="rnn.html" />
+    <link rel="prev" title="Dynamic systems" href="dynamic_systems.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            GrainLearning
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dynamic_systems.html">Dynamic systems</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Bayesian filtering</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#bayes-theorem">Bayes’ theorem</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#the-inference-module">The inference module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#sequential-monte-carlo">Sequential Monte Carlo</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#importance-sampling">Importance sampling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#ensemble-predictions">Ensemble predictions</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#the-sampling-module">The sampling module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#sampling-from-low-discrepancy-sequences">Sampling from low-discrepancy sequences</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#sampling-from-a-proposal-density-function">Sampling from a proposal density function</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#iterative-bayesian-filter">Iterative Bayesian filter</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="rnn.html">RNN Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_contribute.html">Contributing guidelines</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">Python API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">GrainLearning</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Bayesian filtering</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/bayesian_filtering.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="bayesian-filtering">
+<h1>Bayesian filtering<a class="headerlink" href="#bayesian-filtering" title="Permalink to this heading"></a></h1>
+<p>Bayesian filtering is a general framework for estimating the <em>hidden</em> state of a dynamical system
+from partial observations using a predictive model of the system dynamics.</p>
+<p>The state, usually augmented by the system’s parameters, changes in time according to a stochastic process,
+and the observations are assumed to contain random noise.
+The goal of Bayesian filtering is to update the probability distribution of the system’s state
+whenever new observations become available, using the recursive Bayes’ theorem.</p>
+<p>This section describes the theoretical background of Bayesian filtering.
+Interested in how GrainLearning provides parameter values to your software?
+Then browse directly to <a class="reference internal" href="#the-sampling-module"><span class="std std-ref">the sampling module</span></a>.</p>
+<section id="bayes-theorem">
+<h2>Bayes’ theorem<a class="headerlink" href="#bayes-theorem" title="Permalink to this heading"></a></h2>
+<p>Humans are Bayesian machines, constantly using Bayesian reasoning to make decisions and predictions about the world around them.
+Bayes’ theorem is the mathematical foundation for this process, allowing us to update our beliefs in the face of new evidence,</p>
+<div class="math notranslate nohighlight">
+\[p(A|B) = \frac{p(B|A) p(A)}{p(B)}.\]</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(p(A|B)\)</span> is the <strong>posterior</strong> probability of hypothesis <span class="math notranslate nohighlight">\(A\)</span> given evidence <span class="math notranslate nohighlight">\(B\)</span> has been observed</p></li>
+<li><p><span class="math notranslate nohighlight">\(p(B|A)\)</span> is the <strong>likelihood</strong> of observing evidence <span class="math notranslate nohighlight">\(B\)</span> given hypothesis <span class="math notranslate nohighlight">\(A\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(p(A)\)</span> is the <strong>prior</strong> probability of hypothesis <span class="math notranslate nohighlight">\(A\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(p(B)\)</span> is a <strong>normalizing</strong> constant that ensures the posterior distribution sums to one</p></li>
+</ul>
+</div>
+<p>At its core, Bayes’ theorem is a simple concept: the probability of a hypothesis given some observed evidence
+is proportional to the product of the prior probability of the hypothesis
+and the likelihood of the evidence given the hypothesis.
+Check <a class="reference external" href="https://www.youtube.com/watch?v=HZGCoVF3YvM">this video</a> for a more intuitive explanation.</p>
+</section>
+<section id="the-inference-module">
+<h2>The inference module<a class="headerlink" href="#the-inference-module" title="Permalink to this heading"></a></h2>
+<p>The <a class="reference internal" href="api.html#module-grainlearning.inference" title="grainlearning.inference"><code class="xref py py-mod docutils literal notranslate"><span class="pre">inference</span></code></a> module contains classes that infer the probability
+distribution of model parameters from observation data.
+This process is also known as <a class="reference external" href="https://en.wikipedia.org/wiki/Inverse_problem">inverse analysis</a> or <a class="reference external" href="https://en.wikipedia.org/wiki/Data_assimilation">data assimilation</a>.
+The output of the <a class="reference internal" href="api.html#module-grainlearning.inference" title="grainlearning.inference"><code class="xref py py-mod docutils literal notranslate"><span class="pre">inference</span></code></a> module is the probability distribution over the model state <span class="math notranslate nohighlight">\(\vec{x}_t\)</span>,
+usually augmented by the parameters <span class="math notranslate nohighlight">\(\vec{\Theta}\)</span>, conditioned on the observation data <span class="math notranslate nohighlight">\(\vec{y}_t\)</span> at time <span class="math notranslate nohighlight">\(t\)</span>.</p>
+<section id="sequential-monte-carlo">
+<h3>Sequential Monte Carlo<a class="headerlink" href="#sequential-monte-carlo" title="Permalink to this heading"></a></h3>
+<p>The method currently available for statistical inference is <a class="reference internal" href="api.html#grainlearning.inference.SMC" title="grainlearning.inference.SMC"><code class="xref py py-class docutils literal notranslate"><span class="pre">Sequential</span> <span class="pre">Monte</span> <span class="pre">Carlo</span></code></a>.
+It recursively updates the probability distribution of the augmented model state
+<span class="math notranslate nohighlight">\(\hat{\vec{x}}_T=(\vec{x}_T, \vec{\Theta})\)</span> from the sequences of observation data
+<span class="math notranslate nohighlight">\(\vec{y}_{0:T}\)</span> from time <span class="math notranslate nohighlight">\(t = 0\)</span> to <span class="math notranslate nohighlight">\(T\)</span>.
+The posterior distribution of the augmented model state is approximated by a set of samples,
+where each sample instantiates a realization of the model state.
+.. Samples are drawn from a proposal density, which can be either
+.. <a class="reference internal" href="#sec-inform"><span class="std std-ref">informative</span></a>
+.. or <a class="reference internal" href="#sec-noninform"><span class="std std-ref">non-informative</span></a>.</p>
+<p>Via Bayes’ rule, the posterior distribution of the <em>augmented model state</em> reads</p>
+<div class="math notranslate nohighlight">
+\[p(\hat{\vec{x}}_{0:T}|\vec{y}_{1:T}) \propto \prod_{t_i=1}^T p(\vec{y}_{t_i}|\hat{\vec{x}}_{t_i}) p(\hat{\vec{x}}_{t_i}|\hat{\vec{x}}_{{t_i}-1}) p(\hat{\vec{x}}_0),\]</div>
+<p>Where <span class="math notranslate nohighlight">\(p(\hat{\vec{x}}_0)\)</span> is the initial distribution of the model state.
+We can rewrite this equation in the recursive form, so that the posterior distribution gets updated
+at every time step <span class="math notranslate nohighlight">\(t\)</span>.</p>
+<div class="math notranslate nohighlight">
+\[p(\hat{\vec{x}}_{0:t}|\vec{y}_{1:t}) \propto p(\vec{y}_t|\hat{\vec{x}}_t)p(\hat{\vec{x}}_t|\hat{\vec{x}}_{t-1})p(\hat{\vec{x}}_{1:t-1}|\vec{y}_{1:t-1}),\]</div>
+<p>Where <span class="math notranslate nohighlight">\(p(\vec{y}_t|\hat{\vec{x}}_t)\)</span> and <span class="math notranslate nohighlight">\(p(\hat{\vec{x}}_t|\hat{\vec{x}}_{t-1})\)</span>
+are the <a class="reference external" href="https://en.wikipedia.org/wiki/Likelihood_function">likelihood</a> distribution
+and the <a class="reference external" href="https://en.wikipedia.org/wiki/Transition_probability">transition</a> distribution, respectively.
+The likelihood distribution is the probability distribution of observing <span class="math notranslate nohighlight">\(\vec{y}_t\)</span> given the model state <span class="math notranslate nohighlight">\(\hat{\vec{x}}_t\)</span>.
+The transition distribution is the probability distribution of the model’s current state <span class="math notranslate nohighlight">\(\hat{\vec{x}}_t\)</span> given its previous state <span class="math notranslate nohighlight">\(\hat{\vec{x}}_{t-1}\)</span>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>We apply no perturbation in the parameters <span class="math notranslate nohighlight">\(\vec{\Theta}\)</span> nor in the model states <span class="math notranslate nohighlight">\(\vec{x}_{1:T}\)</span>
+because the model history must be kept intact for path-dependent materials.
+This results in a deterministic transition distribution predetermined from the initial state <span class="math notranslate nohighlight">\(p(\hat{\vec{x}}_0)\)</span>.</p>
+</div>
+<section id="importance-sampling">
+<h4>Importance sampling<a class="headerlink" href="#importance-sampling" title="Permalink to this heading"></a></h4>
+<p>The prior, likelihood, and posterior distributions can be evaluated via <a class="reference external" href="https://en.wikipedia.org/wiki/Importance_sampling">importance sampling</a>.
+The idea is to have samples that are more important than others when approximating a target distribution.
+The measure of this importance is the so-called <strong>importance weight</strong> (see the figure below).</p>
+<figure class="align-default" id="id3">
+<a class="reference internal image-reference" href="_images/SIS.png"><img alt="Sequential Importance Sampling" src="_images/SIS.png" style="width: 400px;" /></a>
+<figcaption>
+<p><span class="caption-text">Illustration of importance sampling.</span><a class="headerlink" href="#id3" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<p>Therefore, we draw <a class="reference internal" href="api.html#grainlearning.dynamic_systems.DynamicSystem.param_data" title="grainlearning.dynamic_systems.DynamicSystem.param_data"><code class="xref py py-attr docutils literal notranslate"><span class="pre">samples</span></code></a>, <span class="math notranslate nohighlight">\(\vec{\Theta}^{(i)} \ (i=1,...,N_p)\)</span>,
+from a proposal density, leading to an ensemble of the <a class="reference internal" href="api.html#grainlearning.dynamic_systems.DynamicSystem.sim_data" title="grainlearning.dynamic_systems.DynamicSystem.sim_data"><code class="xref py py-attr docutils literal notranslate"><span class="pre">model</span> <span class="pre">state</span></code></a> <span class="math notranslate nohighlight">\(\vec{x}_t^{(i)}\)</span>.
+The <a class="reference internal" href="api.html#grainlearning.inference.SMC.posteriors" title="grainlearning.inference.SMC.posteriors"><code class="xref py py-attr docutils literal notranslate"><span class="pre">importance</span> <span class="pre">weights</span></code></a> <span class="math notranslate nohighlight">\(w_t^{(i)}\)</span> are updated recursively, via</p>
+<div class="math notranslate nohighlight">
+\[w_t^{(i)} \propto p(\vec{y}_t|\hat{\vec{x}}_t^{(i)})p(\hat{\vec{x}}_t^{(i)}|\hat{\vec{x}}_{t-1}^{(i)}) w_{t-1}^{(i)}.\]</div>
+<p>The <a class="reference internal" href="api.html#grainlearning.inference.SMC.likelihoods" title="grainlearning.inference.SMC.likelihoods"><code class="xref py py-attr docutils literal notranslate"><span class="pre">likelihood</span></code></a> <span class="math notranslate nohighlight">\(p(\vec{y}_t|\hat{\vec{x}}_t^{(i)})\)</span>
+can be assumed to be a multivariate Gaussian (see the equation below), which is computed by the function <a class="reference internal" href="api.html#grainlearning.inference.SMC.get_likelihoods" title="grainlearning.inference.SMC.get_likelihoods"><code class="xref py py-attr docutils literal notranslate"><span class="pre">get_likelihoods</span></code></a>
+of the <a class="reference internal" href="api.html#grainlearning.inference.SMC" title="grainlearning.inference.SMC"><code class="xref py py-class docutils literal notranslate"><span class="pre">SMC</span></code></a> class.</p>
+<div class="math notranslate nohighlight">
+\[p(\vec{y}_t|\hat{\vec{x}}_t^{(i)}) \propto \exp \{-\frac{1}{2}[\vec{y}_t-\mathbf{H}(\vec{x}^{(i)}_t)]^T {\mathbf{\Sigma}_t^D}^{-1} [\vec{y}_t-\mathbf{H}(\vec{x}^{(i)}_t)]\},\]</div>
+<p>where <span class="math notranslate nohighlight">\(\mathbf{H}\)</span> is the observation model that reduces to a diagonal matrix for uncorrelated observables,
+and <span class="math notranslate nohighlight">\(\mathbf{\Sigma}_t^D\)</span> is the covariance matrix <a class="reference internal" href="api.html#grainlearning.inference.SMC.cov_matrices" title="grainlearning.inference.SMC.cov_matrices"><code class="xref py py-attr docutils literal notranslate"><span class="pre">cov_matrices</span></code></a>
+calculated from <span class="math notranslate nohighlight">\(\vec{y}_t\)</span> and the user-defined normalized variance <a class="reference internal" href="api.html#grainlearning.dynamic_systems.DynamicSystem.sigma_max" title="grainlearning.dynamic_systems.DynamicSystem.sigma_max"><code class="xref py py-attr docutils literal notranslate"><span class="pre">sigma_max</span></code></a>, in the function <a class="reference internal" href="api.html#grainlearning.inference.SMC.get_covariance_matrices" title="grainlearning.inference.SMC.get_covariance_matrices"><code class="xref py py-attr docutils literal notranslate"><span class="pre">get_covariance_matrices</span></code></a>.</p>
+<p>By making use of importance sampling, the posterior distribution
+<span class="math notranslate nohighlight">\(p(\vec{y}_t|\hat{\vec{x}}_t^{(i)})\)</span> gets updated over time in <a class="reference internal" href="api.html#grainlearning.inference.SMC.data_assimilation_loop" title="grainlearning.inference.SMC.data_assimilation_loop"><code class="xref py py-attr docutils literal notranslate"><span class="pre">data_assimilation_loop</span></code></a>
+— this is known as <a class="reference external" href="https://statswithr.github.io/book/the-basics-of-bayesian-statistics.html#bayes-updating">Bayesian updating</a>.
+Figure below illustrates the evolution of a posterior distribution over time.</p>
+<figure class="align-default" id="id4">
+<a class="reference internal image-reference" href="_images/linear_posterior_a.png"><img alt="Posterior distribution at various time steps" src="_images/linear_posterior_a.png" style="width: 500px;" /></a>
+<figcaption>
+<p><span class="caption-text">Time evolution of the importance weights over model parameter <span class="math notranslate nohighlight">\(a\)</span>.</span><a class="headerlink" href="#id4" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+</section>
+<section id="ensemble-predictions">
+<h4>Ensemble predictions<a class="headerlink" href="#ensemble-predictions" title="Permalink to this heading"></a></h4>
+<p>Since the importance weight on each sample <span class="math notranslate nohighlight">\(\vec{\Theta}^{(i)}\)</span> is discrete
+and the sample <span class="math notranslate nohighlight">\(\vec{\Theta}^{(i)}\)</span> and model state <span class="math notranslate nohighlight">\(\vec{x}_t^{(i)}\)</span> have one-to-one correspondence,
+the ensemble mean and variance of <span class="math notranslate nohighlight">\(f_t\)</span>, an arbitrary function of the model’s augmented state <span class="math notranslate nohighlight">\(\hat{\vec{x}}_t\)</span>,
+can be computed as</p>
+<div class="math notranslate nohighlight">
+\[ \begin{align}\begin{aligned}\mathrm{\widehat{E}}[f_t(\hat{\vec{x}}_t)|\vec{y}_{1:t}] &amp; = \sum_{i=1}^{N_p} w_t^{(i)} f_t(\hat{\vec{x}}_t^{(i)}),\\\mathrm{\widehat{Var}}[f_t(\hat{\vec{x}}_t)|\vec{y}_{1:t}] &amp; = \sum_{i=1}^{N_p} w_t^{(i)} (f_t(\hat{\vec{x}}_t^{(i)})-\mathrm{\widehat{E}}[f_t(\hat{\vec{x}}_t)|\vec{y}_{1:t}])^2,\end{aligned}\end{align} \]</div>
+<p>The figure below gives an example of the ensemble prediction in darkred, the top three fits in blue, orange, and green, and the observation data in black.</p>
+<figure class="align-default">
+<a class="reference internal image-reference" href="_images/linear_obs_and_sim.png"><img alt="simulation versus observation data" src="_images/linear_obs_and_sim.png" style="width: 500px;" /></a>
+</figure>
+</section>
+</section>
+</section>
+<section id="the-sampling-module">
+<h2>The sampling module<a class="headerlink" href="#the-sampling-module" title="Permalink to this heading"></a></h2>
+<p>The sampling module allows drawing samples from</p>
+<ul class="simple">
+<li><p>a <a class="reference internal" href="#sec-noninform"><span class="std std-ref">non-informative</span></a> uniform distribution</p></li>
+<li><p>an <a class="reference internal" href="#sec-inform"><span class="std std-ref">informative</span></a> proposal density designed and optimized to make the inference efficient</p></li>
+</ul>
+<section id="sampling-from-low-discrepancy-sequences">
+<span id="sec-noninform"></span><h3>Sampling from low-discrepancy sequences<a class="headerlink" href="#sampling-from-low-discrepancy-sequences" title="Permalink to this heading"></a></h3>
+<p>Since we typically don’t know the prior distribution of model parameters,
+we start with a non-informative, uniform sampling using <a class="reference external" href="https://en.wikipedia.org/wiki/Low-discrepancy_sequence">quasi-random</a>
+or <a class="reference external" href="https://en.wikipedia.org/wiki/Latin_hypercube_sampling">near-random</a> numbers.
+We make use of the <a class="reference external" href="https://docs.scipy.org/doc/scipy/reference/stats.qmc.html">Quasi-Monte Carlo generators of scipy</a>.</p>
+<p>You can choose one of the sampling methods when initializing a <a class="reference internal" href="api.html#grainlearning.iterative_bayesian_filter.IterativeBayesianFilter" title="grainlearning.iterative_bayesian_filter.IterativeBayesianFilter"><code class="xref py py-class docutils literal notranslate"><span class="pre">IterativeBayesianFilter</span></code></a> object.</p>
+<ul class="simple">
+<li><p><cite>“sobol”</cite>: a <a class="reference external" href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.qmc.Sobol.html#scipy.stats.qmc.Sobol">Sobol sequence</a></p></li>
+<li><p><cite>“halton”</cite>: a <a class="reference external" href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.qmc.Halton.html#scipy.stats.qmc.Halton">Halton sequence</a></p></li>
+<li><p><cite>“LH”</cite>: a <a class="reference external" href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.qmc.LatinHypercube.html#scipy.stats.qmc.LatinHypercube">Latin Hypercube</a></p></li>
+</ul>
+<div class="literal-block-wrapper docutils container" id="id5">
+<div class="code-block-caption"><span class="caption-text">Initialize the Bayesian calibration method</span><a class="headerlink" href="#id5" title="Permalink to this code"></a></div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ibf_cls</span> <span class="o">=</span> <span class="n">IterativeBayesianFilter</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;inference&quot;</span><span class="p">:{</span>
+            <span class="s2">&quot;ess_target&quot;</span><span class="p">:</span> <span class="mf">0.3</span><span class="p">,</span>
+        <span class="p">},</span>
+        <span class="s2">&quot;sampling&quot;</span><span class="p">:{</span>
+            <span class="s2">&quot;max_num_components&quot;</span><span class="p">:</span> <span class="mi">1</span>
+        <span class="p">}</span>
+        <span class="s2">&quot;initial_sampling&quot;</span><span class="p">:</span> <span class="s2">&quot;halton&quot;</span>
+    <span class="p">}</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>The figure below shows parameter samples generated using a Halton sequence, a Sobol sequence and a Latin Hypercube in 2D.</p>
+<figure class="align-default">
+<a class="reference internal image-reference" href="_images/qmc.png"><img alt="Quasi-Monte Carlo generator" src="_images/qmc.png" style="width: 400px;" /></a>
+</figure>
+</section>
+<section id="sampling-from-a-proposal-density-function">
+<span id="sec-inform"></span><h3>Sampling from a proposal density function<a class="headerlink" href="#sampling-from-a-proposal-density-function" title="Permalink to this heading"></a></h3>
+<p>An initial uniform sampling is unbiased, but it can be very inefficient since the correlation structure is not sampled.
+If we have some vague idea of the posterior distribution, we can come up with a proposal density.
+For that, we can use the <a class="reference internal" href="api.html#grainlearning.sampling.GaussianMixtureModel" title="grainlearning.sampling.GaussianMixtureModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">GaussianMixtureModel</span></code></a> class which is a wrapper of <a class="reference external" href="https://scikit-learn.org/stable/modules/generated/sklearn.mixture.BayesianGaussianMixture.html">BayesianGaussianMixture</a> of scikit-learn.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Note that <a class="reference external" href="https://scikit-learn.org/stable/modules/generated/sklearn.mixture.BayesianGaussianMixture.html">BayesianGaussianMixture</a>
+is based on a variational Bayesian estimation of a Gaussian mixture,
+meaning the parameters of a Gaussian mixture distribution are inferred.
+For example, the number of components is optimized rather than an input of the Gaussian mixture.</p>
+</div>
+<p>The <strong>non-parametric</strong> <a class="reference internal" href="api.html#grainlearning.sampling.GaussianMixtureModel.gmm" title="grainlearning.sampling.GaussianMixtureModel.gmm"><code class="xref py py-attr docutils literal notranslate"><span class="pre">Gaussian</span> <span class="pre">mixture</span></code></a> can be trained using the previously generated samples
+and their importance weights estimated by the <a class="reference internal" href="api.html#module-grainlearning.inference" title="grainlearning.inference"><code class="xref py py-mod docutils literal notranslate"><span class="pre">inference</span></code></a> method.
+New samples are then drawn from this mixture model that acts as a proposal density in <a class="reference internal" href="api.html#grainlearning.sampling.GaussianMixtureModel.regenerate_params" title="grainlearning.sampling.GaussianMixtureModel.regenerate_params"><code class="xref py py-attr docutils literal notranslate"><span class="pre">regenerate_params</span></code></a>.</p>
+<figure class="align-default" id="id6">
+<a class="reference internal image-reference" href="_images/gmm.jpg"><img alt="Resampling via a Gaussian mixture" src="_images/gmm.jpg" style="width: 500px;" /></a>
+<figcaption>
+<p><span class="caption-text">Resampling of parameter space via a Gaussian mixture model.</span><a class="headerlink" href="#id6" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+</section>
+</section>
+<section id="iterative-bayesian-filter">
+<h2>Iterative Bayesian filter<a class="headerlink" href="#iterative-bayesian-filter" title="Permalink to this heading"></a></h2>
+<p>The idea of <a class="reference external" href="https://doi.org/10.1016/j.cma.2019.01.027">iterative Bayesian filtering algorithm</a> is to solve the inverse problem all over again, with new samples drawn from a more sensible proposal density,
+leading to a multi-level resampling strategy to avoid weight degeneracy and improve efficiency.
+The essential steps include</p>
+<ol class="arabic simple">
+<li><p>Generating the initial samples using <a class="reference internal" href="api.html#grainlearning.iterative_bayesian_filter.IterativeBayesianFilter.initialize" title="grainlearning.iterative_bayesian_filter.IterativeBayesianFilter.initialize"><code class="xref py py-attr docutils literal notranslate"><span class="pre">a</span> <span class="pre">low-discrepancy</span> <span class="pre">sequence</span></code></a>,</p></li>
+<li><p>Running the instances of the predictive (forward) model via a user-defined <a class="reference internal" href="dynamic_systems.html#interact-with-third-party-software-via-callback-function"><span class="std std-ref">callback function</span></a>,</p></li>
+<li><p>Estimating the time evolution of <a class="reference internal" href="api.html#grainlearning.iterative_bayesian_filter.IterativeBayesianFilter.run_inference" title="grainlearning.iterative_bayesian_filter.IterativeBayesianFilter.run_inference"><code class="xref py py-attr docutils literal notranslate"><span class="pre">the</span> <span class="pre">posterior</span> <span class="pre">distribution</span></code></a>,</p></li>
+<li><p>Generateing new samples from <a class="reference internal" href="api.html#grainlearning.iterative_bayesian_filter.IterativeBayesianFilter.run_sampling" title="grainlearning.iterative_bayesian_filter.IterativeBayesianFilter.run_sampling"><code class="xref py py-attr docutils literal notranslate"><span class="pre">the</span> <span class="pre">proposal</span> <span class="pre">density</span></code></a>, trained with the previous ensemble (i.e., samples and associated weights),</p></li>
+<li><p>Check whether the posterior expecation of the model parameters has converged to a certain value, and stop the iteration if so.</p></li>
+<li><p>If not, repeating step 1–5 (combined into the function <a class="reference internal" href="api.html#grainlearning.iterative_bayesian_filter.IterativeBayesianFilter.solve" title="grainlearning.iterative_bayesian_filter.IterativeBayesianFilter.solve"><code class="xref py py-attr docutils literal notranslate"><span class="pre">IterativeBayesianFilter.solve</span></code></a>)</p></li>
+</ol>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>When running <a class="reference internal" href="api.html#grainlearning.inference.SMC" title="grainlearning.inference.SMC"><code class="xref py py-class docutils literal notranslate"><span class="pre">SMC</span></code></a> filtering via <a class="reference internal" href="api.html#grainlearning.iterative_bayesian_filter.IterativeBayesianFilter.run_inference" title="grainlearning.iterative_bayesian_filter.IterativeBayesianFilter.run_inference"><code class="xref py py-attr docutils literal notranslate"><span class="pre">IterativeBayesianFilter.run_inference</span></code></a>,
+it is crucial to ensure that the <a class="reference internal" href="api.html#grainlearning.inference.SMC.ess" title="grainlearning.inference.SMC.ess"><code class="xref py py-attr docutils literal notranslate"><span class="pre">effective</span> <span class="pre">sample</span> <span class="pre">size</span></code></a> is large enough,
+so that the ensemble does not degenerate into few samples with very large weights.</p>
+</div>
+<p>The figure below illustrates the workflow of iterative Bayesian filtering.</p>
+<figure class="align-default">
+<a class="reference internal image-reference" href="_images/IBF.png"><img alt="Iterative Bayesian filtering" src="_images/IBF.png" style="width: 500px;" /></a>
+</figure>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="dynamic_systems.html" class="btn btn-neutral float-left" title="Dynamic systems" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="rnn.html" class="btn btn-neutral float-right" title="RNN Module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Hongyang Cheng, Retief Lubbe, Luisa Orozco, Aron Jansen.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

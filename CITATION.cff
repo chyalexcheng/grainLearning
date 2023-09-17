@@ -1,0 +1,63 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: GrainLearning
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - given-names: Hongyang
+    family-names: Cheng
+    email: h.cheng@utwente.nl
+    affiliation: University of Twente
+    orcid: 'https://orcid.org/0000-0001-7652-8600'
+  - given-names: Luisa
+    family-names: ' Orozco'
+    email: l.orozco@esciencecenter.nl
+    orcid: 'https://orcid.org/0000-0002-9153-650X'
+    affiliation: Netherlands eScience Center
+  - given-names: Retief
+    family-names: Lubbe
+    email: r.lubbe@utwente.nl
+    affiliation: University of Twente
+  - given-names: Aron
+    family-names: Jansen
+    orcid: 'https://orcid.org/0000-0002-4764-9347'
+    affiliation: Netherlands eScience Center
+    email: a.p.jansen@esciencecenter.nl
+  - given-names: Philipp
+    family-names: Hartmann
+    email: philipp.hartmann@newcastle.edu.au
+    orcid: 'https://orcid.org/0000-0002-2524-8024'
+    affiliation: University of Newcastle
+  - given-names: Klaus
+    family-names: Thoeni
+    orcid: 'https://orcid.org/0000-0001-7351-7447'
+    affiliation: University of Newcastle
+    email: klaus.thoeni@newcastle.edu.au
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.7123966
+repository-code: 'https://github.com/GrainLearning/grainLearning/'
+url: 'https://grainlearning.readthedocs.io/'
+abstract: >-
+  GrainLearning is a Bayesian uncertainty quantification and
+  propagation toolbox for computer simulations of granular
+  materials. The software is primarily used to infer and
+  quantify parameter uncertainties in computational models
+  of granular materials from observation data, also known as
+  inverse analyses or data assimilation. Implemented in
+  Python, GrainLearning can be loaded into a Python
+  environment to process the simulation and observation
+  data, or alternatively, as an independent tool where
+  simulation runs are done separately, e.g., via a shell
+  script.
+keywords:
+  - Uncertainty quantification
+  - Granular materials
+  - Machine learning
+  - Calibration
+  - Bayesian inference
+license: GPL-2.0

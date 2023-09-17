@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Installation &mdash; GrainLearning  documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Dynamic systems" href="dynamic_systems.html" />
+    <link rel="prev" title="Introduction" href="introduction.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            GrainLearning
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#package-management-and-dependencies">Package management and dependencies</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#install-using-poetry">Install using poetry</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#install-using-pip">Install using pip</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#for-windows-users">For Windows users</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#packaging-one-command-install">Packaging/One command install</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#documentation">Documentation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#online">Online</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#build-the-documentation-locally">Build the documentation locally</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="dynamic_systems.html">Dynamic systems</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bayesian_filtering.html">Bayesian filtering</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rnn.html">RNN Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_contribute.html">Contributing guidelines</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">Python API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">GrainLearning</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Installation</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/installation.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="installation">
+<h1>Installation<a class="headerlink" href="#installation" title="Permalink to this heading"></a></h1>
+<p>GrainLearning can be installed with poetry and pip, on Windows, Mac, and Linux OS, with a Python version higher than 3.8.
+We have tested GrainLearning with Python versions 3.8, 3.9, and 3.10.</p>
+<section id="package-management-and-dependencies">
+<h2>Package management and dependencies<a class="headerlink" href="#package-management-and-dependencies" title="Permalink to this heading"></a></h2>
+<section id="install-using-poetry">
+<h3>Install using poetry<a class="headerlink" href="#install-using-poetry" title="Permalink to this heading"></a></h3>
+<p>First, install poetry following <a class="reference external" href="https://python-poetry.org/docs/#installation">these instructions</a>.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Clone the repository</span>
+git<span class="w"> </span>clone<span class="w"> </span>https://github.com/GrainLearning/grainLearning.git
+
+<span class="c1"># Activate the virtual environment</span>
+<span class="nb">cd</span><span class="w"> </span>grainLearning
+poetry<span class="w"> </span>shell
+
+<span class="c1"># Install GrainLearning and its dependencies</span>
+poetry<span class="w"> </span>install
+
+<span class="c1"># Run the self-tests</span>
+poetry<span class="w"> </span>run<span class="w"> </span>pytest<span class="w"> </span>-v
+
+<span class="c1"># You are done. Try any examples in the ./tutorials directory</span>
+poetry<span class="w"> </span>run<span class="w"> </span>python<span class="w"> </span>&lt;example.py&gt;
+</pre></div>
+</div>
+</section>
+<section id="install-using-pip">
+<h3>Install using pip<a class="headerlink" href="#install-using-pip" title="Permalink to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># clone the repository</span>
+git<span class="w"> </span>clone<span class="w"> </span>https://github.com/GrainLearning/grainLearning.git
+<span class="nb">cd</span><span class="w"> </span>grainLearning
+
+<span class="c1"># We recommend working in a virtual environment using conda or any other python environment manager.</span>
+<span class="c1"># for example, with anaconda</span>
+conda<span class="w"> </span>create<span class="w"> </span>--name<span class="w"> </span>grainlearning<span class="w"> </span><span class="nv">python</span><span class="o">=</span><span class="m">3</span>.8
+conda<span class="w"> </span>activate<span class="w"> </span>grainlearning
+
+<span class="c1"># Install GrainLearning and its dependencies</span>
+pip<span class="w"> </span>install<span class="w"> </span>.
+
+<span class="c1"># You may need to install matplotlib and pytest</span>
+conda<span class="w"> </span>install<span class="w"> </span>matplotlib<span class="w"> </span><span class="c1"># for visualization</span>
+conda<span class="w"> </span>install<span class="w"> </span>pytest<span class="w"> </span><span class="c1"># optional</span>
+
+<span class="c1"># Run the self-tests</span>
+pytest<span class="w"> </span>-v
+
+<span class="c1"># You are done. Try any examples in the ./tutorials directory</span>
+python<span class="w"> </span>&lt;example.py&gt;
+</pre></div>
+</div>
+</section>
+<section id="for-windows-users">
+<h3>For Windows users<a class="headerlink" href="#for-windows-users" title="Permalink to this heading"></a></h3>
+<ul class="simple">
+<li><p>Installation using Windows Subsystem for Linx (WSL)</p>
+<ul>
+<li><p>Enable WSL1 or WSL2 according to <a class="reference external" href="https://learn.microsoft.com/en-us/windows/wsl/install-manual">these instructions</a></p></li>
+<li><p>Install GrainLearning using <a class="reference internal" href="#install-using-poetry"><span class="std std-ref">poetry</span></a> or <a class="reference internal" href="#install-using-pip"><span class="std std-ref">pip</span></a></p></li>
+</ul>
+</li>
+<li><p>Installation using anaconda (if no WSLs are available on your Windows system)</p>
+<ul>
+<li><p>Open Anaconda Prompt and <a class="reference internal" href="#install-using-pip"><span class="std std-ref">install GrainLearning using pip</span></a>. This should create a virtual environment, named GrainLearning.</p></li>
+<li><p>Choose that environment from your anaconda navigator: click <cite>Environments</cite> and select <cite>grainlearning</cite> from the drop-down menu</p></li>
+<li><p>Open any editor, for example, spider, and run the examples in grainLearning/tutorials.</p></li>
+</ul>
+</li>
+</ul>
+</section>
+<section id="packaging-one-command-install">
+<h3>Packaging/One command install<a class="headerlink" href="#packaging-one-command-install" title="Permalink to this heading"></a></h3>
+<p>Stable versions of GrainLearning can be installed via <cite>pip install grainlearning</cite>.
+However, you would still need to clone the GrainLearning repository to run the tutorials.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># create a virtual environment</span>
+python3<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>env
+<span class="nb">source</span><span class="w"> </span>env/bin/activate
+
+<span class="c1"># install GrainLearning</span>
+pip<span class="w"> </span>install<span class="w"> </span>grainlearning
+
+<span class="c1"># Clone the repository</span>
+git<span class="w"> </span>clone<span class="w"> </span>https://github.com/GrainLearning/grainLearning.git
+
+<span class="c1"># run a simple linear regression test</span>
+python3<span class="w"> </span>grainLearning/tests/integration/test_lenreg.py
+
+<span class="c1"># deactivate virtual environment</span>
+deactivate
+rm<span class="w"> </span>-r<span class="w"> </span>env
+</pre></div>
+</div>
+</section>
+</section>
+<section id="documentation">
+<h2>Documentation<a class="headerlink" href="#documentation" title="Permalink to this heading"></a></h2>
+<section id="online">
+<h3>Online<a class="headerlink" href="#online" title="Permalink to this heading"></a></h3>
+<p>You can check the online documentation <a class="reference external" href="https://grainlearning.readthedocs.io/en/latest/">here</a>.</p>
+</section>
+<section id="build-the-documentation-locally">
+<h3>Build the documentation locally<a class="headerlink" href="#build-the-documentation-locally" title="Permalink to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># You need to be in the same `poetry shell` used for installing grainlearning</span>
+$<span class="w"> </span>poetry<span class="w"> </span>shell
+$<span class="w"> </span><span class="nb">cd</span><span class="w"> </span>docs
+$<span class="w"> </span>poetry<span class="w"> </span>run<span class="w"> </span>make<span class="w"> </span>html
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="introduction.html" class="btn btn-neutral float-left" title="Introduction" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="dynamic_systems.html" class="btn btn-neutral float-right" title="Dynamic systems" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Hongyang Cheng, Retief Lubbe, Luisa Orozco, Aron Jansen.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

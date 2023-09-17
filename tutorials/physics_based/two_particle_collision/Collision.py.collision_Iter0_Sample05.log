@@ -1,0 +1,16 @@
+TCP python prompt on localhost:9001, auth cookie `kscsud'
+Welcome to Yade 2022.01a 
+Using python version: 3.10.12 (main, Jun 11 2023, 05:26:28) [GCC 11.4.0]
+Warning: no X rendering available (see https://bbs.archlinux.org/viewtopic.php?id=13189)
+XMLRPC info provider on http://localhost:21001
+/usr/lib/python3/dist-packages/IPython/core/interactiveshell.py:949: UserWarning: Attempting to work in a virtualenv. If you encounter problems, please install IPython inside the virtualenv.
+  warn(
+Running script /home/hcheng/GrainLearning/grainLearning/tutorials/physics_based/two_particle_collision/Collision.py
+
+=================== JOB SUMMARY ================
+id      : collision_Iter0_Sample05
+status  : 0 (OK)
+duration: 00:00:02
+command : YADE_BATCH=/home/hcheng/GrainLearning/grainLearning/tutorials/physics_based/two_particle_collision/collision_Iter0_Samples.txt:7 DISPLAY=  /usr/bin/yade-double --threads=8 --nice=10 -x /home/hcheng/GrainLearning/grainLearning/tutorials/physics_based/two_particle_collision/Collision.py> /home/hcheng/GrainLearning/grainLearning/tutorials/physics_based/two_particle_collision/Collision.py.collision_Iter0_Sample05.log 2>&1
+started : Sun Sep 10 07:51:50 2023
+finished: Sun Sep 10 07:51:53 2023

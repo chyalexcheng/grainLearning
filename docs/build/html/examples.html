@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Examples &mdash; GrainLearning  documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Contributing guidelines" href="how_to_contribute.html" />
+    <link rel="prev" title="Tutorials" href="tutorials.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            GrainLearning
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dynamic_systems.html">Dynamic systems</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bayesian_filtering.html">Bayesian filtering</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rnn.html">RNN Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html">Tutorials</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Examples</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#bayesian-calibration-of-dem-models">Bayesian calibration of DEM models</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#run-dem-simulations-guided-by-grainlearning">Run DEM simulations guided by GrainLearning</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#process-simulation-data-with-grainlearning">Process simulation data with GrainLearning</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_contribute.html">Contributing guidelines</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">Python API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">GrainLearning</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Examples</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/examples.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="examples">
+<h1>Examples<a class="headerlink" href="#examples" title="Permalink to this heading"></a></h1>
+<p>This section contains various applications of GrainLearning for the Bayesian calibration of granular material models.
+In granular materials, plastic deformation at the macro scale
+arises from contact sliding in the tangential and rolling/twisting directions
+and the irrecoverable change of the microstructure.
+Because the parameters relevant to these microscopic phenomena
+are not directly measurable in a laboratory, calibration of DEM models
+is generally treated as an inverse problem using “inverse methods”,
+ranging from trials and errors to sophisticated statistical inference.</p>
+<p>Solving an inverse problem that involves nonlinearity and/or discontinuity
+in the <cite>forward</cite> model (DEM or constitutive) is very challenging.
+Furthermore, because of the potentially large computational cost
+for running the simulations, the “trials” have to be selected with an optimized strategy to boost efficiency.</p>
+<section id="bayesian-calibration-of-dem-models">
+<h2>Bayesian calibration of DEM models<a class="headerlink" href="#bayesian-calibration-of-dem-models" title="Permalink to this heading"></a></h2>
+<section id="run-dem-simulations-guided-by-grainlearning">
+<h3>Run DEM simulations guided by GrainLearning<a class="headerlink" href="#run-dem-simulations-guided-by-grainlearning" title="Permalink to this heading"></a></h3>
+</section>
+<section id="process-simulation-data-with-grainlearning">
+<h3>Process simulation data with GrainLearning<a class="headerlink" href="#process-simulation-data-with-grainlearning" title="Permalink to this heading"></a></h3>
+<p>In the case of DEM modeling of granular soils, relevant parameters could be
+Young’s modulus, friction coefficient, Poisson’s ratio, rolling stiffness, and rolling friction, etc.
+of a soil particle, as well as structural parameters like a particle size distribution parameterized by its moments.
+Below is a piece of code that performs Bayesian calibration of four DEM parameters using triaxial compression data.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">grainlearning</span> <span class="kn">import</span> <span class="n">BayesianCalibration</span>
+<span class="kn">from</span> <span class="nn">grainlearning.dynamic_systems</span> <span class="kn">import</span> <span class="n">IODynamicSystem</span>
+
+<span class="n">curr_iter</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">sim_data_dir</span> <span class="o">=</span> <span class="s1">&#39;./tests/data/oedo_sim_data&#39;</span>
+
+<span class="n">calibration</span> <span class="o">=</span> <span class="n">BayesianCalibration</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;curr_iter&quot;</span><span class="p">:</span> <span class="n">curr_iter</span><span class="p">,</span>
+        <span class="s2">&quot;num_iter&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="s2">&quot;system&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">&quot;system_type&quot;</span><span class="p">:</span> <span class="n">IODynamicSystem</span><span class="p">,</span>
+            <span class="s2">&quot;obs_data_file&quot;</span><span class="p">:</span> <span class="s1">&#39;obsdata.dat&#39;</span><span class="p">,</span>
+            <span class="s2">&quot;obs_names&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;p&#39;</span><span class="p">,</span><span class="s1">&#39;q&#39;</span><span class="p">,</span><span class="s1">&#39;n&#39;</span><span class="p">],</span>
+            <span class="s2">&quot;ctrl_name&quot;</span><span class="p">:</span> <span class="s1">&#39;e_a&#39;</span><span class="p">,</span>
+            <span class="s2">&quot;sim_name&quot;</span><span class="p">:</span> <span class="s1">&#39;oedo&#39;</span><span class="p">,</span>
+            <span class="s2">&quot;sim_data_dir&quot;</span><span class="p">:</span> <span class="n">sim_data_dir</span><span class="p">,</span>
+            <span class="s2">&quot;param_data_file&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">sim_data_dir</span><span class="si">}</span><span class="s1">/iter</span><span class="si">{</span><span class="n">curr_iter</span><span class="si">}</span><span class="s1">/smcTable</span><span class="si">{</span><span class="n">curr_iter</span><span class="si">}</span><span class="s1">.txt&#39;</span><span class="p">,</span>
+            <span class="s2">&quot;param_names&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;E&#39;</span><span class="p">,</span> <span class="s1">&#39;mu&#39;</span><span class="p">,</span> <span class="s1">&#39;k_r&#39;</span><span class="p">,</span> <span class="s1">&#39;mu_r&#39;</span><span class="p">],</span>
+            <span class="s2">&quot;param_min&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">100e9</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">],</span>
+            <span class="s2">&quot;param_max&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">200e9</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">1e4</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">],</span>
+            <span class="s2">&quot;inv_obs_weight&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">],</span>
+        <span class="p">},</span>
+        <span class="s2">&quot;calibration&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">&quot;inference&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;ess_target&quot;</span><span class="p">:</span> <span class="mf">0.2</span><span class="p">},</span>
+            <span class="s2">&quot;sampling&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">&quot;max_num_components&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
+            <span class="s2">&quot;prior_weight&quot;</span><span class="p">:</span> <span class="mf">0.01</span><span class="p">,</span>
+            <span class="p">},</span>
+        <span class="p">},</span>
+        <span class="s2">&quot;save_fig&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="p">}</span>
+<span class="p">)</span>
+
+<span class="c1">#%%</span>
+<span class="c1"># load the simulation data and run the inference for one iteration</span>
+<span class="n">calibration</span><span class="o">.</span><span class="n">load_and_run_one_iteration</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>In this example, GrainLearning read the data from pre-run simulations stored in <cite>sim_data_dir</cite>,
+We control the model uncertainty to reach an effective sample size of 20%.
+A new parameter table is generated in the subdirectory of <cite>sim_data_dir</cite>.
+The following figure shows the resampled parameter sub-spaces
+that are progressively localized near the posterior modes over the iterations.</p>
+<figure class="align-default" id="id1">
+<a class="reference internal image-reference" href="_images/resampling.jpg"><img alt="resampled parameters" src="_images/resampling.jpg" style="width: 600px;" /></a>
+<figcaption>
+<p><span class="caption-text">Localization of resampled parameter values over a few iterations.</span><a class="headerlink" href="#id1" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<p>Because the closer to a posterior distribution mode the higher the sample density, resampling from the repeatedly updated proposal density allows zooming into highly probable parameter subspace in very few iterations.
+The iterative (re)sampling scheme brings three major advantages to Bayesian filtering:</p>
+<ol class="arabic simple">
+<li><p>The posterior distribution is iteratively estimated with an increased resolution on the posterior landscape.</p></li>
+<li><p>The multi-level sampling algorithm keeps allocating model evaluations in parameter subspace where the posterior probabilities are expected to be high, thus significantly improving computational efficiency.</p></li>
+<li><p>Resampling that takes place between two consecutive iterations can effectively overcome the weight degeneracy problem while keeping sample trajectories intact within the time/load history.</p></li>
+</ol>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="tutorials.html" class="btn btn-neutral float-left" title="Tutorials" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="how_to_contribute.html" class="btn btn-neutral float-right" title="Contributing guidelines" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Hongyang Cheng, Retief Lubbe, Luisa Orozco, Aron Jansen.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

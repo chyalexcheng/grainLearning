@@ -1,0 +1,8 @@
+TCP python prompt on localhost:9001, auth cookie `euaskd'
+Welcome to Yade 2022.01a 
+Using python version: 3.10.12 (main, Jun 11 2023, 05:26:28) [GCC 11.4.0]
+Warning: no X rendering available (see https://bbs.archlinux.org/viewtopic.php?id=13189)
+XMLRPC info provider on http://localhost:21001
+/usr/lib/python3/dist-packages/IPython/core/interactiveshell.py:949: UserWarning: Attempting to work in a virtualenv. If you encounter problems, please install IPython inside the virtualenv.
+  warn(
+Running script /home/hcheng/GrainLearning/grainLearning/tutorials/physics_based/two_particle_collision/Collision.py

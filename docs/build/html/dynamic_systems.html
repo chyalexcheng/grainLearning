@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dynamic systems &mdash; GrainLearning  documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
+        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Bayesian filtering" href="bayesian_filtering.html" />
+    <link rel="prev" title="Installation" href="installation.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            GrainLearning
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Dynamic systems</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#the-dynamic-system-module">The dynamic system module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#interact-with-third-party-software-via-callback-function">Interact with third-party software via callback function</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#interact-with-python-software">Interact with Python software</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#interact-with-non-python-software">Interact with non-Python software</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#data-format-and-directory-structure">Data format and directory structure</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="bayesian_filtering.html">Bayesian filtering</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rnn.html">RNN Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_contribute.html">Contributing guidelines</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">Python API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">GrainLearning</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Dynamic systems</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/dynamic_systems.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="dynamic-systems">
+<h1>Dynamic systems<a class="headerlink" href="#dynamic-systems" title="Permalink to this heading"></a></h1>
+<section id="the-dynamic-system-module">
+<h2>The dynamic system module<a class="headerlink" href="#the-dynamic-system-module" title="Permalink to this heading"></a></h2>
+<p>The <a class="reference internal" href="api.html#module-grainlearning.dynamic_systems" title="grainlearning.dynamic_systems"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dynamic_systems</span></code></a> module is essential for GrainLearning to run the predictive model(s)
+and encapsulate simulation and observation (or reference) data in a single <a class="reference internal" href="api.html#grainlearning.dynamic_systems.DynamicSystem" title="grainlearning.dynamic_systems.DynamicSystem"><code class="xref py py-class docutils literal notranslate"><span class="pre">DynamicSystem</span></code></a> class.
+Currently, the <a class="reference internal" href="api.html#module-grainlearning.dynamic_systems" title="grainlearning.dynamic_systems"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dynamic_systems</span></code></a> module contains</p>
+<ul class="simple">
+<li><p>a <a class="reference internal" href="api.html#grainlearning.dynamic_systems.DynamicSystem" title="grainlearning.dynamic_systems.DynamicSystem"><code class="xref py py-class docutils literal notranslate"><span class="pre">DynamicSystem</span></code></a> class that handles the simulation and observation data within a <em>Python environment</em>,</p></li>
+<li><p>an <a class="reference internal" href="api.html#grainlearning.dynamic_systems.IODynamicSystem" title="grainlearning.dynamic_systems.IODynamicSystem"><code class="xref py py-class docutils literal notranslate"><span class="pre">IODynamicSystem</span></code></a> class that sends instructions to external <em>third-party software</em> (e.g., via the command line) and retrieves simulation data from the output files of the software.</p></li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>A dynamic system is also known as a state-space model in the literature.
+It describes the time evolution of the state of the model <span class="math notranslate nohighlight">\(\vec{x}_t\)</span> (<a class="reference internal" href="api.html#grainlearning.dynamic_systems.DynamicSystem.sim_data" title="grainlearning.dynamic_systems.DynamicSystem.sim_data"><code class="xref py py-attr docutils literal notranslate"><span class="pre">DynamicSystem.sim_data</span></code></a>)
+and the state of the observables <span class="math notranslate nohighlight">\(\vec{y}_t\)</span> (<a class="reference internal" href="api.html#grainlearning.dynamic_systems.DynamicSystem.obs_data" title="grainlearning.dynamic_systems.DynamicSystem.obs_data"><code class="xref py py-attr docutils literal notranslate"><span class="pre">DynamicSystem.obs_data</span></code></a>).
+Both <span class="math notranslate nohighlight">\(\vec{x}_t\)</span> and <span class="math notranslate nohighlight">\(\vec{y}_t\)</span> are random variables
+whose distributions are updated by the <a class="reference internal" href="api.html#module-grainlearning.inference" title="grainlearning.inference"><code class="xref py py-mod docutils literal notranslate"><span class="pre">inference</span></code></a> module.</p>
+</div>
+<div class="math notranslate nohighlight">
+\[\begin{split}\begin{align}
+\vec{x}_t &amp; =\mathbb{F}(\vec{x}_{t-1})+\vec{\nu}_t
+\label{eq:dynaModel},\\
+\vec{y}_t &amp; =\mathbb{H}(\vec{x}_t)+\vec{\omega}_t
+\label{eq:obsModel}
+\end{align}\end{split}\]</div>
+<p>where <span class="math notranslate nohighlight">\(\mathbb{F}\)</span> represents the <strong>third-party software</strong> model that
+takes the previous model state <span class="math notranslate nohighlight">\(\vec{x}_{t-1}\)</span> to make predictions for time <span class="math notranslate nohighlight">\(t\)</span>.
+If all observables <span class="math notranslate nohighlight">\(\vec{y}_t\)</span> are independent and have a one-to-one correspondence with <span class="math notranslate nohighlight">\(\vec{x}_t\)</span>,
+(meaning you predict what you observe),
+the observation model <span class="math notranslate nohighlight">\(\mathbb{H}\)</span> reduces to the identity matrix <span class="math notranslate nohighlight">\(\mathbb{I}_d\)</span>,
+with <span class="math notranslate nohighlight">\(d\)</span> being the number of independent observables.</p>
+<p>The simulation and observation errors <span class="math notranslate nohighlight">\(\vec{\nu}_t\)</span> and <span class="math notranslate nohighlight">\(\vec{\omega}_t\)</span>
+are random variables and assumed to be normally distributed around zero means.
+We consider both errors together in the covariance matrix <a class="reference internal" href="api.html#grainlearning.inference.SMC.cov_matrices" title="grainlearning.inference.SMC.cov_matrices"><code class="xref py py-attr docutils literal notranslate"><span class="pre">SMC.cov_matrices</span></code></a>.</p>
+</section>
+<section id="interact-with-third-party-software-via-callback-function">
+<h2>Interact with third-party software via callback function<a class="headerlink" href="#interact-with-third-party-software-via-callback-function" title="Permalink to this heading"></a></h2>
+<p>Interaction with an external “software” model can be done via the callback function of <a class="reference internal" href="api.html#grainlearning.dynamic_systems.DynamicSystem" title="grainlearning.dynamic_systems.DynamicSystem"><code class="xref py py-class docutils literal notranslate"><span class="pre">DynamicSystem</span></code></a> or <a class="reference internal" href="api.html#grainlearning.dynamic_systems.IODynamicSystem" title="grainlearning.dynamic_systems.IODynamicSystem"><code class="xref py py-class docutils literal notranslate"><span class="pre">IODynamicSystem</span></code></a>.
+You can define your own callback function
+and pass <em>samples</em> (combinations of parameters) to the <strong>model implemented in Python</strong> or to the software from the <strong>command line</strong>.
+The figure below shows how the callback function is called in the execution loop of <a class="reference internal" href="api.html#grainlearning.bayesian_calibration.BayesianCalibration" title="grainlearning.bayesian_calibration.BayesianCalibration"><code class="xref py py-class docutils literal notranslate"><span class="pre">BayesianCalibration</span></code></a>.</p>
+<a class="reference internal image-reference" href="figs/execution_loop.png" id="execution-loop"><img alt="How a callback function gets executed" id="execution-loop" src="figs/execution_loop.png" style="width: 400px;" /></a>
+<section id="interact-with-python-software">
+<h3>Interact with Python software<a class="headerlink" href="#interact-with-python-software" title="Permalink to this heading"></a></h3>
+<p>Let us first look at an example where the predictive model <span class="math notranslate nohighlight">\(\mathbb{F}\)</span> is implemented in Python.
+The following code snippet shows how to define a callback function that runs a linear model.</p>
+<div class="literal-block-wrapper docutils container" id="id1">
+<div class="code-block-caption"><span class="caption-text">A linear function implemented in Python</span><a class="headerlink" href="#id1" title="Permalink to this code"></a></div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">run_sim</span><span class="p">(</span><span class="n">system</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="c1"># loop over parameter samples</span>
+    <span class="k">for</span> <span class="n">params</span> <span class="ow">in</span> <span class="n">system</span><span class="o">.</span><span class="n">param_data</span><span class="p">:</span>
+        <span class="c1"># Run the model: y = a*x + b</span>
+        <span class="n">y_sim</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">system</span><span class="o">.</span><span class="n">ctrl_data</span> <span class="o">+</span> <span class="n">params</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="c1"># Append the simulation data to the list</span>
+        <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">y_sim</span><span class="p">,</span> <span class="n">ndmin</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
+    <span class="c1"># pass the simulation data to the dynamic system</span>
+    <span class="n">system</span><span class="o">.</span><span class="n">set_sim_data</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>The function <cite>run_sim</cite> is assigned to the <a class="reference internal" href="api.html#grainlearning.dynamic_systems.DynamicSystem.callback" title="grainlearning.dynamic_systems.DynamicSystem.callback"><code class="xref py py-attr docutils literal notranslate"><span class="pre">DynamicSystem.callback</span></code></a> attribute of the <a class="reference internal" href="api.html#grainlearning.dynamic_systems.DynamicSystem" title="grainlearning.dynamic_systems.DynamicSystem"><code class="xref py py-class docutils literal notranslate"><span class="pre">DynamicSystem</span></code></a> class
+and is is called every time the <a class="reference internal" href="api.html#grainlearning.dynamic_systems.DynamicSystem.run" title="grainlearning.dynamic_systems.DynamicSystem.run"><code class="xref py py-attr docutils literal notranslate"><span class="pre">DynamicSystem.run</span></code></a> function is called (see <a class="reference internal" href="#execution-loop"><span class="std std-ref">the figure</span></a> above).</p>
+</section>
+<section id="interact-with-non-python-software">
+<h3>Interact with non-Python software<a class="headerlink" href="#interact-with-non-python-software" title="Permalink to this heading"></a></h3>
+<p>The <a class="reference internal" href="api.html#grainlearning.dynamic_systems.IODynamicSystem" title="grainlearning.dynamic_systems.IODynamicSystem"><code class="xref py py-class docutils literal notranslate"><span class="pre">IODynamicSystem</span></code></a> class inherits from <a class="reference internal" href="api.html#grainlearning.dynamic_systems.DynamicSystem" title="grainlearning.dynamic_systems.DynamicSystem"><code class="xref py py-class docutils literal notranslate"><span class="pre">DynamicSystem</span></code></a> and is intended to work with external software packages
+via the command line.
+The <a class="reference internal" href="api.html#grainlearning.dynamic_systems.IODynamicSystem.run" title="grainlearning.dynamic_systems.IODynamicSystem.run"><code class="xref py py-attr docutils literal notranslate"><span class="pre">IODynamicSystem.run</span></code></a> function overrides the <a class="reference internal" href="api.html#grainlearning.dynamic_systems.DynamicSystem.run" title="grainlearning.dynamic_systems.DynamicSystem.run"><code class="xref py py-attr docutils literal notranslate"><span class="pre">DynamicSystem.run</span></code></a> function of the <a class="reference internal" href="api.html#grainlearning.dynamic_systems.DynamicSystem" title="grainlearning.dynamic_systems.DynamicSystem"><code class="xref py py-class docutils literal notranslate"><span class="pre">DynamicSystem</span></code></a> class.
+Parameter samples are written into a text file and used by <a class="reference internal" href="api.html#grainlearning.dynamic_systems.IODynamicSystem.callback" title="grainlearning.dynamic_systems.IODynamicSystem.callback"><code class="xref py py-attr docutils literal notranslate"><span class="pre">IODynamicSystem.callback</span></code></a> to execute the third-party software.
+Users only need to write a for-loop to pass each parameter sample to this external software, e.g., as command-line arguments (see the example below).</p>
+<div class="literal-block-wrapper docutils container" id="id2">
+<div class="code-block-caption"><span class="caption-text">A callback function that interacts with external software</span><a class="headerlink" href="#id2" title="Permalink to this code"></a></div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">executable</span> <span class="o">=</span> <span class="s1">&#39;./software&#39;</span>
+
+<span class="k">def</span> <span class="nf">run_sim</span><span class="p">(</span><span class="n">system</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="kn">from</span> <span class="nn">math</span> <span class="kn">import</span> <span class="n">floor</span><span class="p">,</span> <span class="n">log</span>
+    <span class="kn">import</span> <span class="nn">os</span>
+    <span class="c1"># keep the naming convention consistent between iterations</span>
+    <span class="n">mag</span> <span class="o">=</span> <span class="n">floor</span><span class="p">(</span><span class="n">log</span><span class="p">(</span><span class="n">system</span><span class="o">.</span><span class="n">num_samples</span><span class="p">,</span> <span class="mi">10</span><span class="p">))</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="n">curr_iter</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;curr_iter&#39;</span><span class="p">]</span>
+    <span class="c1"># loop over and pass parameter samples to the executable</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">params</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">system</span><span class="o">.</span><span class="n">param_data</span><span class="p">):</span>
+        <span class="n">description</span> <span class="o">=</span> <span class="s1">&#39;Iter&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">curr_iter</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;_Sample&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="o">.</span><span class="n">zfill</span><span class="p">(</span><span class="n">mag</span><span class="p">)</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">system</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">executable</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">%.8e</span><span class="s1"> </span><span class="si">%.8e</span><span class="s1">&#39;</span><span class="o">%</span><span class="nb">tuple</span><span class="p">(</span><span class="n">params</span><span class="p">),</span> <span class="n">description</span><span class="p">]))</span>
+</pre></div>
+</div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This code snippet can be used as a template to interact with any third-party software.
+The only thing you need to do is to replace the executable name and the command-line arguments.
+The command-line arguments are passed to the software in the order of the parameter names in <a class="reference internal" href="api.html#grainlearning.dynamic_systems.IODynamicSystem.param_names" title="grainlearning.dynamic_systems.IODynamicSystem.param_names"><code class="xref py py-attr docutils literal notranslate"><span class="pre">IODynamicSystem.param_names</span></code></a>.
+The last argument (optional) is a description of the current simulation, which is used to tag the output files.
+In this example, the description is <cite>Iter&lt;curr_iter&gt;_Sample&lt;sample_ID&gt;</cite>.
+The output files are read into <a class="reference internal" href="api.html#grainlearning.dynamic_systems.IODynamicSystem.sim_data" title="grainlearning.dynamic_systems.IODynamicSystem.sim_data"><code class="xref py py-attr docutils literal notranslate"><span class="pre">IODynamicSystem.sim_data</span></code></a> by the function <a class="reference internal" href="api.html#grainlearning.dynamic_systems.IODynamicSystem.load_sim_data" title="grainlearning.dynamic_systems.IODynamicSystem.load_sim_data"><code class="xref py py-attr docutils literal notranslate"><span class="pre">IODynamicSystem.load_sim_data</span></code></a>.</p>
+</div>
+<section id="data-format-and-directory-structure">
+<h4>Data format and directory structure<a class="headerlink" href="#data-format-and-directory-structure" title="Permalink to this heading"></a></h4>
+<p>GrainLearning can read plain text and .npy formats (for backward compatibility).
+When using <a class="reference internal" href="api.html#grainlearning.dynamic_systems.IODynamicSystem" title="grainlearning.dynamic_systems.IODynamicSystem"><code class="xref py py-class docutils literal notranslate"><span class="pre">IODynamicSystem</span></code></a>, the directory <a class="reference internal" href="api.html#grainlearning.dynamic_systems.IODynamicSystem.sim_data_dir" title="grainlearning.dynamic_systems.IODynamicSystem.sim_data_dir"><code class="xref py py-attr docutils literal notranslate"><span class="pre">IODynamicSystem.sim_data_dir</span></code></a> must exist and contains the observation data file <a class="reference internal" href="api.html#grainlearning.dynamic_systems.IODynamicSystem.obs_data_file" title="grainlearning.dynamic_systems.IODynamicSystem.obs_data_file"><code class="xref py py-attr docutils literal notranslate"><span class="pre">IODynamicSystem.obs_data_file</span></code></a>.
+Subdirectories with name <cite>iter&lt;curr_iter&gt;</cite> will be created in <a class="reference internal" href="api.html#grainlearning.dynamic_systems.IODynamicSystem.sim_data_dir" title="grainlearning.dynamic_systems.IODynamicSystem.sim_data_dir"><code class="xref py py-attr docutils literal notranslate"><span class="pre">IODynamicSystem.sim_data_dir</span></code></a>.
+In these subdirectories, you find</p>
+<ul class="simple">
+<li><p>simulation data file: <cite>&lt;sim_name&gt;_Iter&lt;curr_iter&gt;_Sample&lt;sample_ID&gt;_sim.txt</cite></p></li>
+<li><p>parameter data file: <cite>&lt;sim_name&gt;_Iter&lt;curr_iter&gt;_Sample&lt;sample_ID&gt;_param.txt</cite>,</p></li>
+</ul>
+<p>where &lt;sim_name&gt; is <a class="reference internal" href="api.html#grainlearning.dynamic_systems.IODynamicSystem.sim_name" title="grainlearning.dynamic_systems.IODynamicSystem.sim_name"><code class="xref py py-attr docutils literal notranslate"><span class="pre">IODynamicSystem.sim_name</span></code></a>, &lt;curr_iter&gt; is <a class="reference internal" href="api.html#grainlearning.bayesian_calibration.BayesianCalibration.curr_iter" title="grainlearning.bayesian_calibration.BayesianCalibration.curr_iter"><code class="xref py py-attr docutils literal notranslate"><span class="pre">BayesianCalibration.curr_iter</span></code></a>,
+and &lt;sample_ID&gt; is the index of the <a class="reference internal" href="api.html#grainlearning.dynamic_systems.IODynamicSystem.param_data" title="grainlearning.dynamic_systems.IODynamicSystem.param_data"><code class="xref py py-attr docutils literal notranslate"><span class="pre">IODynamicSystem.param_data</span></code></a> sequence.</p>
+<p>For example, the observation data stored in a text file <a class="reference internal" href="api.html#grainlearning.dynamic_systems.IODynamicSystem.obs_data_file" title="grainlearning.dynamic_systems.IODynamicSystem.obs_data_file"><code class="xref py py-attr docutils literal notranslate"><span class="pre">IODynamicSystem.obs_data_file</span></code></a> should look like this.</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span># u f
+0       5.0
+1       5.2
+2       5.4
+3       5.6
+4       5.8
+5       6.0
+</pre></div>
+</div>
+<p>Similarly, in a simulation data file <cite>linear_Iter0_Sample00_sim.txt</cite>, you will find</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span># f
+5.0
+5.2
+5.4
+5.6
+5.8
+6.0
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The simulation data doesn’t contain the sequence of <code class="xref py py-attr docutils literal notranslate"><span class="pre">DynamicSystem.ctrl_data</span></code> at which the outputs are stored.
+Therefore, when initializing <a class="reference internal" href="api.html#grainlearning.dynamic_systems.IODynamicSystem" title="grainlearning.dynamic_systems.IODynamicSystem"><code class="xref py py-class docutils literal notranslate"><span class="pre">IODynamicSystem</span></code></a> the user needs to provide the keys to the data sequences
+that belong to the <strong>control</strong> and the <strong>observation</strong> group.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># name of the control variable</span>
+<span class="s2">&quot;ctrl_name&quot;</span><span class="p">:</span> <span class="s1">&#39;u&#39;</span><span class="p">,</span>
+<span class="c1"># name of the output variables of the model</span>
+<span class="s2">&quot;obs_names&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;f&#39;</span><span class="p">],</span>
+</pre></div>
+</div>
+</div>
+</section>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="installation.html" class="btn btn-neutral float-left" title="Installation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="bayesian_filtering.html" class="btn btn-neutral float-right" title="Bayesian filtering" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Hongyang Cheng, Retief Lubbe, Luisa Orozco, Aron Jansen.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
